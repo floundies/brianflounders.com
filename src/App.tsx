@@ -64,7 +64,7 @@ export default function App() {
       <header>
         <div className="wrap" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h1 style={{ margin: 0 }}>BrianFlounders.com</h1>
+            <h1 style={{ margin: 0 }}>brianflounders.com</h1>
             <div className="meta">Author: {author || '— set VITE_NOSTR_AUTHOR or pass ?pub='}</div>
           </div>
           <nav style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
