@@ -5,86 +5,65 @@ import NewPost from './components/NewPost'
 import EditPost from './components/EditPost'
 
 type Route =
-  | { view: 'list' }
-  | { view: 'new' }
-  | { view: 'post'; id: string }
-  | { view: 'edit'; id: string }
+  | { name: 'home' }
+  | { name: 'post'; id: string }
+  | { name: 'new' }
+  | { name: 'edit'; id: string }
 
-function useRoute(): Route {
-  const [route, setRoute] = useState(window.location.hash || '#/')
+function parseHash(): Route {
+  const h = (location.hash || '').replace(/^#/, '')
+  // "" | "/" -> home
+  if (!h || h === '/' || h === '/home') return { name: 'home' }
+  // /post/<id>
+  const mPost = h.match(/^\/post\/(.+)$/)
+  if (mPost) return { name: 'post', id: decodeURIComponent(mPost[1]) }
+  // /new
+  if (h === '/new') return { name: 'new' }
+  // /edit/<id>
+  const mEdit = h.match(/^\/edit\/(.+)$/)
+  if (mEdit) return { name: 'edit', id: decodeURIComponent(mEdit[1]) }
+  return { name: 'home' }
+}
+
+export default function App() {
+  const [route, setRoute] = useState<Route>(parseHash())
 
   useEffect(() => {
-    const onHash = () => setRoute(window.location.hash || '#/')
+    const onHash = () => setRoute(parseHash())
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
 
-  const mPost = route.match(/^#\/post\/(.+)$/)
-  if (mPost) return { view: 'post', id: mPost[1] }
-
-  const mEdit = route.match(/^#\/edit\/(.+)$/)
-  if (mEdit) return { view: 'edit', id: mEdit[1] }
-
-  if (route.startsWith('#/new')) return { view: 'new' }
-
-  return { view: 'list' }
-}
-
-const lightning = import.meta.env.VITE_LIGHTNING_ADDRESS as string | undefined
-
-function ZapButton() {
-  if (!lightning) return null
-  async function zap() {
-    const webln = (window as any).webln
-    if (webln && webln.sendPayment) {
-      try {
-        await webln.enable?.()
-        await webln.sendPayment(lightning)
-        return
-      } catch {
-        // fall through to lightning: link
-      }
-    }
-    window.location.href = `lightning:${lightning}`
-  }
-  return <button className="btn" onClick={zap}>⚡ Zap</button>
-}
-
-export default function App() {
-  const r = useRoute()
-
-  // Author from ?pub=npub... or .env fallback
-  const url = new URL(window.location.href)
-  const author =
-    url.searchParams.get('pub') ||
-    ((import.meta.env.VITE_NOSTR_AUTHOR as string) || '')
-
   return (
-    <div>
-      <header>
-        <div className="wrap" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h1 style={{ margin: 0 }}>brianflounders.com</h1>
-            <div className="meta">Author: {author || '— set VITE_NOSTR_AUTHOR or pass ?pub='}</div>
+    <>
+      {/* Sticky header */}
+      <header className="site">
+        <div className="wrap nav">
+          <div className="brand">
+            <a href="#/">brianflounders.com</a>
           </div>
-          <nav style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <nav className="nav-links">
             <a href="#/">Home</a>
             <a href="#/new">New Post</a>
-            <ZapButton />
           </nav>
         </div>
       </header>
 
-      <main className="wrap">
-        {r.view === 'list' && <PostList author={author} />}
-        {r.view === 'post' && <PostView id={r.id} />}
-        {r.view === 'new' && <NewPost />}
-        {r.view === 'edit' && <EditPost id={r.id} />}
+      {/* Page */}
+      <main className="page">
+        <div className="wrap">
+          {route.name === 'home' && <PostList />}
+          {route.name === 'post' && <PostView id={route.id} />}
+          {route.name === 'new' && <NewPost />}
+          {route.name === 'edit' && <EditPost id={route.id} />}
+        </div>
       </main>
 
-      <footer className="wrap" style={{ opacity: 0.7, fontSize: '.9rem', paddingBottom: 30 }}>
-        Powered by Nostr (NIP-23). No servers. Deploy anywhere.
+      <footer className="wrap" style={{ opacity: 0.7, paddingBottom: 28 }}>
+        <p className="meta">
+          Powered by public Nostr relays (NIP-23). No servers. Deploy anywhere.
+        </p>
       </footer>
-    </div>
+    </>
   )
 }
