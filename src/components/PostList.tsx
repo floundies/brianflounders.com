@@ -38,18 +38,12 @@ function npubToHex(npubOrHex: string, nip19: any): string {
 }
 
 function isReply(ev: NEvent): boolean {
-  // replies usually have an 'e' tag with marker 'reply' or 'root'.
-  // keep posts that have NO 'e' marker tags (but keep reposts separately).
   return ev.tags.some(
-    t =>
-      t[0] === 'e' &&
-      (t[3] === 'reply' || t[3] === 'root' || typeof t[3] === 'undefined')
+    t => t[0] === 'e' && (t[3] === 'reply' || t[3] === 'root' || typeof t[3] === 'undefined')
   )
 }
 
-function getD(ev: NEvent): string | undefined {
-  return ev.tags.find(t => t[0] === 'd')?.[1]
-}
+function getD(ev: NEvent): string | undefined { return ev.tags.find(t => t[0] === 'd')?.[1] }
 function getTitle(ev: NEvent): string {
   const fromTag = ev.tags.find(t => t[0] === 'title')?.[1]
   if (fromTag) return fromTag
@@ -57,49 +51,82 @@ function getTitle(ev: NEvent): string {
   if (firstLine?.startsWith('#')) return firstLine.replace(/^#+\s*/, '')
   return 'Untitled'
 }
-function getSummary(ev: NEvent): string {
-  return ev.tags.find(t => t[0] === 'summary')?.[1] || ''
-}
+function getSummary(ev: NEvent): string { return ev.tags.find(t => t[0] === 'summary')?.[1] || '' }
 
 /* -------------------- short-note image allowlist -------------------- */
-/** hosts we will embed images from */
-const IMG_HOST_ALLOW = new Set<string>([
-  'm.primal.net',
-  'primal.net',
-  // keep a couple common ones that likely already worked for you
-  'image.nostr.build',
-  'i.nostr.build',
-  'nostr.build',
-  'void.cat',
-])
-
-// match urls in text
+const IMG_HOST_ALLOW = new Set<string>(['m.primal.net','primal.net','image.nostr.build','i.nostr.build','nostr.build','void.cat'])
 const URL_REGEX = /https?:\/\/[^\s<>'"()]+/gi
-// require a real image extension (handles optional query strings)
 const IMAGE_EXT_REGEX = /\.(?:png|jpe?g|gif|webp|avif)(?:\?.*)?$/i
-
 function isAllowedImageUrl(u: string): boolean {
-  try {
-    const url = new URL(u)
-    if (!IMG_HOST_ALLOW.has(url.hostname)) return false
-    return IMAGE_EXT_REGEX.test(url.pathname + url.search)
-  } catch {
-    return false
+  try { const url = new URL(u); return IMG_HOST_ALLOW.has(url.hostname) && IMAGE_EXT_REGEX.test(url.pathname + url.search) } catch { return false }
+}
+function extractAllowedImageUrls(text: string): string[] { return (text.match(URL_REGEX) || []).filter(isAllowedImageUrl) }
+function removeUrls(text: string, urls: string[]): string { let out = text; for (const u of urls) out = out.replace(u,'').replace(/\s{2,}/g,' '); return out.trim() }
+
+/* -------------------- HERO image helpers (longform) -------------------- */
+function isHttpUrl(u: string): boolean { try { const url = new URL(u); return url.protocol === 'http:' || url.protocol === 'https:' } catch { return false } }
+function getHeroImageUrl(ev: NEvent): string | undefined {
+  const tagKeys = new Set(['image','thumb','cover','banner'])
+  const tagCandidate = ev.tags.find(t => tagKeys.has(t[0]))?.[1]
+  if (tagCandidate && isHttpUrl(tagCandidate)) return tagCandidate
+  const imetas = ev.tags.filter(t => t[0] === 'imeta')
+  for (const im of imetas) {
+    for (const part of im.slice(1)) {
+      const urlMatch = (part.match(URL_REGEX) || [])[0]
+      if (urlMatch && isHttpUrl(urlMatch)) return urlMatch
+      const mEq = /^url\s*=\s*(https?:\/\/\S+)$/i.exec(part); if (mEq && isHttpUrl(mEq[1])) return mEq[1]
+      const mColon = /^url\s*:\s*(https?:\/\/\S+)$/i.exec(part); if (mColon && isHttpUrl(mColon[1])) return mColon[1]
+      const mSpace = /^url\s+(https?:\/\/\S+)$/i.exec(part); if (mSpace && isHttpUrl(mSpace[1])) return mSpace[1]
+    }
   }
+  const fromBody = extractAllowedImageUrls(ev.content)[0]
+  if (fromBody) return fromBody
+  return undefined
 }
 
-function extractAllowedImageUrls(text: string): string[] {
-  return (text.match(URL_REGEX) || []).filter(isAllowedImageUrl)
+/* =================== Profile fetch (memoized + timeout + pool reuse) =================== */
+let __pool: any = null
+async function getPool() {
+  if (__pool) return __pool
+  const { SimplePool }: any = await import('https://esm.sh/nostr-tools@1.17.0')
+  __pool = new SimplePool()
+  return __pool
 }
 
-function removeUrls(text: string, urls: string[]): string {
-  let out = text
-  for (const u of urls) out = out.replace(u, '').replace(/\s{2,}/g, ' ')
-  return out.trim()
+const avatarPromiseCache = new Map<string, Promise<string | null>>()
+
+function withTimeout<T>(p: Promise<T>, ms = 2000): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('profile timeout')), ms)
+    p.then(v => { clearTimeout(t); resolve(v) }).catch(e => { clearTimeout(t); reject(e) })
+  })
+}
+
+async function fetchProfilePictureOnce(pubkey: string, relays: string[]): Promise<string | null> {
+  try {
+    const pool = await getPool()
+    const ev = await withTimeout(pool.get(relays, { kinds: [0], authors: [pubkey] }), 2000)
+    // close sockets per run to avoid WS overload in long sessions
+    try { pool.close(relays) } catch {}
+    if (!ev?.content) return null
+    try {
+      const meta = JSON.parse(ev.content)
+      const url = meta?.picture || meta?.image
+      return (url && /^https?:\/\//.test(url)) ? url : null
+    } catch { return null }
+  } catch { return null }
+}
+
+function fetchProfilePictureCached(pubkey: string, relays: string[]): Promise<string | null> {
+  const key = pubkey
+  const cached = avatarPromiseCache.get(key)
+  if (cached) return cached
+  const p = fetchProfilePictureOnce(pubkey, relays)
+  avatarPromiseCache.set(key, p)
+  return p
 }
 
 /* ================================================================ */
-
 export default function PostList() {
   const [items, setItems] = useState<NEvent[]>([])
   const [loading, setLoading] = useState(true)
@@ -112,50 +139,26 @@ export default function PostList() {
     let stop = false
     ;(async () => {
       try {
-        setLoading(true)
-        setErr('')
-
-        // use a stable nostr-tools build that has SimplePool.list(...)
-        const { SimplePool, nip19 }: any = await import(
-          'https://esm.sh/nostr-tools@1.17.0'
-        )
-
+        setLoading(true); setErr('')
+        const { SimplePool, nip19 }: any = await import('https://esm.sh/nostr-tools@1.17.0')
         const authorHex = npubToHex(authorNpub, nip19)
         if (!authorHex) throw new Error('Bad VITE_NOSTR_AUTHOR')
-
         const pool = new SimplePool()
-
         const filters = [
-          // long-form (NIP-23)
           { kinds: [30023], authors: [authorHex], limit: 100 },
-          // short notes (kind 1) — we’ll filter replies out below
           { kinds: [1], authors: [authorHex], limit: 100 },
-          // reposts (kind 6)
           { kinds: [6], authors: [authorHex], limit: 50 },
         ]
-
         const evs: NEvent[] = await pool.list(relays, filters)
+        pool.close(relays)
         if (stop) return
-
-        // keep: long-form, reposts; for kind-1 keep only non-replies
-        const filtered = evs.filter(ev => {
-          if (ev.kind === 6) return true
-          if (ev.kind === 30023) return true
-          if (ev.kind === 1) return !isReply(ev)
-          return false
-        })
-
-        filtered.sort((a, b) => (b.created_at || 0) - (a.created_at || 0))
+        const filtered = evs.filter(ev => (ev.kind === 6) || (ev.kind === 30023) || (ev.kind === 1 && !isReply(ev)))
+        filtered.sort((a,b) => (b.created_at||0) - (a.created_at||0))
         setItems(filtered)
-      } catch (e: any) {
-        if (!stop) setErr(e?.message || String(e))
-      } finally {
-        if (!stop) setLoading(false)
-      }
+      } catch (e:any) { if (!stop) setErr(e?.message || String(e)) }
+      finally { if (!stop) setLoading(false) }
     })()
-    return () => {
-      stop = true
-    }
+    return () => { stop = true }
   }, [authorNpub, relays])
 
   if (loading) return <p>Loading…</p>
@@ -167,7 +170,6 @@ export default function PostList() {
       {items.map((ev) => {
         const ts = dayjs(ev.created_at * 1000).format('YYYY-MM-DD HH:mm')
 
-        // Repost card
         if (ev.kind === 6) {
           return (
             <li className="list-row" key={ev.id}>
@@ -177,86 +179,59 @@ export default function PostList() {
                   <em>{ts} · ↻ repost</em>
                 </div>
                 <div style={{ marginTop: 6 }}>
-                  <StatsBar ev={ev} interactive />
+                  <StatsBar eventId={ev.id} author={ev.pubkey} />
                 </div>
               </div>
             </li>
           )
         }
 
-        // Long-form NIP-23
         if (ev.kind === 30023) {
           const title = getTitle(ev)
           const summary = getSummary(ev)
+          const hero = getHeroImageUrl(ev)
           return (
             <li className="list-row" key={ev.id}>
               <div className="card">
-                <a
-                  className="title"
-                  href={`#/post/${encodeAnchor(ev)}`}
-                  onClick={() => sessionStorage.removeItem('goto_comments')}
-                >
-                  {title}
-                </a>
-                <div className="meta">
-                  <span>{ts}</span>
-                  {summary ? <span> · {summary}</span> : null}
-                </div>
+                {hero && (
+                  <a href={`#/post/${encodeAnchor(ev)}`} onClick={() => sessionStorage.removeItem('goto_comments')} style={{ display:'block', width:'100%', borderRadius:12, overflow:'hidden', marginBottom:10 }}>
+                    <div style={{ position:'relative', width:'100%', aspectRatio:'16 / 9', background:'#000' }}>
+                      <img src={hero} alt="" loading="lazy" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'center', display:'block' }} />
+                    </div>
+                  </a>
+                )}
+                <a className="title" href={`#/post/${encodeAnchor(ev)}`} onClick={() => sessionStorage.removeItem('goto_comments')}>{title}</a>
+                <div className="meta"><span>{ts}</span>{summary ? <span> · {summary}</span> : null}</div>
                 <div style={{ marginTop: 6 }}>
-                  <StatsBar
-                    ev={ev}
-                    interactive
-                    onCommentsClick={() => {
-                      // if your StatsBar calls this, jump into PostView at comments
-                      sessionStorage.setItem('goto_comments', '1')
-                      location.hash = `#/post/${encodeAnchor(ev)}`
-                    }}
-                  />
+                  <StatsBar eventId={ev.id} author={ev.pubkey} />
                 </div>
               </div>
             </li>
           )
         }
 
-        // Short note (kind 1) – inline body, embed allowed images, no link to PostView
         if (ev.kind === 1) {
           const imgs = extractAllowedImageUrls(ev.content)
           const body = removeUrls(ev.content, imgs)
-
           return (
-            <li className="list-row note card" key={ev.id}>
-              {/* body text (hard-wrap via CSS) */}
-              <div
-                style={{
-                  whiteSpace: 'pre-wrap',
-                  overflowWrap: 'anywhere',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {body}
-              </div>
-
-              {/* allowed images (m.primal.net / primal.net, etc.) */}
-              {imgs.length > 0 && (
-                <div style={{ marginTop: 10, display: 'grid', gap: 10 }}>
-                  {imgs.map((u, i) => (
-                    <a key={u + i} href={u} target="_blank" rel="noopener noreferrer">
-                      <img
-                        src={u}
-                        alt=""
-                        loading="lazy"
-                        style={{ maxWidth: '100%', height: 'auto', borderRadius: 12, display: 'block' }}
-                      />
-                    </a>
-                  ))}
+            <li className="list-row" key={ev.id}>
+              <div className="card" style={{ padding: 16 }}>
+                <ShortNoteBubble pubkey={ev.pubkey} relays={relays}>
+                  <div style={{ whiteSpace:'pre-wrap', overflowWrap:'anywhere', wordBreak:'break-word' }}>{body}</div>
+                  {imgs.length > 0 && (
+                    <div style={{ marginTop:10, display:'grid', gap:10 }}>
+                      {imgs.map((u,i) => (
+                        <a key={u+i} href={u} target="_blank" rel="noopener noreferrer">
+                          <img src={u} alt="" loading="lazy" style={{ maxWidth:'100%', height:'auto', borderRadius:12, display:'block' }} />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  <div className="meta" style={{ marginTop: 8 }}><em>{ts} · short note</em></div>
+                </ShortNoteBubble>
+                <div style={{ marginTop: 6 }}>
+                  <StatsBar eventId={ev.id} author={ev.pubkey} />
                 </div>
-              )}
-
-              <div className="meta">
-                <em>{ts} · short note</em>
-              </div>
-              <div style={{ marginTop: 6 }}>
-                <StatsBar ev={ev} interactive />
               </div>
             </li>
           )
@@ -269,17 +244,8 @@ export default function PostList() {
 }
 
 /* ---------- helpers ---------- */
-
-function encodeAnchor(ev: NEvent): string {
-  // For 30023, prefer naddr (pubkey + kind + d)
-  // Fallback to nevent if anything is missing.
-  const kind = ev.kind
-  return encodeNip19(ev, kind)
-}
-
+function encodeAnchor(ev: NEvent): string { return encodeNip19(ev, ev.kind) }
 function encodeNip19(ev: NEvent, kind: number): string {
-  // dynamic import only when needed
-  // (keeps the top-level from loading more than necessary)
   const enc = (window as any).__nip19enc as (x: any) => string | null
   if (enc) return enc({ ev, kind }) || ev.id
   ;(async () => {
@@ -288,20 +254,58 @@ function encodeNip19(ev: NEvent, kind: number): string {
       try {
         if (kind === 30023) {
           const d = getD(ev)
-          if (d) {
-            return nip19.naddrEncode({
-              kind,
-              pubkey: ev.pubkey,
-              identifier: d,
-            })
-          }
+          if (d) return nip19.naddrEncode({ kind, pubkey: ev.pubkey, identifier: d })
         }
         return nip19.neventEncode({ id: ev.id, kind: ev.kind, author: ev.pubkey })
-      } catch {
-        return null
-      }
+      } catch { return null }
     }
-    // no navigation here; PostList already has a stable key; next click will use cache
   })()
   return ev.id
+}
+
+/* =================== Short Note Bubble (avatar + speech bubble) =================== */
+function ShortNoteBubble({ pubkey, relays, children }: { pubkey: string; relays: string[]; children: any }) {
+  // avatar: undefined => loading; string => url; null => no profile
+  const [avatar, setAvatar] = useState<string | null | undefined>(undefined)
+
+  useEffect(() => {
+    let stop = false
+    setAvatar(undefined) // show skeleton while loading
+    ;(async () => {
+      const url = await fetchProfilePictureCached(pubkey, relays)
+      if (!stop) setAvatar(url)
+    })()
+    return () => { stop = true }
+  }, [pubkey, relays.join(',')])
+
+  const size = 42
+  const bubbleBg = 'rgba(255,255,255,0.04)'
+  const bubbleBorder = '1px solid rgba(255,255,255,0.08)'
+  const skeletonBg = 'rgba(255,255,255,0.08)'
+
+  return (
+    <div style={{ display:'grid', gridTemplateColumns: `${size}px 1fr`, alignItems:'start', gap:12 }}>
+      {/* avatar */}
+      {avatar === undefined ? (
+        // skeleton circle (no text) while loading
+        <div style={{ width:size, height:size, borderRadius:'50%', background:skeletonBg }} />
+      ) : avatar ? (
+        <img src={avatar} alt="" loading="lazy" style={{ width:size, height:size, borderRadius:'50%', objectFit:'cover', display:'block', border:'1px solid rgba(255,255,255,0.08)' }} />
+      ) : (
+        // fallback initials only if we definitively have no profile
+        <div style={{ width:size, height:size, borderRadius:'50%', display:'grid', placeItems:'center', background:skeletonBg, fontWeight:600, fontSize:12 }}>
+          {initialsFrom(pubkey)}
+        </div>
+      )}
+
+      {/* speech bubble */}
+      <div style={{ position:'relative', maxWidth:'100%' }}>
+        <div style={{ background:bubbleBg, padding:'10px 12px', borderRadius:14, border:bubbleBorder }}>
+          {children}
+        </div>
+        {/* tail */}
+        <div style={{ position:'absolute', left:-8, top:14, width:0, height:0, borderTop:'8px solid transparent', borderBottom:'8px solid transparent', borderRight:`8px solid ${bubbleBg}` }} />
+      </div>
+    </div>
+  )
 }

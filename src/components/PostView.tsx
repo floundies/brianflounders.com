@@ -71,6 +71,50 @@ export default function PostView({ id }: { id: string }) {
     })()
   }, [ev])
 
+  /* -------------------- HERO extraction (same as list) -------------------- */
+  const URL_REGEX = /https?:\/\/[^\s<>'"()]+/gi
+  const IMAGE_EXT_REGEX = /\.(?:png|jpe?g|gif|webp|avif)(?:\?.*)?$/i
+  const IMG_HOST_ALLOW = new Set<string>([
+    'm.primal.net',
+    'primal.net',
+    'image.nostr.build', 'i.nostr.build', 'nostr.build', 'void.cat',
+  ])
+
+  function isHttpUrl(u: string): boolean {
+    try { const url = new URL(u); return url.protocol === 'http:' || url.protocol === 'https:' } catch { return false }
+  }
+  function isAllowedImageUrl(u: string): boolean {
+    try { const url = new URL(u); return IMG_HOST_ALLOW.has(url.hostname) && IMAGE_EXT_REGEX.test(url.pathname + url.search) } catch { return false }
+  }
+  function extractAllowedFrom(text: string): string[] {
+    return (text.match(URL_REGEX) || []).filter(isAllowedImageUrl)
+  }
+
+  function getHeroUrl(ev: any): { url?: string; cameFromBody?: boolean } {
+    if (!ev) return {}
+    // 1) image/thumb/cover/banner
+    const tagKeys = new Set(['image','thumb','cover','banner'])
+    const t = (ev.tags || []).find((tt: string[]) => tagKeys.has(tt[0]))?.[1]
+    if (t && isHttpUrl(t)) return { url: t, cameFromBody: false }
+    // 2) imeta variants
+    const imetas = (ev.tags || []).filter((tt: string[]) => tt[0] === 'imeta')
+    for (const im of imetas) {
+      for (const part of im.slice(1)) {
+        const hit = (part.match(URL_REGEX) || [])[0]
+        if (hit && isHttpUrl(hit)) return { url: hit, cameFromBody: false }
+        const mEq = /^url\s*=\s*(https?:\/\/\S+)$/i.exec(part); if (mEq && isHttpUrl(mEq[1])) return { url: mEq[1], cameFromBody: false }
+        const mColon = /^url\s*:\s*(https?:\/\/\S+)$/i.exec(part); if (mColon && isHttpUrl(mColon[1])) return { url: mColon[1], cameFromBody: false }
+        const mSpace = /^url\s+(https?:\/\/\S+)$/i.exec(part); if (mSpace && isHttpUrl(mSpace[1])) return { url: mSpace[1], cameFromBody: false }
+      }
+    }
+    // 3) first allow-listed image in content
+    const fromBody = extractAllowedFrom(ev.content || '')[0]
+    if (fromBody) return { url: fromBody, cameFromBody: true }
+    return {}
+  }
+
+  const { url: heroUrl, cameFromBody } = useMemo(() => getHeroUrl(ev), [ev])
+
   // -------- metadata ----------
   const title = useMemo(() => {
     if (!ev) return ''
@@ -89,7 +133,12 @@ export default function PostView({ id }: { id: string }) {
     [ev]
   )
 
-  const html = useMemo(() => marked.parse(ev?.content || ''), [ev])
+  const html = useMemo(() => {
+    const raw = ev?.content || ''
+    // if hero came from body, strip that URL to avoid duplicate render
+    const body = (cameFromBody && heroUrl) ? raw.replace(heroUrl, '').replace(/\s{2,}/g, ' ').trim() : raw
+    return marked.parse(body)
+  }, [ev, heroUrl, cameFromBody])
 
   // -------- comments: ZapThreads (iife) for comments only; hide its counts; fallback to NoComment ----------
   const injected = useRef(false)
@@ -141,14 +190,11 @@ export default function PostView({ id }: { id: string }) {
 
     // hide zapthreads’ summary/zap row (attributes + defensive shadow patch)
     const hideZapThreadsChrome = (el: HTMLElement) => {
-      // try supported knobs first (many builds honor these):
       el.setAttribute('show-zap-button', 'false')
       el.setAttribute('show-reaction-summary', 'false')
-      // defensive shadow patch (best-effort):
       const tryPatch = () => {
         const sr: any = (el as any).shadowRoot
         if (!sr) { requestAnimationFrame(tryPatch); return }
-        // heuristics: hide the first container that has both “likes” and “sats” words
         const all = Array.from(sr.querySelectorAll<HTMLElement>('*'))
         for (const n of all) {
           const t = (n.textContent || '').toLowerCase()
@@ -162,7 +208,6 @@ export default function PostView({ id }: { id: string }) {
     }
 
     const mountZapThreads = async () => {
-      // Use the iife build and wait for <zap-threads> to be defined
       const sources = [
         'https://unpkg.com/zapthreads@latest/dist/zapthreads.iife.js',
         'https://cdn.jsdelivr.net/npm/zapthreads@latest/dist/zapthreads.iife.js',
@@ -193,11 +238,9 @@ export default function PostView({ id }: { id: string }) {
       clean()
       const el = document.createElement('zap-threads') as any
       el.setAttribute('anchor', anchorRaw)
-      // NOTE: many builds only accept ONE relay here; leave it single to avoid URL() errors
       el.setAttribute('relays', firstRelay)
       el.setAttribute('theme', 'auto')
-      el.setAttribute('publisher', 'nip07') // allow NIP-07 to comment
-      // hide its own reaction/zap UI – we’ll use our StatsBar for actions:
+      el.setAttribute('publisher', 'nip07')
       hideZapThreadsChrome(el)
 
       commentsRef.current!.appendChild(el)
@@ -230,6 +273,42 @@ export default function PostView({ id }: { id: string }) {
 
   return (
     <article>
+      {/* HERO (optional) 16:9 center crop */}
+      {heroUrl && (
+        <div
+          style={{
+            width: '100%',
+            borderRadius: 12,
+            overflow: 'hidden',
+            marginBottom: 10,
+          }}
+        >
+          <div
+            style={{
+              position: 'relative',
+              width: '100%',
+              aspectRatio: '16 / 9',
+              background: '#000',
+            }}
+          >
+            <img
+              src={heroUrl}
+              alt=""
+              loading="lazy"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'center',
+                display: 'block',
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       <h2 className="post-title">{title}</h2>
       <div className="meta">
         {ts}{summary ? ` · ${summary}` : ''}

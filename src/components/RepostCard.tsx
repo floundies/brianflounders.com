@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import StatsBar from './StatsBar'
 import { titleFrom, summaryFrom } from '../lib/nostr'
 
 let sharedPool: any = null
@@ -139,7 +138,6 @@ export default function RepostCard({ ev }: Props) {
               {imageUrlsFrom(orig.content || '').map((u, i) => (
                 <img key={i} src={u} alt="" style={{ maxWidth: '100%', borderRadius: 8, marginTop: 8 }} />
               ))}
-              <StatsBar ev={orig} lazy compact />
             </div>
           )}
 
@@ -147,24 +145,21 @@ export default function RepostCard({ ev }: Props) {
             <div style={{ marginTop: 6 }}>
               <a className="post-title" href={`#/post/${orig.id}`}>{titleFrom(orig)}</a>
               <div className="meta">{summaryFrom(orig) || ''}</div>
-              <StatsBar ev={orig} lazy compact />
             </div>
           )}
 
           {!([1, 30023].includes(orig.kind)) && (
             <div style={{ marginTop: 6 }}>
               <a className="post-title" href={`#/post/${orig.id}`}>Open original</a>
-              <StatsBar ev={orig} lazy compact />
             </div>
           )}
         </>
       ) : (
         <>
-          {loading ? <div className="meta">loading original…</div> : (
-            <>
-              {err && <div className="meta">error loading original: {err}</div>}
-              <StatsBar ev={ev} lazy compact />
-            </>
+          {loading ? (
+            <div className="meta">loading original…</div>
+          ) : (
+            err && <div className="meta">error loading original: {err}</div>
           )}
         </>
       )}
