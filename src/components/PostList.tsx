@@ -207,7 +207,23 @@ export default function PostList() {
                 )}
                 <a className="title" href={`#/post/${encodeAnchor(ev)}`} onClick={() => sessionStorage.removeItem('goto_comments')}>{title}</a>
                 <div className="meta"><span>{ts}</span>{summary ? <span> · {summary}</span> : null}</div>
-                <div style={{ marginTop: 6 }}>
+                <a
+                  href={`#/post/${encodeAnchor(ev)}`}
+                  onClick={() => sessionStorage.removeItem('goto_comments')}
+                  style={{
+                    display: 'inline-block',
+                    marginTop: 10,
+                    padding: '8px 12px',
+                    borderRadius: 12,
+                    border: '1px solid rgba(255,255,255,0.18)',
+                    textDecoration: 'none',
+                    fontWeight: 600,
+                    lineHeight: 1.1,
+                  }}
+                >
+                  Read more →
+                </a>
+                <div style={{ marginTop: 10 }}>
                   <StatsBar eventId={ev.id} author={ev.pubkey} />
                 </div>
               </div>
