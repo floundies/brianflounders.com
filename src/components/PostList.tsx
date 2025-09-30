@@ -54,11 +54,16 @@ function getTitle(ev: NEvent): string {
 function getSummary(ev: NEvent): string { return ev.tags.find(t => t[0] === 'summary')?.[1] || '' }
 
 /* -------------------- short-note image allowlist -------------------- */
-const IMG_HOST_ALLOW = new Set<string>(['m.primal.net','primal.net','image.nostr.build','i.nostr.build','nostr.build','void.cat'])
+const IMG_HOST_ALLOW_SET = new Set<string>(['m.primal.net','primal.net','image.nostr.build','i.nostr.build','nostr.build','void.cat'])
+function isAllowedHost(hostname: string): boolean {
+  if (IMG_HOST_ALLOW_SET.has(hostname)) return true
+  if (hostname.endsWith('.primal.net')) return true
+  return false
+}
 const URL_REGEX = /https?:\/\/[^\s<>'"()]+/gi
 const IMAGE_EXT_REGEX = /\.(?:png|jpe?g|gif|webp|avif)(?:\?.*)?$/i
 function isAllowedImageUrl(u: string): boolean {
-  try { const url = new URL(u); return IMG_HOST_ALLOW.has(url.hostname) && IMAGE_EXT_REGEX.test(url.pathname + url.search) } catch { return false }
+  try { const url = new URL(u); return isAllowedHost(url.hostname) && IMAGE_EXT_REGEX.test(url.pathname + url.search) } catch { return false }
 }
 function extractAllowedImageUrls(text: string): string[] { return (text.match(URL_REGEX) || []).filter(isAllowedImageUrl) }
 function removeUrls(text: string, urls: string[]): string { let out = text; for (const u of urls) out = out.replace(u,'').replace(/\s{2,}/g,' '); return out.trim() }

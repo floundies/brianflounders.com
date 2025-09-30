@@ -74,17 +74,20 @@ export default function PostView({ id }: { id: string }) {
   /* -------------------- HERO extraction (same as list) -------------------- */
   const URL_REGEX = /https?:\/\/[^\s<>'"()]+/gi
   const IMAGE_EXT_REGEX = /\.(?:png|jpe?g|gif|webp|avif)(?:\?.*)?$/i
-  const IMG_HOST_ALLOW = new Set<string>([
+  const ALLOWED_HOSTS = new Set<string>([
     'm.primal.net',
     'primal.net',
     'image.nostr.build', 'i.nostr.build', 'nostr.build', 'void.cat',
   ])
+  function isAllowedHost(host: string): boolean {
+    return ALLOWED_HOSTS.has(host) || host.endsWith('.primal.net')
+  }
 
   function isHttpUrl(u: string): boolean {
     try { const url = new URL(u); return url.protocol === 'http:' || url.protocol === 'https:' } catch { return false }
   }
   function isAllowedImageUrl(u: string): boolean {
-    try { const url = new URL(u); return IMG_HOST_ALLOW.has(url.hostname) && IMAGE_EXT_REGEX.test(url.pathname + url.search) } catch { return false }
+    try { const url = new URL(u); return isAllowedHost(url.hostname) && IMAGE_EXT_REGEX.test(url.pathname + url.search) } catch { return false }
   }
   function extractAllowedFrom(text: string): string[] {
     return (text.match(URL_REGEX) || []).filter(isAllowedImageUrl)
