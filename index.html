@@ -8,6 +8,34 @@
     <meta name="description" content="brianflounders.com :: where's the beef?" />
     <meta property="og:title" content="brianflounders.com" />
     <meta property="og:description" content="brianflounders.com :: where's the beef?" />
+	<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-W5VKC7V5Z8"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){ dataLayer.push(arguments); }
+  gtag('js', new Date());
+  // Disable auto page_view so we control SPA views
+  gtag('config', 'G-W5VKC7V5Z8', { send_page_view: false });
+
+  // SPA page_view: fire on load + hash navigation (no React dependency)
+  (function () {
+    function send() {
+      if (typeof window.gtag !== 'function') return;
+      var path = location.pathname + location.search + location.hash;
+      window.gtag('event', 'page_view', {
+        page_path: path,
+        page_location: location.href,
+        page_title: document.title || undefined
+      });
+    }
+    // initial
+    if (document.readyState === 'complete') send();
+    else window.addEventListener('load', send);
+    // hash / history navigations
+    window.addEventListener('hashchange', send);
+    window.addEventListener('popstate', send);
+  })();
+</script>
   </head>
   <body>
     <div id="root"></div>
