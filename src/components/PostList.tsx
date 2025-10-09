@@ -20,6 +20,7 @@ function relaysFromEnv(): string[] {
   return arr.length
     ? arr
     : [
+        'wss://relay.primal.net',
         'wss://relay.damus.io',
         'wss://nos.lol',
         'wss://relay.snort.social',
@@ -124,7 +125,8 @@ function withTimeout<T>(p: Promise<T>, ms = 2000): Promise<T> {
 
 async function fetchProfilePictureOnce(pubkey: string, relays: string[]): Promise<string | null> {
   try {
-    const pool = await getPool()
+    const { SimplePool }: any = await import('https://esm.sh/nostr-tools@1.17.0')
+    const pool = new SimplePool()
     const ev = await withTimeout(pool.get(relays, { kinds: [0], authors: [pubkey] }), 2000)
     // close sockets per run to avoid WS overload in long sessions
     try { pool.close(relays) } catch {}
@@ -163,7 +165,7 @@ export default function PostList({ tag }: { tag?: string }) {
         const { SimplePool, nip19 }: any = await import('https://esm.sh/nostr-tools@1.17.0')
         const authorHex = npubToHex(authorNpub, nip19)
         if (!authorHex) throw new Error('Bad VITE_NOSTR_AUTHOR')
-        const pool = new SimplePool()
+        const pool = await getPool()
 
         const lowerTag = (tag || '').toLowerCase()
         const includeNotesForTag = !!lowerTag && TAGS_INCLUDE_NOTES.has(lowerTag)
@@ -180,7 +182,6 @@ export default function PostList({ tag }: { tag?: string }) {
         ]
 
         const evs: NEvent[] = await pool.list(relays, filters)
-        // pool.close(relays)
         if (stop) return
 
         let filtered = evs
@@ -265,7 +266,7 @@ export default function PostList({ tag }: { tag?: string }) {
                   Read more →
                 </a>
                 <div style={{ marginTop: 10 }}>
-                  <StatsBar ev={ev} />
+                  <StatsBar key={`${ev.id}:${tag || 'home'}`} ev={ev} />
                 </div>
               </div>
             </li>
@@ -302,7 +303,7 @@ export default function PostList({ tag }: { tag?: string }) {
                   <div className="meta" style={{ marginTop: 8 }}><em>{ts} · short note</em></div>
                 </ShortNoteBubble>
                 <div style={{ marginTop: 6 }}>
-                  <StatsBar ev={ev} />
+                  <StatsBar key={`${ev.id}:${tag || 'home'}`} ev={ev} />
                 </div>
               </div>
             </li>

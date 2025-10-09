@@ -12,6 +12,7 @@ function relaysFromEnv() {
   const s = (import.meta.env.VITE_RELAYS as string) || ''
   const arr = s.split(',').map(t => t.trim()).filter(Boolean)
   return arr.length ? arr : [
+    'wss://relay.primal.net',
     'wss://relay.damus.io',
     'wss://nos.lol',
     'wss://relay.snort.social',
@@ -52,10 +53,11 @@ export default function StatsBar({ ev, compact, lazy, interactive }: Props) {
       if (loadedRef.current) return
       loadedRef.current = true
       ;(async () => {
+        let p: any | null = null
+        const relays = relaysFromEnv()
         try {
           const { SimplePool }: any = await import('https://esm.sh/nostr-tools@1.17.0')
-          const pool = new SimplePool()
-          const relays = relaysFromEnv()
+          p = new SimplePool()
 
           const filters: any[] = [
             { kinds: [7],    '#e': [ev.id], limit: 500 }, // likes
@@ -65,7 +67,7 @@ export default function StatsBar({ ev, compact, lazy, interactive }: Props) {
           ]
           if (aTag) filters.push({ kinds: [7,6,1,9735], '#a': [aTag], limit: 500 })
 
-          const res = await pool.list(relays, filters)
+          const res = await p.list(relays, filters)
           const events = uniq(res)
 
           setCounts({
@@ -86,6 +88,9 @@ export default function StatsBar({ ev, compact, lazy, interactive }: Props) {
             } catch {}
           }
         } catch {}
+        finally {
+          try { p && p.close(relays) } catch {}
+        }
       })()
     }
 
@@ -95,7 +100,7 @@ export default function StatsBar({ ev, compact, lazy, interactive }: Props) {
       { rootMargin: '300px' }
     )
     io.observe(el); return () => io.disconnect()
-  }, [ev?.id, aTag, lazy])
+  }, [ev?.id, ev?.kind, ev?.pubkey, aTag, lazy])
 
   // --- actions ---------------------------------------------------------------
   async function publishLike() {

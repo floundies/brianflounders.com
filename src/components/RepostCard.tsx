@@ -1,13 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { titleFrom, summaryFrom } from '../lib/nostr'
 
-let sharedPool: any = null
-async function pool() {
-  if (sharedPool) return sharedPool
-  const { SimplePool }: any = await import('https://esm.sh/nostr-tools@1.17.0')
-  sharedPool = new SimplePool()
-  return sharedPool
-}
 
 function imageUrlsFrom(text: string) {
   const urls = Array.from((text || '').matchAll(/https?:\/\/\S+/g)).map(m => m[0])
@@ -64,6 +57,7 @@ export default function RepostCard({ ev }: Props) {
     let cancelled = false
     ;(async () => {
       if (!active) return
+      let tempPool: any = null
       try {
         setLoading(true); setErr('')
 
@@ -76,9 +70,19 @@ export default function RepostCard({ ev }: Props) {
           } catch {}
         }
 
-        const relays = (import.meta.env.VITE_RELAYS as string || '')
-          .split(',').map(s => s.trim()).filter(Boolean)
-        const p = await pool()
+        const relaysEnv = (import.meta.env.VITE_RELAYS as string) || ''
+        let relays = relaysEnv.split(',').map(s => s.trim()).filter(Boolean)
+        if (!relays.length) {
+          relays = [
+            'wss://relay.primal.net',
+            'wss://relay.damus.io',
+            'wss://nos.lol',
+            'wss://relay.snort.social',
+          ]
+        }
+        const { SimplePool }: any = await import('https://esm.sh/nostr-tools@1.17.0')
+        const p = new SimplePool()
+        tempPool = p
 
         // resolve via tags if needed
         if (!original) {
@@ -112,6 +116,7 @@ export default function RepostCard({ ev }: Props) {
       } catch (e: any) {
         if (!cancelled) setErr(e?.message || String(e))
       } finally {
+        try { tempPool && tempPool.close(relays) } catch {}
         if (!cancelled) setLoading(false)
       }
     })()
