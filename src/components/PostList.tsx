@@ -180,7 +180,7 @@ export default function PostList({ tag }: { tag?: string }) {
         ]
 
         const evs: NEvent[] = await pool.list(relays, filters)
-        pool.close(relays)
+        // pool.close(relays)
         if (stop) return
 
         let filtered = evs
@@ -227,9 +227,6 @@ export default function PostList({ tag }: { tag?: string }) {
                 <div className="meta" style={{ marginTop: 8 }}>
                   <em>{ts} · ↻ repost</em>
                 </div>
-                <div style={{ marginTop: 6 }}>
-                  <StatsBar eventId={ev.id} author={ev.pubkey} />
-                </div>
               </div>
             </li>
           )
@@ -268,7 +265,7 @@ export default function PostList({ tag }: { tag?: string }) {
                   Read more →
                 </a>
                 <div style={{ marginTop: 10 }}>
-                  <StatsBar eventId={ev.id} author={ev.pubkey} />
+                  <StatsBar ev={ev} />
                 </div>
               </div>
             </li>
@@ -305,7 +302,7 @@ export default function PostList({ tag }: { tag?: string }) {
                   <div className="meta" style={{ marginTop: 8 }}><em>{ts} · short note</em></div>
                 </ShortNoteBubble>
                 <div style={{ marginTop: 6 }}>
-                  <StatsBar eventId={ev.id} author={ev.pubkey} />
+                  <StatsBar ev={ev} />
                 </div>
               </div>
             </li>
