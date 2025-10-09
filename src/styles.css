@@ -61,7 +61,7 @@ a:hover { color: var(--accent-strong); text-decoration: underline; }
 .wrap {
   max-width: 980px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 1px;
 }
 
 /* ===================================================================
@@ -81,7 +81,7 @@ header.site {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 16px;
+  padding: 3px 16px;
 }
 
 .brand a,

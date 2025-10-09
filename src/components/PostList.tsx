@@ -60,7 +60,7 @@ function isAllowedHost(hostname: string): boolean {
   if (hostname.endsWith('.primal.net')) return true
   return false
 }
-const URL_REGEX = /https?:\/\/[^\s<>'"()]+/gi
+const URL_REGEX = /https?:\/\/[^\s<>\'"()]+/gi
 const IMAGE_EXT_REGEX = /\.(?:png|jpe?g|gif|webp|avif)(?:\?.*)?$/i
 function isAllowedImageUrl(u: string): boolean {
   try { const url = new URL(u); return isAllowedHost(url.hostname) && IMAGE_EXT_REGEX.test(url.pathname + url.search) } catch { return false }
@@ -87,6 +87,18 @@ function getHeroImageUrl(ev: NEvent): string | undefined {
   const fromBody = extractAllowedImageUrls(ev.content)[0]
   if (fromBody) return fromBody
   return undefined
+}
+
+/* -------------------- tag match helpers -------------------- */
+function hasTag(ev: NEvent, slug: string): boolean {
+  const want = (slug || '').toLowerCase()
+  if (!want) return false
+  // NIP-12 t-tags
+  const tHit = ev.tags.some(t => t[0] === 't' && (t[1] || '').toLowerCase() === want)
+  if (tHit) return true
+  // hashtag fallback from body
+  const bodyTags = (ev.content.match(/#[a-z0-9_-]+/gi) || []).map(h => h.slice(1).toLowerCase())
+  return bodyTags.includes(want)
 }
 
 /* =================== Profile fetch (memoized + timeout + pool reuse) =================== */
@@ -132,7 +144,7 @@ function fetchProfilePictureCached(pubkey: string, relays: string[]): Promise<st
 }
 
 /* ================================================================ */
-export default function PostList() {
+export default function PostList({ tag }: { tag?: string }) {
   const [items, setItems] = useState<NEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string>('')
@@ -149,7 +161,10 @@ export default function PostList() {
         const authorHex = npubToHex(authorNpub, nip19)
         if (!authorHex) throw new Error('Bad VITE_NOSTR_AUTHOR')
         const pool = new SimplePool()
-        const filters = [
+        // If a tag route, only need longform (30023). Otherwise, load all types.
+        const filters = tag ? [
+          { kinds: [30023], authors: [authorHex], limit: 200 },
+        ] : [
           { kinds: [30023], authors: [authorHex], limit: 100 },
           { kinds: [1], authors: [authorHex], limit: 100 },
           { kinds: [6], authors: [authorHex], limit: 50 },
@@ -157,25 +172,32 @@ export default function PostList() {
         const evs: NEvent[] = await pool.list(relays, filters)
         pool.close(relays)
         if (stop) return
-        const filtered = evs.filter(ev => (ev.kind === 6) || (ev.kind === 30023) || (ev.kind === 1 && !isReply(ev)))
+        let filtered = evs
+        if (tag) {
+          // Longform only with tag match
+          filtered = evs.filter(ev => ev.kind === 30023 && hasTag(ev, tag))
+        } else {
+          // Home view: show reposts, longform, and non-reply notes
+          filtered = evs.filter(ev => (ev.kind === 6) || (ev.kind === 30023) || (ev.kind === 1 && !isReply(ev)))
+        }
         filtered.sort((a,b) => (b.created_at||0) - (a.created_at||0))
         setItems(filtered)
       } catch (e:any) { if (!stop) setErr(e?.message || String(e)) }
       finally { if (!stop) setLoading(false) }
     })()
     return () => { stop = true }
-  }, [authorNpub, relays])
+  }, [authorNpub, relays, tag])
 
   if (loading) return <p>Loading…</p>
   if (err) return <div className="card"><p className="meta">Error: {err}</p></div>
-  if (!items.length) return <div className="card"><p className="meta">No posts yet.</p></div>
+  if (!items.length) return <div className="card"><p className="meta">{tag ? `No posts yet for “${tag}”.` : 'No posts yet.'}</p></div>
 
   return (
     <ul className="list">
       {items.map((ev) => {
         const ts = dayjs(ev.created_at * 1000).format('YYYY-MM-DD HH:mm')
 
-        if (ev.kind === 6) {
+        if (!tag && ev.kind === 6) {
           return (
             <li className="list-row" key={ev.id}>
               <div className="card">
@@ -231,7 +253,7 @@ export default function PostList() {
           )
         }
 
-        if (ev.kind === 1) {
+        if (!tag && ev.kind === 1) {
           const imgs = extractAllowedImageUrls(ev.content)
           const body = removeUrls(ev.content, imgs)
           return (
@@ -329,4 +351,9 @@ function ShortNoteBubble({ pubkey, relays, children }: { pubkey: string; relays:
       </div>
     </div>
   )
+}
+
+/* avatar helpers */
+function initialsFrom(pubkey: string): string {
+  return (pubkey || '').slice(0, 4).toUpperCase()
 }

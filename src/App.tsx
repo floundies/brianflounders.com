@@ -3,12 +3,14 @@ import PostList from './components/PostList'
 import PostView from './components/PostView'
 import NewPost from './components/NewPost'
 import EditPost from './components/EditPost'
+import './styles/subnav.css'
 
 type Route =
   | { name: 'home' }
   | { name: 'post'; id: string }
   | { name: 'new' }
   | { name: 'edit'; id: string }
+  | { name: 'tag'; slug: string }
 
 function parseHash(): Route {
   const h = (location.hash || '').replace(/^#/, '')
@@ -22,6 +24,9 @@ function parseHash(): Route {
   // /edit/<id>
   const mEdit = h.match(/^\/edit\/(.+)$/)
   if (mEdit) return { name: 'edit', id: decodeURIComponent(mEdit[1]) }
+  // /tag/<slug>
+  const mTag = h.match(/^\/tag\/([^\/]+)$/)
+  if (mTag) return { name: 'tag', slug: decodeURIComponent(mTag[1]) }
   return { name: 'home' }
 }
 
@@ -43,8 +48,20 @@ export default function App() {
             <a href="#/">brianflounders.com</a>
           </div>
           <nav className="nav-links">
-            <a href="#/">Home</a>
             <a href="#/new">New Post</a>
+          </nav>
+        </div>
+        {/* Sub-menu */}
+        <div className="wrap">
+          <nav className="subnav" aria-label="Sections">
+            <a className="pill" href="#/" aria-current={route.name === 'home' ? 'page' : undefined}>HOME</a>
+            <a className="pill" href="#/me">ME</a>
+            <a className="pill" href="#/tag/travel">TRAVEL</a>
+            <a className="pill" href="#/tag/bitcoin">BITCOIN</a>
+            <a className="pill" href="#/tag/fitness">FITNESS</a>
+            <a className="pill" href="#/tag/build">BUILD</a>
+            <a className="pill" href="#/tag/cook">COOK</a>
+            <a className="pill" href="#/tag/family">FAMILY</a>
           </nav>
         </div>
       </header>
@@ -53,6 +70,7 @@ export default function App() {
       <main className="page">
         <div className="wrap">
           {route.name === 'home' && <PostList />}
+          {route.name === 'tag' && <PostList tag={route.slug} />}
           {route.name === 'post' && <PostView id={route.id} />}
           {route.name === 'new' && <NewPost />}
           {route.name === 'edit' && <EditPost id={route.id} />}
