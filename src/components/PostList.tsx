@@ -60,7 +60,7 @@ function isAllowedHost(hostname: string): boolean {
   if (hostname.endsWith('.primal.net')) return true
   return false
 }
-const URL_REGEX = /https?:\/\/[^\s<>\'"()]+/gi
+const URL_REGEX = /https?:\/\/[^\s<>'"()]+/gi
 const IMAGE_EXT_REGEX = /\.(?:png|jpe?g|gif|webp|avif)(?:\?.*)?$/i
 function isAllowedImageUrl(u: string): boolean {
   try { const url = new URL(u); return isAllowedHost(url.hostname) && IMAGE_EXT_REGEX.test(url.pathname + url.search) } catch { return false }
@@ -100,6 +100,9 @@ function hasTag(ev: NEvent, slug: string): boolean {
   const bodyTags = (ev.content.match(/#[a-z0-9_-]+/gi) || []).map(h => h.slice(1).toLowerCase())
   return bodyTags.includes(want)
 }
+
+/* --- tag behavior: which tags include short notes on tag pages? --- */
+const TAGS_INCLUDE_NOTES = new Set<string>(['cook','briantries'])
 
 /* =================== Profile fetch (memoized + timeout + pool reuse) =================== */
 let __pool: any = null
@@ -161,25 +164,44 @@ export default function PostList({ tag }: { tag?: string }) {
         const authorHex = npubToHex(authorNpub, nip19)
         if (!authorHex) throw new Error('Bad VITE_NOSTR_AUTHOR')
         const pool = new SimplePool()
-        // If a tag route, only need longform (30023). Otherwise, load all types.
-        const filters = tag ? [
-          { kinds: [30023], authors: [authorHex], limit: 200 },
-        ] : [
+
+        const lowerTag = (tag || '').toLowerCase()
+        const includeNotesForTag = !!lowerTag && TAGS_INCLUDE_NOTES.has(lowerTag)
+
+        // Build relay filters
+        const filters = tag ? (
+          includeNotesForTag
+            ? [{ kinds: [30023, 1], authors: [authorHex], limit: 200 }]
+            : [{ kinds: [30023], authors: [authorHex], limit: 200 }]
+        ) : [
           { kinds: [30023], authors: [authorHex], limit: 100 },
           { kinds: [1], authors: [authorHex], limit: 100 },
           { kinds: [6], authors: [authorHex], limit: 50 },
         ]
+
         const evs: NEvent[] = await pool.list(relays, filters)
         pool.close(relays)
         if (stop) return
+
         let filtered = evs
         if (tag) {
-          // Longform only with tag match
-          filtered = evs.filter(ev => ev.kind === 30023 && hasTag(ev, tag))
+          // Tag pages
+          if (includeNotesForTag) {
+            filtered = evs.filter(ev => (
+              (ev.kind === 30023 || (ev.kind === 1 && !isReply(ev))) && hasTag(ev, lowerTag)
+            ))
+          } else {
+            filtered = evs.filter(ev => ev.kind === 30023 && hasTag(ev, lowerTag))
+          }
         } else {
-          // Home view: show reposts, longform, and non-reply notes
-          filtered = evs.filter(ev => (ev.kind === 6) || (ev.kind === 30023) || (ev.kind === 1 && !isReply(ev)))
+          // Home view
+          filtered = evs.filter(ev => (
+            ev.kind === 6 ||
+            ev.kind === 30023 ||
+            (ev.kind === 1 && !isReply(ev))
+          ))
         }
+
         filtered.sort((a,b) => (b.created_at||0) - (a.created_at||0))
         setItems(filtered)
       } catch (e:any) { if (!stop) setErr(e?.message || String(e)) }
@@ -253,7 +275,17 @@ export default function PostList({ tag }: { tag?: string }) {
           )
         }
 
-        if (!tag && ev.kind === 1) {
+        if (ev.kind === 1) {
+          // Only show notes on home, or on tag pages that include notes and match the tag
+          const lowerTag = (tag || '').toLowerCase()
+          if (tag) {
+            if (!TAGS_INCLUDE_NOTES.has(lowerTag)) return null
+            if (!hasTag(ev, lowerTag)) return null
+            if (isReply(ev)) return null
+          } else {
+            if (isReply(ev)) return null
+          }
+
           const imgs = extractAllowedImageUrls(ev.content)
           const body = removeUrls(ev.content, imgs)
           return (
