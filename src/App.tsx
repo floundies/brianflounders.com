@@ -8,6 +8,17 @@ import './styles/subnav.css'
 const SITE_TITLE = 'brianflounders.com'
 
 function formatTagLabel(slug: string): string {
+  // custom titles for specific slugs
+  const customTitles: Record<string, string> = {
+    briantries: "Brian Tries…",
+  }
+
+  // if a custom title exists, return it
+  if (customTitles[slug.toLowerCase()]) {
+    return customTitles[slug.toLowerCase()]
+  }
+
+  // default: capitalize words
   const pretty = slug.replace(/[-_]+/g, ' ').trim()
   return pretty.replace(/\b\w/g, (m) => m.toUpperCase())
 }
