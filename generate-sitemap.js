@@ -1,4 +1,5 @@
-import "websocket-polyfill"; // required for NDK / WebSocket in Node
+import { WebSocket as NodeWebSocket } from "ws"; // provide WebSocket in Node/CF build
+globalThis.WebSocket = globalThis.WebSocket || NodeWebSocket;
 
 // generate-sitemap.js
 // Build-time sitemap generator for Nostr long-form posts (NIP-23, kind 30023)
