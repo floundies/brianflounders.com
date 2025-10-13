@@ -1,10 +1,26 @@
+// Cloudflare Pages Function: SSR for /post/:id
+// - Accepts: hex id, note1..., nevent1..., naddr1...
+// - Fetches the event via HTTP (robust fallbacks), renders HTML + meta + JSON-LD
+// - Caches at the edge (no KV), then lets your SPA hydrate.
+
 export const onRequestGet: PagesFunction = async (ctx) => {
   const { request, params } = ctx;
-  const id = String(params.id || "").trim();
+  const raw = String(params.id || "").trim();
 
-  // Basic sanity
-  if (!/^[a-z0-9]+$/i.test(id)) {
-    return new Response("Bad id", { status: 400 });
+  // Decode the incoming id into one of:
+  //  - { type:"id", id: <64-hex> }
+  //  - { type:"addr", kind:number, pubkey:string(hex), d:string }
+  const decoded = await decodeIncoming(raw);
+  if (!decoded) {
+    return htmlResponse(
+      htmlShell({
+        title: "Bad id – brianflounders.com",
+        description: "Unrecognized post identifier.",
+        body: `<h1>Bad id</h1><p>Unrecognized post identifier.</p>`,
+        canonical: `https://www.brianflounders.com/post/${escapeHtml(raw)}`,
+      }),
+      { status: 400, cacheSeconds: 600 }
+    );
   }
 
   // Edge cache lookup
@@ -13,58 +29,33 @@ export const onRequestGet: PagesFunction = async (ctx) => {
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
-  // Try multiple HTTP sources (no WebSocket in Workers; keeps this free/simple)
-  const sources = [
-    // nostr.band HTTP event endpoint (public; subject to rate limits)
-    `https://api.nostr.band/nostr/event/${id}`,
-    // fallback via search-by-id (same service; structure differs)
-    `https://api.nostr.band/nostr/search?kind=30023&id=${id}`,
-  ];
-
-  let evt: any | null = null;
-  for (const url of sources) {
-    try {
-      const r = await fetch(url, { headers: { "accept": "application/json" } });
-      if (!r.ok) continue;
-      const j = await r.json();
-      // normalize shape from different endpoints
-      evt = j?.event ?? (Array.isArray(j?.events) ? j.events.find((e: any) => e?.id === id) : null);
-      if (evt?.id) break;
-    } catch {}
-  }
+  // Try to fetch the event from several HTTP endpoints
+  const evt = await fetchEventHTTP(decoded, raw);
 
   if (!evt?.id) {
-    // Serve a gentle HTML (not JSON) to keep crawlers happy
     const nf = htmlShell({
       title: "Post not found – brianflounders.com",
       description: "We couldn't fetch this Nostr post right now.",
       body: `<h1>Post not found</h1><p>We couldn't fetch this Nostr post right now. Try again later.</p>`,
-      canonical: `https://www.brianflounders.com/post/${id}`,
+      canonical: `https://www.brianflounders.com/post/${escapeHtml(raw)}`,
     });
-    const res = new Response(nf, {
-      headers: {
-        "content-type": "text/html; charset=utf-8",
-        "cache-control": "public, max-age=0, s-maxage=600, stale-while-revalidate=86400",
-      },
-      status: 404,
-    });
+    const res = htmlResponse(nf, { status: 404, cacheSeconds: 600 });
     ctx.waitUntil(cache.put(cacheKey, res.clone()));
     return res;
   }
 
-  // Extract basics
+  // Extract basics for SEO
   const title =
-    (evt.tags?.find((t: any) => t?.[0] === "title")?.[1] as string) ||
+    getTag(evt, "title") ||
     firstHeading(evt.content) ||
     "Untitled";
   const summary =
-    (evt.tags?.find((t: any) => t?.[0] === "summary")?.[1] as string) ||
+    getTag(evt, "summary") ||
     trimForMeta(evt.content, 160);
-  const publishedISO = evt.created_at ? new Date(evt.created_at * 1000).toISOString() : undefined;
+  const publishedISO = evt.created_at
+    ? new Date(evt.created_at * 1000).toISOString()
+    : undefined;
 
-  // Render HTML w/ meta + JSON-LD.
-  // Important: we add a tiny inline script that, if JS runs,
-  // sets the hash to the SPA route BEFORE your app boots.
   const html = htmlShell({
     title: `${title} – brianflounders.com`,
     description: summary,
@@ -76,15 +67,19 @@ export const onRequestGet: PagesFunction = async (ctx) => {
       ...(publishedISO ? { "datePublished": publishedISO } : {}),
       "author": { "@type": "Person", "name": "Brian Flounders" },
       "url": `https://www.brianflounders.com/post/${evt.id}`,
+      "keywords": extractKeywords(evt)
     },
     body: `
       <article style="max-width:780px;margin:40px auto;padding:0 16px;line-height:1.6">
         <h1 style="margin:0 0 12px 0">${escapeHtml(title)}</h1>
-        <div style="opacity:.7;font-size:.95rem;margin-bottom:16px">${publishedISO ? new Date(publishedISO).toLocaleString() : ""}</div>
+        <div style="opacity:.7;font-size:.95rem;margin-bottom:16px">
+          ${publishedISO ? new Date(publishedISO).toLocaleString() : ""}
+        </div>
         <div>${renderContent(evt.content)}</div>
       </article>
+
+      <!-- Set SPA hash before your app boots so hydration shows same view -->
       <script>
-        // If JS is enabled, shift to your SPA's hash route before the app boots.
         (function(){
           try{
             if (!location.hash || location.hash.indexOf('/post/') === -1) {
@@ -93,26 +88,124 @@ export const onRequestGet: PagesFunction = async (ctx) => {
           }catch(e){}
         })();
       </script>
-      <!-- Load your app AFTER we set the hash so hydration shows the same post view -->
       <script type="module" src="/assets/index.js"></script>
     `,
   });
 
-  const res = new Response(html, {
-    headers: {
-      "content-type": "text/html; charset=utf-8",
-      "cache-control": "public, max-age=0, s-maxage=21600, stale-while-revalidate=86400",
-    },
-  });
+  const res = htmlResponse(html, { cacheSeconds: 21600 }); // 6h edge cache
   ctx.waitUntil(cache.put(cacheKey, res.clone()));
   return res;
 };
 
-/* ---------------- helpers (pure) ---------------- */
+/* ---------------- decoding + HTTP fetch ---------------- */
 
+async function decodeIncoming(raw: string): Promise<
+  | { type: "id"; id: string }
+  | { type: "addr"; kind: number; pubkey: string; d: string }
+  | null
+> {
+  // 64-hex event id
+  if (/^[0-9a-f]{64}$/i.test(raw)) return { type: "id", id: raw.toLowerCase() };
+
+  try {
+    const { nip19 }: any = await import("https://esm.sh/nostr-tools@1.17.0");
+
+    const dec = nip19.decode(raw);
+    if (!dec) return null;
+
+    if (dec.type === "note" && dec.data) {
+      // note1 encodes event id
+      return { type: "id", id: String(dec.data).toLowerCase() };
+    }
+
+    if (dec.type === "nevent" && dec.data?.id) {
+      return { type: "id", id: String(dec.data.id).toLowerCase() };
+    }
+
+    if (dec.type === "naddr" && dec.data) {
+      const { kind, pubkey, identifier } = dec.data as {
+        kind: number; pubkey: string; identifier: string;
+      };
+      if (kind && pubkey && identifier) {
+        return { type: "addr", kind, pubkey: pubkey.toLowerCase(), d: identifier };
+      }
+    }
+  } catch {
+    // fall through
+  }
+  return null;
+}
+
+async function fetchEventHTTP(
+  key:
+    | { type: "id"; id: string }
+    | { type: "addr"; kind: number; pubkey: string; d: string },
+  raw: string
+): Promise<any | null> {
+  const urls: string[] = [];
+
+  if (key.type === "id") {
+    const id = encodeURIComponent(key.id);
+    // direct-by-id + generic search fallbacks
+    urls.push(
+      `https://api.nostr.band/nostr/event/${id}`,
+      `https://api.nostr.band/nostr/search?ids=${id}`,
+      // njump proxy returns JSON when "Accept: application/json" (fallback)
+      `https://njump.me/api/event/${id}`
+    );
+  } else {
+    // naddr search by components
+    const kind = Number(key.kind);
+    const author = encodeURIComponent(key.pubkey);
+    const d = encodeURIComponent(key.d);
+    urls.push(
+      `https://api.nostr.band/nostr/search?kind=${kind}&author=${author}&d=${d}`,
+      // try naddr directly if the service supports it
+      `https://api.nostr.band/nostr/search?naddr=${encodeURIComponent(raw)}`,
+      `https://njump.me/api/naddr/${encodeURIComponent(raw)}`
+    );
+  }
+
+  for (const u of urls) {
+    try {
+      const r = await fetch(u, { headers: { accept: "application/json" } });
+      if (!r.ok) continue;
+      const j = await r.json();
+
+      // normalize common shapes:
+      //  - { event: {...} }
+      //  - { events: [...] }
+      //  - njump: { event: {...} } or { events: [...] }
+      const evt =
+        j?.event ??
+        (Array.isArray(j?.events) ? j.events[0] : null);
+
+      if (evt?.id && evt?.content) return evt;
+    } catch {
+      // ignore and try next
+    }
+  }
+  return null;
+}
+
+/* ---------------- tiny rendering helpers ---------------- */
+
+function getTag(evt: any, key: string): string | undefined {
+  try {
+    const hit = (evt?.tags || []).find((t: any[]) => t?.[0] === key);
+    return hit?.[1];
+  } catch { return undefined; }
+}
+function extractKeywords(evt: any): string[] {
+  try {
+    return (evt?.tags || [])
+      .filter((t: any[]) => t?.[0] === "t" && t[1])
+      .map((t: any[]) => String(t[1]));
+  } catch { return []; }
+}
 function firstHeading(md: string): string | undefined {
-  const firstLine = (md || "").split(/\r?\n/)[0]?.trim() || "";
-  if (firstLine.startsWith("#")) return firstLine.replace(/^#+\s*/, "").trim();
+  const first = (md || "").split(/\r?\n/)[0]?.trim() || "";
+  if (first.startsWith("#")) return first.replace(/^#+\s*/, "").trim();
   return undefined;
 }
 function trimForMeta(s: string, max = 160): string {
@@ -131,7 +224,6 @@ function linkify(text: string): string {
   return (text || "").replace(urlRe, (u) => `<a href="${u}" target="_blank" rel="noopener">${escapeHtml(u)}</a>`);
 }
 function renderContent(content: string): string {
-  // Simple, safe-ish HTML: paragraphs + linkified URLs.
   return linkify(content)
     .split(/\n{2,}/)
     .map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`)
@@ -163,4 +255,15 @@ ${jsonLdStr}
 </head>
 <body>${body}</body>
 </html>`;
+}
+function htmlResponse(html: string, opts?: { status?: number; cacheSeconds?: number }) {
+  const status = opts?.status ?? 200;
+  const ttl = opts?.cacheSeconds ?? 21600;
+  return new Response(html, {
+    status,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": `public, max-age=0, s-maxage=${ttl}, stale-while-revalidate=86400`,
+    },
+  });
 }
