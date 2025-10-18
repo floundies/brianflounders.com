@@ -1,0 +1,259 @@
+/* Shared chrome for SPA + static pages
+   Mirrors tokens & primitives from style.css so both sides match exactly. */
+
+/* ===================== THEME TOKENS ===================== */
+:root {
+  --bg: #0e1116;            /* page background (dark) */
+  --fg: #e7ebf3;            /* primary text */
+  --muted: #9aa6bd;         /* secondary text */
+  --card: #141922;          /* card background */
+  --card-2: #10151d;        /* alt card background (short notes) */
+  --border: #2a3344;        /* subtle border */
+  --accent: #b497ff;        /* links */
+  --accent-strong: #d3c5ff; /* link hover */
+  --icon: #ced7f4;          /* icon/number tint in dark mode */
+  --ok: #ffd54a;
+
+  --radius-lg: 18px;
+  --radius-sm: 10px;
+
+  --shadow-1: 0 6px 30px rgba(0,0,0,.35);
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f7f8fb;
+    --fg: #0f1826;
+    --muted: #566381;
+    --card: #ffffff;
+    --card-2: #f6f8fc;
+    --border: #dbe3ee;
+    --accent: #5b47ff;
+    --accent-strong: #3926ff;
+    --icon: #3b4766;
+    --ok: #a27c00;
+  }
+}
+
+/* ===================== BASE ===================== */
+*,*::before,*::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.55 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-strong); text-decoration: underline; }
+
+.wrap {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 1px;
+}
+
+/* ===================== HEADER ===================== */
+header.site {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 3px 16px;
+}
+.brand a,
+.brand {
+  display: inline-block;
+  font-weight: 800;
+  font-size: clamp(20px, 3.2vw, 32px);
+  letter-spacing: .2px;
+  color: var(--fg);
+  text-decoration: none;
+}
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-weight: 600;
+}
+.nav-links a { color: var(--accent); }
+.nav-links a:hover { color: var(--accent-strong); text-decoration: none; }
+
+main.page { padding-top: 8px; }
+
+/* ===================== CARDS ===================== */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  padding: 22px 24px;
+}
+
+/* ===================== CAPTIONS ===================== */
+.post-body blockquote {
+  border-left: 4px solid var(--border);
+  padding-left: 12px;
+  margin: 8px 0 16px 0;
+  font-style: italic;
+  color: var(--muted);
+}
+.post-body blockquote > p { margin: 0; }
+
+/* ===================== UTILITIES ===================== */
+img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+hr.sep {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 18px 0;
+}
+.center { text-align: center; }
+.right  { text-align: right; }
+
+@media (max-width: 520px) {
+  .wrap { padding: 12px; }
+  .card { padding: 14px; }
+}
+
+/* Subnav base styles */
+.subnav {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: 0;
+  margin: 0;
+  -webkit-overflow-scrolling: touch;
+  background: rgba(66, 99, 235, .08);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.subnav .pill {
+  flex: 1;
+  text-align: center;
+  padding: 10px 0;
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: .02em;
+  color: #3154c8;
+  background: transparent;
+  border: none;
+  border-right: 1px solid rgba(255,255,255,.25);
+  transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+}
+
+.subnav .pill:last-child {
+  border-right: none;
+}
+
+.subnav .pill:hover {
+  background: #3154c8;
+  color: #fff;
+  box-shadow: inset 0 -3px 0 rgba(255,255,255,.4);
+}
+
+.subnav .pill[aria-current="page"] {
+  background: #fff;
+  color: #4169e1;
+  box-shadow: inset 0 -3px 0 #4169e1;
+}
+
+/* dark-mode overrides */
+@media (prefers-color-scheme: dark) {
+  .subnav {
+    background: rgba(66, 99, 235, .12);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .subnav .pill {
+    color: #9fb2ff;
+    border-right: 1px solid rgba(255,255,255,.12);
+  }
+
+  .subnav .pill:hover {
+    background: rgba(65,105,225,.25);
+    color: #fff;
+    box-shadow: inset 0 -3px 0 rgba(255,255,255,.25);
+  }
+
+  .subnav .pill[aria-current="page"] {
+    background: rgba(255,255,255,.08);
+    color: #dbe3ff;
+    box-shadow: inset 0 -3px 0 #8ea2ff;
+  }
+}
+
+@media (max-width: 680px) {
+  .subnav {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  }
+
+  .subnav .pill {
+    flex: none;
+    scroll-snap-align: start;
+    padding: 8px 16px;
+    margin-right: 8px;
+    border-radius: 16px;
+    background: rgba(66, 99, 235, 0.15);
+    color: #3154c8;
+    border: none;
+    box-shadow: none;
+    font-weight: 600;
+    letter-spacing: .02em;
+    text-align: center;
+    text-decoration: none;
+    transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+  }
+
+  .subnav .pill:last-child {
+    margin-right: 0;
+  }
+
+  .subnav .pill:hover {
+    background: #3154c8;
+    color: #fff;
+    box-shadow: none;
+  }
+
+  .subnav .pill[aria-current="page"] {
+    background: #4169e1;
+    color: #fff;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-color-scheme: dark) and (max-width: 680px) {
+  .subnav .pill {
+    background: rgba(65, 105, 225, 0.25);
+    color: #9fb2ff;
+  }
+
+  .subnav .pill:hover {
+    background: rgba(65, 105, 225, 0.5);
+    color: #fff;
+  }
+
+  .subnav .pill[aria-current="page"] {
+    background: #8ea2ff;
+    color: #fff;
+  }
+}

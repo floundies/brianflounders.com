@@ -149,6 +149,22 @@ main.page { padding-top: 8px; }
    POST VIEW
    =================================================================== */
 
+/* ===================================================================
+   CAPTIONS (blockquote used for image captions)
+   =================================================================== */
+
+.post-body blockquote {
+  border-left: 4px solid var(--border);
+  padding-left: 12px;
+  margin: 8px 0 16px 0;
+  font-style: italic;
+  color: var(--muted);
+}
+
+.post-body blockquote > p {
+  margin: 0;
+}
+
 .post-title {
   font-size: clamp(28px, 4.5vw, 44px);
   line-height: 1.15;
