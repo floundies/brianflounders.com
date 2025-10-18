@@ -16,7 +16,8 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 // IMPORTANT: set these in your environment (local .env and Cloudflare Pages variables)
-const BASE_URL = process.env.SITE_BASE_URL || "https://brianflounders.com";
+const RAW_BASE = (process.env.SITE_BASE_URL || "https://www.brianflounders.com").trim();
+const BASE_URL = RAW_BASE.replace(/\/+$/,"");
 
 // Accept either hex (NOSTR_PUBKEY) or npub (VITE_NOSTR_AUTHOR); decode npub to hex
 const RAW_PUB = (process.env.NOSTR_PUBKEY || process.env.VITE_NOSTR_AUTHOR || "").trim();
@@ -186,13 +187,18 @@ function mapEventToRoute(ev) {
 }
 
 function buildXml(urls) {
-  const rows = urls.map(u => `
+  const rows = urls.map(u => {
+    const locPath = String(u.loc || "").trim();                   // remove stray spaces
+    const pathWithSlash = locPath.startsWith("/") ? locPath : `/${locPath}`;
+    const full = `${BASE_URL}${pathWithSlash}`;                   // BASE_URL already has no trailing slash
+    return `
   <url>
-    <loc>${xmlEsc(`${BASE_URL}${u.loc}`)}</loc>
+    <loc>${xmlEsc(full)}</loc>
     ${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}
     ${u.changefreq ? `<changefreq>${u.changefreq}</changefreq>` : ""}
     ${u.priority != null ? `<priority>${u.priority}</priority>` : ""}
-  </url>`).join("");
+  </url>`;
+  }).join("");
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
