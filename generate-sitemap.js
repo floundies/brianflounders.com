@@ -62,6 +62,7 @@ const STATIC_ROUTES = [
   { loc: "/#/tag/fitness",    changefreq: "weekly", priority: 0.5 },
   { loc: "/#/tag/family",     changefreq: "weekly", priority: 0.5 },
   { loc: "/#/tag/me",         changefreq: "weekly", priority: 0.5 },
+  { loc: "/about.html",      changefreq: "monthly", priority: 0.6 },
 ];
 function extractTagRoutes(events) {
   const tags = new Set();
