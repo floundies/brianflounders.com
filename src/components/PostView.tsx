@@ -226,7 +226,25 @@ export default function PostView({ id }: { id: string }) {
       return t
     }
     const body = (cameFromBody && heroUrl) ? stripHeroOnce(raw, heroUrl).replace(/\s{2,}/g, ' ').trim() : raw
-    return marked.parse(embedInlineVideos(body))
+    const parsed = marked.parse(embedInlineVideos(body))
+
+    // FINAL FALLBACK: if anything slipped through pre-markdown processing,
+    // convert paragraph-wrapped raw URLs in the generated HTML into <video> embeds.
+    const htmlAfter = parsed
+      // <p>https://...mp4</p>
+      .replace(/<p>\s*(https?:\/\/[^\s<>'"()]+\.(?:mp4|webm|mov|m4v)(?:\?[^<]*)?)\s*<\/p>/ig, (_m, u) =>
+        isAllowedVideoUrl(u) ? `<video src="${u}" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>` : _m
+      )
+      // <p><a href="https://...mp4">https://...mp4</a></p>
+      .replace(/<p>\s*<a\s+[^>]*href="(https?:\/\/[^\"]+\.(?:mp4|webm|mov|m4v)(?:\?[^<]*)?)"[^>]*>\s*\1\s*<\/a>\s*<\/p>/ig, (_m, u) =>
+        isAllowedVideoUrl(u) ? `<video src="${u}" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>` : _m
+      )
+      // <p>&lt;https://...mp4&gt;</p>
+      .replace(/<p>\s*&lt;\s*(https?:\/\/[^\s<>'"()]+\.(?:mp4|webm|mov|m4v)(?:\?[^<]*)?)\s*&gt;\s*<\/p>/ig, (_m, u) =>
+        isAllowedVideoUrl(u) ? `<video src="${u}" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>` : _m
+      )
+
+    return htmlAfter
   }, [ev, heroUrl, cameFromBody])
 
   // -------- comments: ZapThreads (iife) for comments only; hide its counts; fallback to NoComment ----------
@@ -234,14 +252,18 @@ export default function PostView({ id }: { id: string }) {
 
   useEffect(() => {
     if (!ev || !commentsRef.current) return
+    let cancelled = false
     if (injected.current && import.meta.env.DEV) return
     injected.current = true
 
-    const container = commentsRef.current
     const relays = relaysFromEnv()
     const relaysJson = JSON.stringify(relays)
 
-    const clean = () => { if (commentsRef.current) commentsRef.current.innerHTML = '' }
+    const clean = () => {
+      const c = commentsRef.current
+      if (!c) return
+      c.innerHTML = ''
+    }
 
     const resolveAnchor = async () => {
       const { nip19 }: any = await import('https://esm.sh/nostr-tools@1.17.0')
@@ -263,7 +285,9 @@ export default function PostView({ id }: { id: string }) {
       s.setAttribute('data-owner', ev.pubkey)
       s.setAttribute('data-custom-base', anchor)
       s.setAttribute('data-skip', '/__none__')
-      commentsRef.current!.appendChild(s)
+      const c = commentsRef.current
+      if (!c || cancelled) return
+      c.appendChild(s)
       console.log('[comments] provider: nocomment')
     }
 
@@ -332,19 +356,22 @@ export default function PostView({ id }: { id: string }) {
       el.setAttribute('publisher', 'nip07')
       hideZapThreadsChrome(el)
 
-      commentsRef.current!.appendChild(el)
+      const c = commentsRef.current
+      if (!c || cancelled) return false
+      c.appendChild(el)
       console.log('[comments] provider: zapthreads (<zap-threads>)')
       return true
     }
 
     const run = async () => {
-      container.innerHTML = '<div class="meta">Loading comments…</div>'
+      const c = commentsRef.current
+      if (c) c.innerHTML = '<div class="meta">Loading comments…</div>'
       const ok = await mountZapThreads()
       if (!ok) await mountNoComment()
     }
 
     run()
-    return () => { injected.current = false; clean() }
+    return () => { cancelled = true; injected.current = false; clean() }
   }, [ev?.id])
 
   // -------- jump to comments when 💬 clicked on list ----------
