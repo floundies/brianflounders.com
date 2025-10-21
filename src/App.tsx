@@ -46,6 +46,41 @@ function parseHash(): Route {
   return { name: 'home' }
 }
 
+// --- helpers to keep home feed clean (hide replies/reposts/reactions) ---
+// minimal Nostr event shape for our filter
+type NEvent = { kind: number; tags?: string[][] };
+
+function isThreadReply(ev: NEvent): boolean {
+  if (ev.kind !== 1) return false; // only applies to short notes
+  const tags = ev.tags || [];
+  let hasThreadRef = false;
+  let hasThreadMarker = false;
+
+  for (const t of tags) {
+    if (!t || t.length === 0) continue;
+    if (t[0] === 'e' || t[0] === 'a') {
+      hasThreadRef = true;
+      // NIP-10/NIP-23 markers typically at index 3
+      if (t[3] === 'reply' || t[3] === 'root') hasThreadMarker = true;
+    }
+  }
+
+  // explicit markers mean it's part of a thread
+  if (hasThreadMarker) return true;
+  // fallback: any e/a reference -> treat as reply to be conservative
+  return hasThreadRef;
+}
+
+// keep only items we want visible on HOME
+function homeFilterFn(ev: NEvent): boolean {
+  // hide reposts (kind 6) and reactions (kind 7)
+  if (ev.kind === 6 || ev.kind === 7) return false;
+  // hide short-note replies
+  if (ev.kind === 1 && isThreadReply(ev)) return false;
+  return true; // keep everything else (e.g., 30023 long-form, top-level kind-1)
+}
+// --- end helpers ---
+
 export default function App() {
   const [route, setRoute] = React.useState<Route>(parseHash())
 
@@ -108,7 +143,7 @@ export default function App() {
       {/* Page */}
       <main className="page">
         <div className="wrap">
-          {route.name === 'home' && <PostList />}
+          {route.name === 'home' && <PostList filterFn={homeFilterFn} />}
           {route.name === 'tag' && <PostList tag={route.slug} />}
           {route.name === 'post' && <PostView id={route.id} />}
           {route.name === 'new' && <NewPost />}

@@ -39,9 +39,19 @@ function npubToHex(npubOrHex: string, nip19: any): string {
 }
 
 function isReply(ev: NEvent): boolean {
-  return ev.tags.some(
-    t => t[0] === 'e' && (t[3] === 'reply' || t[3] === 'root' || typeof t[3] === 'undefined')
-  )
+  if (ev.kind !== 1) return false
+  const tags = ev.tags || []
+  let hasThreadRef = false
+  let hasMarker = false
+  for (const t of tags) {
+    if (!t || t.length === 0) continue
+    if (t[0] === 'e' || t[0] === 'a') {
+      hasThreadRef = true
+      if (t[3] === 'reply' || t[3] === 'root') hasMarker = true
+    }
+  }
+  if (hasMarker) return true
+  return hasThreadRef
 }
 
 function getD(ev: NEvent): string | undefined { return ev.tags.find(t => t[0] === 'd')?.[1] }
@@ -149,7 +159,7 @@ function fetchProfilePictureCached(pubkey: string, relays: string[]): Promise<st
 }
 
 /* ================================================================ */
-export default function PostList({ tag }: { tag?: string }) {
+export default function PostList({ tag, filterFn }: { tag?: string; filterFn?: (ev: NEvent) => boolean }) {
   const [items, setItems] = useState<NEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string>('')
@@ -196,11 +206,15 @@ export default function PostList({ tag }: { tag?: string }) {
           }
         } else {
           // Home view
-          filtered = evs.filter(ev => (
-            ev.kind === 6 ||
-            ev.kind === 30023 ||
-            (ev.kind === 1 && !isReply(ev))
-          ))
+          if (filterFn) {
+            filtered = evs.filter(filterFn)
+          } else {
+            filtered = evs.filter(ev => (
+              ev.kind === 6 ||
+              ev.kind === 30023 ||
+              (ev.kind === 1 && !isReply(ev))
+            ))
+          }
         }
 
         filtered.sort((a,b) => (b.created_at||0) - (a.created_at||0))
@@ -209,7 +223,7 @@ export default function PostList({ tag }: { tag?: string }) {
       finally { if (!stop) setLoading(false) }
     })()
     return () => { stop = true }
-  }, [authorNpub, relays, tag])
+  }, [authorNpub, relays, tag, filterFn])
 
   if (loading) return <p>Loading…</p>
   if (err) return <div className="card"><p className="meta">Error: {err}</p></div>
