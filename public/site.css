@@ -123,9 +123,26 @@ hr.sep {
 .center { text-align: center; }
 .right  { text-align: right; }
 
-@media (max-width: 520px) {
-  .wrap { padding: 12px; }
-  .card { padding: 14px; }
+/* code and pre styling for wrapping */
+pre, code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace;
+  font-size: 14px;
+  white-space: pre-wrap; /* allow wrapping */
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+pre {
+  white-space: pre-wrap; /* ensure wrapping in Safari/WebKit */
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  overflow-x: visible;
+  background: rgba(200, 200, 200, 0.12);
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin: 12px 0;
+  overflow-y: auto;
 }
 
 /* Subnav base styles */
@@ -255,5 +272,37 @@ hr.sep {
   .subnav .pill[aria-current="page"] {
     background: #8ea2ff;
     color: #fff;
+  }
+}
+
+</file>
+/* ===================== CODE BLOCKS ===================== */
+pre, code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  white-space: pre-wrap; /* wrap long lines */
+  word-break: break-word;
+  overflow-x: auto;
+}
+
+pre {
+  background: rgba(200, 200, 200, 0.12); /* subtle light gray background */
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 14px 0;
+}
+
+code {
+  background: rgba(200, 200, 200, 0.12);
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
+@media (prefers-color-scheme: light) {
+  pre {
+    background: #f4f4f6;
+  }
+  code {
+    background: #f4f4f6;
   }
 }
