@@ -75,6 +75,7 @@ export default function PostView({ id }: { id: string }) {
   const URL_REGEX = /https?:\/\/[^\s<>'"()]+/gi
   const IMAGE_EXT_REGEX = /\.(?:png|jpe?g|gif|webp|avif)(?:\?.*)?$/i
   const VIDEO_EXT_REGEX = /\.(?:mp4|webm|mov|m4v)(?:\?.*)?$/i
+  const AUDIO_EXT_REGEX = /\.(?:mp3|wav|ogg|m4a)(?:\?.*)?$/i
   const ALLOWED_HOSTS = new Set<string>([
     'm.primal.net',
     'primal.net',
@@ -93,11 +94,61 @@ export default function PostView({ id }: { id: string }) {
   function isAllowedVideoUrl(u: string): boolean {
     try { const url = new URL(u); return isAllowedHost(url.hostname) && VIDEO_EXT_REGEX.test(url.pathname + url.search) } catch { return false }
   }
+  function isAllowedAudioUrl(u: string): boolean {
+    try { const url = new URL(u); return isAllowedHost(url.hostname) && AUDIO_EXT_REGEX.test(url.pathname + url.search) } catch { return false }
+  }
   function extractAllowedFrom(text: string): string[] {
     return (text.match(URL_REGEX) || []).filter(isAllowedImageUrl)
   }
   function extractAllowedVideosFrom(text: string): string[] {
     return (text.match(URL_REGEX) || []).filter(isAllowedVideoUrl)
+  }
+  function extractAllowedAudioFrom(text: string): string[] {
+    return (text.match(URL_REGEX) || []).filter(isAllowedAudioUrl)
+  }
+  function embedInlineAudio(md: string): string {
+    const lines = md.split(/\n/)
+    const out: string[] = []
+    for (let line of lines) {
+      const trimmed = line.trim()
+
+      // Case A: raw URL on its own line
+      const rawMatch = (trimmed.match(URL_REGEX) || [])[0]
+      if (rawMatch && isAllowedAudioUrl(rawMatch) && trimmed === rawMatch) {
+        out.push(`<audio src="${rawMatch}" controls preload="metadata" style="max-width:100%;width:100%;margin:8px 0"></audio>`)
+        continue
+      }
+
+      // Case B: <https://...> autolink style on its own line
+      const angleMatch = /^<\s*(https?:\/\/[^\s<>'"()]+)\s*>$/i.exec(trimmed)
+      if (angleMatch && isAllowedAudioUrl(angleMatch[1])) {
+        out.push(`<audio src="${angleMatch[1]}" controls preload="metadata" style="max-width:100%;width:100%;margin:8px 0"></audio>`)
+        continue
+      }
+
+      // Case C: HTML anchor tag on its own line
+      const aTagMatch = /^<a\s+[^>]*href="(https?:\/\/[^"]+)"[^>]*>([^<]*)<\/a>\s*$/i.exec(trimmed)
+      if (aTagMatch && isAllowedAudioUrl(aTagMatch[1])) {
+        const text = (aTagMatch[2] || '').trim()
+        if (!text || text === aTagMatch[1]) {
+          out.push(`<audio src="${aTagMatch[1]}" controls preload="metadata" style="max-width:100%;width:100%;margin:8px 0"></audio>`)
+          continue
+        }
+      }
+
+      // Case D: Markdown link on its own line: [text](url) — embed if text equals the URL or is empty
+      const mdLinkMatch = /^\[([^\]]*)\]\((https?:\/\/[^)]+)\)\s*$/i.exec(trimmed)
+      if (mdLinkMatch && isAllowedAudioUrl(mdLinkMatch[2])) {
+        const text = (mdLinkMatch[1] || '').trim()
+        if (!text || text === mdLinkMatch[2]) {
+          out.push(`<audio src="${mdLinkMatch[2]}" controls preload="metadata" style="max-width:100%;width:100%;margin:8px 0"></audio>`)
+          continue
+        }
+      }
+
+      out.push(line)
+    }
+    return out.join('\n')
   }
 
   function getHeroMedia(ev: any): { type?: 'video' | 'image'; url?: string; cameFromBody?: boolean } {
@@ -226,7 +277,7 @@ export default function PostView({ id }: { id: string }) {
       return t
     }
     const body = (cameFromBody && heroUrl) ? stripHeroOnce(raw, heroUrl).replace(/\s{2,}/g, ' ').trim() : raw
-    const parsed = marked.parse(embedInlineVideos(body))
+    const parsed = marked.parse(embedInlineVideos(embedInlineAudio(body)))
 
     // FINAL FALLBACK: if anything slipped through pre-markdown processing,
     // convert paragraph-wrapped raw URLs in the generated HTML into <video> embeds.
@@ -242,6 +293,18 @@ export default function PostView({ id }: { id: string }) {
       // <p>&lt;https://...mp4&gt;</p>
       .replace(/<p>\s*&lt;\s*(https?:\/\/[^\s<>'"()]+\.(?:mp4|webm|mov|m4v)(?:\?[^<]*)?)\s*&gt;\s*<\/p>/ig, (_m, u) =>
         isAllowedVideoUrl(u) ? `<video src="${u}" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>` : _m
+      )
+      // <p>https://...mp3</p>
+      .replace(/<p>\s*(https?:\/\/[^\s<>'"()]+\.(?:mp3|wav|ogg|m4a)(?:\?[^<]*)?)\s*<\/p>/ig, (_m, u) =>
+        isAllowedAudioUrl(u) ? `<audio src="${u}" controls preload="metadata" style="max-width:100%;width:100%;margin:8px 0"></audio>` : _m
+      )
+      // <p><a href="https://...mp3">https://...mp3</a></p>
+      .replace(/<p>\s*<a\s+[^>]*href="(https?:\/\/[^\"]+\.(?:mp3|wav|ogg|m4a)(?:\?[^<]*)?)"[^>]*>\s*\1\s*<\/a>\s*<\/p>/ig, (_m, u) =>
+        isAllowedAudioUrl(u) ? `<audio src="${u}" controls preload="metadata" style="max-width:100%;width:100%;margin:8px 0"></audio>` : _m
+      )
+      // <p>&lt;https://...mp3&gt;</p>
+      .replace(/<p>\s*&lt;\s*(https?:\/\/[^\s<>'"()]+\.(?:mp3|wav|ogg|m4a)(?:\?[^<]*)?)\s*&gt;\s*<\/p>/ig, (_m, u) =>
+        isAllowedAudioUrl(u) ? `<audio src="${u}" controls preload="metadata" style="max-width:100%;width:100%;margin:8px 0"></audio>` : _m
       )
 
     return htmlAfter
