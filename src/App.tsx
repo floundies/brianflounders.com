@@ -133,7 +133,7 @@ export default function App() {
             <a className="pill" href="#/tag/bitcoin" aria-current={route.name === 'tag' && route.slug === 'bitcoin' ? 'page' : undefined}>BITCOIN</a>
             <a className="pill" href="#/tag/fitness" aria-current={route.name === 'tag' && route.slug === 'fitness' ? 'page' : undefined}>FITNESS</a>
             <a className="pill" href="#/tag/travel" aria-current={route.name === 'tag' && route.slug === 'travel' ? 'page' : undefined}>TRAVEL</a>
-            <a className="pill" href="#/tag/build" aria-current={route.name === 'tag' && route.slug === 'build' ? 'page' : undefined}>BUILD</a>
+            <a className="pill" href="#/tag/create" aria-current={route.name === 'tag' && route.slug === 'create' ? 'page' : undefined}>CREATE</a>
             <a className="pill" href="#/tag/cook" aria-current={route.name === 'tag' && route.slug === 'cook' ? 'page' : undefined}>COOK</a>
             <a className="pill" href="#/tag/briantries" aria-current={route.name === 'tag' && route.slug === 'briantries' ? 'page' : undefined}>TRY</a>
           </nav>
