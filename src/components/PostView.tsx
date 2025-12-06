@@ -8,9 +8,10 @@ function relaysFromEnv() {
   const s = (import.meta.env.VITE_RELAYS as string) || ''
   const arr = s.split(',').map(t => t.trim()).filter(Boolean)
   return arr.length ? arr : [
+    'wss://relay.primal.net',
     'wss://relay.damus.io',
     'wss://nos.lol',
-    'wss://relay.snort.social'
+    'wss://relay.snort.social',
   ]
 }
 
@@ -198,12 +199,17 @@ export default function PostView({ id }: { id: string }) {
   const { type: heroType, url: heroUrl, cameFromBody } = useMemo(() => getHeroMedia(ev), [ev])
 
   // -------- metadata ----------
-  const title = useMemo(() => {
-    if (!ev) return ''
-    return ev.tags.find((t: string[]) => t[0] === 'title')?.[1]
-      || (ev.content.split('\n')[0]?.replace(/^#\s*/, ''))
-      || 'Untitled'
-  }, [ev])
+const title = useMemo(() => {
+  if (!ev) return ''
+  // For short notes, don't promote the content line to a header.
+  // Just render the body once below.
+  if (ev.kind === 1) return ''
+  return (
+    ev.tags.find((t: string[]) => t[0] === 'title')?.[1] ||
+    ev.content.split('\n')[0]?.replace(/^#\s*/, '') ||
+    'Untitled'
+  )
+}, [ev])
 
   const summary = useMemo(() => {
     if (!ev) return ''
@@ -329,13 +335,14 @@ export default function PostView({ id }: { id: string }) {
     }
 
     const resolveAnchor = async () => {
-      const { nip19 }: any = await import('https://esm.sh/nostr-tools@1.17.0')
-      if (ev.kind === 30023) {
-        const d = (ev.tags || []).find((t: string[]) => t[0] === 'd')?.[1] || ''
-        if (d) return nip19.naddrEncode({ kind: ev.kind, pubkey: ev.pubkey, identifier: d })
-      }
-      return nip19.neventEncode({ id: ev.id, author: ev.pubkey, kind: ev.kind })
-    }
+  const { nip19 }: any = await import('https://esm.sh/nostr-tools@1.17.0')
+  if (ev.kind === 30023) {
+    const d = (ev.tags || []).find((t: string[]) => t[0] === 'd')?.[1] || ''
+    if (d) return nip19.naddrEncode({ kind: ev.kind, pubkey: ev.pubkey, identifier: d })
+  }
+  // For regular notes, anchor on the note ID so we share threads with Primal and others.
+  return nip19.noteEncode(ev.id)
+}
 
     const mountNoComment = async () => {
       const anchor = await resolveAnchor() // raw naddr/nevent/note
@@ -408,13 +415,13 @@ export default function PostView({ id }: { id: string }) {
       }
       if (!customElements.get('zap-threads')) return false
 
-      const firstRelay = relays[0] || 'wss://relay.damus.io'
+      const relayList = relays.length ? relays.join(',') : 'wss://relay.primal.net'
       const anchorRaw = await resolveAnchor() // **raw NIP-19** (no nostr: prefix)
 
       clean()
       const el = document.createElement('zap-threads') as any
       el.setAttribute('anchor', anchorRaw)
-      el.setAttribute('relays', firstRelay)
+      el.setAttribute('relays', relayList)
       el.setAttribute('theme', 'auto')
       el.setAttribute('publisher', 'nip07')
       hideZapThreadsChrome(el)
@@ -505,10 +512,10 @@ export default function PostView({ id }: { id: string }) {
         </div>
       )}
 
-      <h2 className="post-title">{title}</h2>
-      <div className="meta">
-        {ts}{summary ? ` · ${summary}` : ''}
-      </div>
+      {title && <h2 className="post-title">{title}</h2>}
+<div className="meta">
+  {ts}{summary ? ` · ${summary}` : ''}
+</div>
 
       {/* your clickable actions */}
       <StatsBar ev={ev} interactive />

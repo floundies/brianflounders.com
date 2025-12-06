@@ -280,7 +280,7 @@ export default function PostList({ tag, filterFn }: { tag?: string; filterFn?: (
                   Read more →
                 </a>
                 <div style={{ marginTop: 10 }}>
-                  <StatsBar key={`${ev.id}:${tag || 'home'}`} ev={ev} />
+                  <StatsBar key={`${ev.id}:${tag || 'home'}`} ev={ev} interactive />
                 </div>
               </div>
             </li>
@@ -317,7 +317,7 @@ export default function PostList({ tag, filterFn }: { tag?: string; filterFn?: (
                   <div className="meta" style={{ marginTop: 8 }}><em>{ts} · short note</em></div>
                 </ShortNoteBubble>
                 <div style={{ marginTop: 6 }}>
-                  <StatsBar key={`${ev.id}:${tag || 'home'}`} ev={ev} />
+                  <StatsBar key={`${ev.id}:${tag || 'home'}`} ev={ev} interactive />
                 </div>
               </div>
             </li>

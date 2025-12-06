@@ -32,6 +32,47 @@ function uniq<T extends { id: string }>(xs: T[]) {
   return xs.filter(x => (seen.has(x.id) ? false : (seen.add(x.id), true)))
 }
 
+function encodeAnchorForStats(ev: any): string {
+  const win: any = window as any
+  const enc = win.__nostrAnchorEnc as (ev: any) => string | null
+  if (enc) {
+    const v = enc(ev)
+    if (v) return v
+  }
+  ;(async () => {
+    try {
+      const { nip19 }: any = await import('https://esm.sh/nostr-tools@1.17.0')
+      win.__nostrAnchorEnc = (evInner: any) => {
+        try {
+          if (evInner.kind === 30023) {
+            const d = (evInner.tags || []).find((t: string[]) => t[0] === 'd')?.[1]
+            if (d) {
+              return nip19.naddrEncode({
+                kind: evInner.kind,
+                pubkey: evInner.pubkey,
+                identifier: d,
+              })
+            }
+          }
+          if (evInner.kind === 1) {
+            return nip19.noteEncode(evInner.id)
+          }
+          return nip19.neventEncode({
+            id: evInner.id,
+            kind: evInner.kind,
+            author: evInner.pubkey,
+          })
+        } catch {
+          return null
+        }
+      }
+    } catch {
+      // ignore, will fall back to raw id
+    }
+  })()
+  return ev.id
+}
+
 export default function StatsBar({ ev, compact, lazy, interactive }: Props) {
   const [counts, setCounts] = useState({ likes: 0, boosts: 0, replies: 0, zaps: 0 })
   const [mine, setMine] = useState({ liked: false, boosted: false })
@@ -138,8 +179,9 @@ export default function StatsBar({ ev, compact, lazy, interactive }: Props) {
   }
 
   function goReply() {
+    const anchor = encodeAnchorForStats(ev)
     try { sessionStorage.setItem('goto_comments', '1') } catch {}
-    window.location.hash = `#/post/${ev.id}` // opens post page with comments block
+    window.location.hash = `#/post/${anchor}` // opens post page with comments block
   }
 
   // NIP-57 zap (LNURLp via author lud16 or fallback env address)
