@@ -80,6 +80,7 @@ export default function PostView({ id }: { id: string }) {
   const ALLOWED_HOSTS = new Set<string>([
     'm.primal.net',
     'primal.net',
+    'blossom.primal.net',
     'image.nostr.build', 'i.nostr.build', 'nostr.build', 'void.cat',
   ])
   function isAllowedHost(host: string): boolean {
@@ -93,10 +94,16 @@ export default function PostView({ id }: { id: string }) {
     try { const url = new URL(u); return isAllowedHost(url.hostname) && IMAGE_EXT_REGEX.test(url.pathname + url.search) } catch { return false }
   }
   function isAllowedVideoUrl(u: string): boolean {
-    try { const url = new URL(u); return isAllowedHost(url.hostname) && VIDEO_EXT_REGEX.test(url.pathname + url.search) } catch { return false }
+    try {
+      const url = new URL(u)
+      return VIDEO_EXT_REGEX.test(url.pathname + url.search)
+    } catch { return false }
   }
   function isAllowedAudioUrl(u: string): boolean {
-    try { const url = new URL(u); return isAllowedHost(url.hostname) && AUDIO_EXT_REGEX.test(url.pathname + url.search) } catch { return false }
+    try {
+      const url = new URL(u)
+      return AUDIO_EXT_REGEX.test(url.pathname + url.search)
+    } catch { return false }
   }
   function extractAllowedFrom(text: string): string[] {
     return (text.match(URL_REGEX) || []).filter(isAllowedImageUrl)
@@ -221,51 +228,14 @@ const title = useMemo(() => {
     [ev]
   )
 
-  // Replace standalone video URLs (raw, angle-bracket, markdown, or simple <a>) in markdown with <video> players
   function embedInlineVideos(md: string): string {
-    const lines = md.split(/\n/)
-    const out: string[] = []
-    for (let line of lines) {
-      const trimmed = line.trim()
-
-      // Case A: raw URL on its own line
-      const rawMatch = (trimmed.match(URL_REGEX) || [])[0]
-      if (rawMatch && isAllowedVideoUrl(rawMatch) && trimmed === rawMatch) {
-        out.push(`<video src="${rawMatch}" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>`)
-        continue
+    return md.replace(
+      /(https?:\/\/[^\s<>'"()]+\.(?:mp4|webm|mov|m4v)(?:\?[^\s<>'"]*)?)/ig,
+      (u) => {
+        if (!isAllowedVideoUrl(u)) return u
+        return `<video src="${u}" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>`
       }
-
-      // Case B: <https://...> autolink style on its own line
-      const angleMatch = /^<\s*(https?:\/\/[^\s<>'"()]+)\s*>$/i.exec(trimmed)
-      if (angleMatch && isAllowedVideoUrl(angleMatch[1])) {
-        out.push(`<video src="${angleMatch[1]}" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>`)
-        continue
-      }
-
-      // Case C: HTML anchor tag on its own line
-      const aTagMatch = /^<a\s+[^>]*href="(https?:\/\/[^"]+)"[^>]*>([^<]*)<\/a>\s*$/i.exec(trimmed)
-      if (aTagMatch && isAllowedVideoUrl(aTagMatch[1])) {
-        // If the anchor text is the same URL or empty, treat as standalone
-        const text = (aTagMatch[2] || '').trim()
-        if (!text || text === aTagMatch[1]) {
-          out.push(`<video src="${aTagMatch[1]}" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>`)
-          continue
-        }
-      }
-
-      // Case D: Markdown link on its own line: [text](url) — embed if text equals the URL or is empty
-      const mdLinkMatch = /^\[([^\]]*)\]\((https?:\/\/[^)]+)\)\s*$/i.exec(trimmed)
-      if (mdLinkMatch && isAllowedVideoUrl(mdLinkMatch[2])) {
-        const text = (mdLinkMatch[1] || '').trim()
-        if (!text || text === mdLinkMatch[2]) {
-          out.push(`<video src="${mdLinkMatch[2]}" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>`)
-          continue
-        }
-      }
-
-      out.push(line)
-    }
-    return out.join('\n')
+    )
   }
 
   const html = useMemo(() => {

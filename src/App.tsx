@@ -120,9 +120,6 @@ export default function App() {
           <div className="brand">
             <a href="#/">brianflounders.com</a>
           </div>
-          <nav className="nav-links">
-            <a href="#/new">New Post</a>
-          </nav>
         </div>
         {/* Sub-menu */}
         <div className="wrap">

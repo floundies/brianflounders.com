@@ -73,11 +73,28 @@ function isAllowedHost(hostname: string): boolean {
 }
 const URL_REGEX = /https?:\/\/[^\s<>'"()]+/gi
 const IMAGE_EXT_REGEX = /\.(?:png|jpe?g|gif|webp|avif)(?:\?.*)?$/i
+const VIDEO_EXT_REGEX = /\.(?:mp4|webm|mov|m4v)(?:\?.*)?$/i
+function isVideoUrl(u: string): boolean {
+  try { const url = new URL(u); return VIDEO_EXT_REGEX.test(url.pathname + url.search) } catch { return false }
+}
+function extractVideoUrls(text: string): string[] {
+  return (text.match(URL_REGEX) || []).filter(isVideoUrl)
+}
 function isAllowedImageUrl(u: string): boolean {
   try { const url = new URL(u); return isAllowedHost(url.hostname) && IMAGE_EXT_REGEX.test(url.pathname + url.search) } catch { return false }
 }
 function extractAllowedImageUrls(text: string): string[] { return (text.match(URL_REGEX) || []).filter(isAllowedImageUrl) }
-function removeUrls(text: string, urls: string[]): string { let out = text; for (const u of urls) out = out.replace(u,'').replace(/\s{2,}/g,' '); return out.trim() }
+function removeUrls(text: string, urls: string[]): string {
+  let out = text
+  for (const u of urls) {
+    out = out.replace(u, '')
+  }
+  // collapse repeated spaces but keep line breaks
+  out = out.replace(/[ ]{2,}/g, ' ')
+  // trim trailing spaces on each line
+  out = out.split('\n').map(l => l.trimEnd()).join('\n')
+  return out.trim()
+}
 
 /* -------------------- HERO image helpers (longform) -------------------- */
 function isHttpUrl(u: string): boolean { try { const url = new URL(u); return url.protocol === 'http:' || url.protocol === 'https:' } catch { return false } }
@@ -113,7 +130,7 @@ function hasTag(ev: NEvent, slug: string): boolean {
 }
 
 /* --- tag behavior: which tags include short notes on tag pages? --- */
-const TAGS_INCLUDE_NOTES = new Set<string>(['cook','briantries'])
+const TAGS_INCLUDE_NOTES = new Set<string>(['cook','briantries','fitness','bitcoin'])
 
 /* =================== Profile fetch (memoized + timeout + pool reuse) =================== */
 let __pool: any = null
@@ -298,13 +315,21 @@ export default function PostList({ tag, filterFn }: { tag?: string; filterFn?: (
             if (isReply(ev)) return null
           }
 
+          const vids = extractVideoUrls(ev.content)
           const imgs = extractAllowedImageUrls(ev.content)
-          const body = removeUrls(ev.content, imgs)
+          const body = removeUrls(removeUrls(ev.content, vids), imgs)
           return (
             <li className="list-row" key={ev.id}>
               <div className="card" style={{ padding: 16 }}>
                 <ShortNoteBubble pubkey={ev.pubkey} relays={relays}>
                   <div style={{ whiteSpace:'pre-wrap', overflowWrap:'anywhere', wordBreak:'break-word' }}>{body}</div>
+                  {vids.length > 0 && (
+                    <div style={{ marginTop:10, display:'grid', gap:10 }}>
+                      {vids.map((u,i) => (
+                        <video key={u+i} src={u} controls preload="metadata" playsInline style={{ maxWidth:'100%', width:'100%', borderRadius:12 }} />
+                      ))}
+                    </div>
+                  )}
                   {imgs.length > 0 && (
                     <div style={{ marginTop:10, display:'grid', gap:10 }}>
                       {imgs.map((u,i) => (
