@@ -110,9 +110,8 @@ a:hover { color: var(--j-gold-strong); }
 }
 
 .hero__logo {
-  margin: 0 auto 32px;
+  margin: 48px auto 32px;
   width: 180px;
-  height: 180px;
 }
 
 .hero__title {
