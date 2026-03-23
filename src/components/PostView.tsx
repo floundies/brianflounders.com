@@ -224,7 +224,7 @@ const title = useMemo(() => {
   }, [ev])
 
   const ts = useMemo(
-    () => ev ? dayjs((ev.created_at || 0) * 1000).format('YYYY-MM-DD HH:mm') : '',
+    () => ev ? dayjs((ev.created_at || 0) * 1000).format('MMM D, YYYY') : '',
     [ev]
   )
 
@@ -423,82 +423,83 @@ const title = useMemo(() => {
     }
   }, [commentsRef.current])
 
-  if (loading) return <p>Loading…</p>
+  if (loading) return <p style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>Loading…</p>
   if (err) return <div className="card"><p className="meta">Error: {err}</p></div>
   if (!ev) return <div className="card"><p className="meta">Post not found.</p></div>
 
+  const hasHeroImage = heroUrl && heroType === 'image'
+  const hasHeroVideo = heroUrl && heroType === 'video'
+
   return (
-    <article>
-      {/* HERO (optional) 16:9 center crop */}
-      {heroUrl && (
-        <div
-          style={{
-            width: '100%',
-            borderRadius: 12,
-            overflow: 'hidden',
-            marginBottom: 10,
-          }}
-        >
-          <div
-            style={{
-              position: 'relative',
-              width: '100%',
-              aspectRatio: '16 / 9',
-              background: '#000',
-            }}
-          >
-            {heroType === 'image' ? (
-              <img
-                src={heroUrl}
-                alt=""
-                loading="lazy"
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  objectPosition: 'center',
-                  display: 'block',
-                }}
-              />
-            ) : (
-              <video
-                src={heroUrl}
-                controls
-                preload="metadata"
-                playsInline
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  display: 'block',
-                }}
-              />
-            )}
+    <article className="post-article">
+      {/* Back link */}
+      <a href="#/" className="post-back">← Back</a>
+
+      {/* HERO with hybrid overlap layout (image only) */}
+      {hasHeroImage && (
+        <div className="post-hero-wrap">
+          <div className="post-hero">
+            <img
+              src={heroUrl}
+              alt=""
+              loading="lazy"
+            />
+            {/* bottom gradient scrim */}
+            <div className="post-hero__scrim" />
+          </div>
+          {/* Title overlaps bottom of hero via negative margin */}
+          <div className="post-hero__overlay">
+            {title && <h1 className="post-title post-title--hero">{title}</h1>}
+            <div className="meta post-hero__meta">
+              <span>{ts}</span>
+              {summary && <span style={{ opacity: .8 }}>· {summary}</span>}
+            </div>
           </div>
         </div>
       )}
 
-      {title && <h2 className="post-title">{title}</h2>}
-<div className="meta">
-  {ts}{summary ? ` · ${summary}` : ''}
-</div>
+      {/* HERO video (no overlap — controls need to be visible) */}
+      {hasHeroVideo && (
+        <div style={{ margin: '0 -20px 24px', overflow: 'hidden', borderRadius: 'var(--radius-lg)' }}>
+          <div style={{ position: 'relative', width: '100%', aspectRatio: '2 / 1', background: 'var(--bg)' }}>
+            <video
+              src={heroUrl}
+              controls
+              preload="metadata"
+              playsInline
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+          </div>
+        </div>
+      )}
 
-      {/* your clickable actions */}
+      {/* Title/meta when there's no hero image (video or no media) */}
+      {!hasHeroImage && (
+        <>
+          {title && <h1 className="post-title">{title}</h1>}
+          <div className="meta" style={{ marginBottom: 12 }}>
+            <span>{ts}</span>
+            {summary && <span style={{ opacity: .8 }}>· {summary}</span>}
+          </div>
+        </>
+      )}
+
       <StatsBar ev={ev} interactive />
 
-      <div className="post-body" style={{ marginTop: 10 }} dangerouslySetInnerHTML={{ __html: html }} />
+      <div style={{ margin: '24px 0', borderTop: '1px solid var(--border)' }} />
 
-      {/* comments (ZapThreads with its counts hidden, or NoComment fallback) */}
-      <div ref={commentsRef} style={{ marginTop: 16 }} />
+      <div className="post-body" style={{ maxWidth: 720 }} dangerouslySetInnerHTML={{ __html: html }} />
 
-      <p style={{ display:'flex', gap:10 }}>
-        <a className="btn" href="#/">← Back</a>
-        {canEdit && <a className="btn" href={`#/edit/${ev.id}`}>Edit</a>}
-      </p>
+      {/* Comments section */}
+      <div style={{ margin: '40px 0 8px', borderTop: '1px solid var(--border)' }} />
+      <h3 style={{ fontSize: 20, marginBottom: 16, color: 'var(--muted)' }}>Conversation</h3>
+      <div ref={commentsRef} />
+
+      {canEdit && (
+        <div style={{ marginTop: 24 }}>
+          <a className="btn" href={`#/edit/${ev.id}`}>Edit post</a>
+        </div>
+      )}
     </article>
   )
 }

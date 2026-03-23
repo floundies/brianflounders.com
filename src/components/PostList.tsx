@@ -1,7 +1,7 @@
 // src/components/PostList.tsx
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import dayjs from 'dayjs'
-import StatsBar from './StatsBar'
 import RepostCard from './RepostCard'
 
 type NEvent = {
@@ -176,13 +176,19 @@ function fetchProfilePictureCached(pubkey: string, relays: string[]): Promise<st
 }
 
 /* ================================================================ */
+const PAGE_SIZE = 10
+
 export default function PostList({ tag, filterFn }: { tag?: string; filterFn?: (ev: NEvent) => boolean }) {
   const [items, setItems] = useState<NEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string>('')
+  const [page, setPage] = useState(0)
 
   const relays = useMemo(() => relaysFromEnv(), [])
   const authorNpub = (import.meta.env.VITE_NOSTR_AUTHOR as string) || ''
+
+  // Reset page when tag/filter changes
+  useEffect(() => { setPage(0) }, [tag, filterFn])
 
   useEffect(() => {
     let stop = false
@@ -242,70 +248,93 @@ export default function PostList({ tag, filterFn }: { tag?: string; filterFn?: (
     return () => { stop = true }
   }, [authorNpub, relays, tag, filterFn])
 
-  if (loading) return <p>Loading…</p>
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE))
+  const safeePage = Math.min(page, totalPages - 1)
+  const pageItems = items.slice(safeePage * PAGE_SIZE, (safeePage + 1) * PAGE_SIZE)
+
+  const goPage = (p: number) => {
+    setPage(p)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  if (loading) return <p style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>Loading...</p>
   if (err) return <div className="card"><p className="meta">Error: {err}</p></div>
-  if (!items.length) return <div className="card"><p className="meta">{tag ? `No posts yet for “${tag}”.` : 'No posts yet.'}</p></div>
+  if (!items.length) return <div className="card"><p className="meta">{tag ? `No posts yet for "${tag}".` : 'No posts yet.'}</p></div>
 
   return (
+    <>
+    <Lightbox />
     <ul className="list">
-      {items.map((ev) => {
-        const ts = dayjs(ev.created_at * 1000).format('YYYY-MM-DD HH:mm')
+      {pageItems.map((ev, idx) => {
+        const ts = dayjs(ev.created_at * 1000).format('MMM D, YYYY')
 
+        /* ---- Repost card ---- */
         if (!tag && ev.kind === 6) {
           return (
             <li className="list-row" key={ev.id}>
-              <div className="card">
-                <RepostCard ev={ev} relays={relays} />
-                <div className="meta" style={{ marginTop: 8 }}>
-                  <em>{ts} · ↻ repost</em>
+              <div className="card card--repost">
+                <div className="meta" style={{ marginBottom: 8, fontSize: 13, opacity: .7 }}>
+                  <span>↻ reposted · {ts}</span>
                 </div>
+                <RepostCard ev={ev} />
               </div>
             </li>
           )
         }
 
+        /* ---- Long-form article card ---- */
         if (ev.kind === 30023) {
           const title = getTitle(ev)
           const summary = getSummary(ev)
           const hero = getHeroImageUrl(ev)
+          const postUrl = `#/post/${encodeAnchor(ev)}`
+          const clearComments = () => sessionStorage.removeItem('goto_comments')
+          const tTags = ev.tags.filter(t => t[0] === 't' && t[1]).map(t => t[1].toLowerCase())
+          const isFirst = idx === 0 && !tag && safeePage === 0
+
           return (
             <li className="list-row" key={ev.id}>
-              <div className="card">
+              <a
+                href={postUrl}
+                onClick={clearComments}
+                className={`card card--article${isFirst ? ' card--featured' : ''}`}
+                style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}
+              >
                 {hero && (
-                  <a href={`#/post/${encodeAnchor(ev)}`} onClick={() => sessionStorage.removeItem('goto_comments')} style={{ display:'block', width:'100%', borderRadius:12, overflow:'hidden', marginBottom:10 }}>
-                    <div style={{ position:'relative', width:'100%', aspectRatio:'16 / 9', background:'#000' }}>
-                      <img src={hero} alt="" loading="lazy" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'center', display:'block' }} />
+                  <div className="card__hero" style={{ margin: '-28px -32px 20px', overflow: 'hidden', borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0' }}>
+                    <div style={{ position:'relative', width:'100%', aspectRatio: isFirst ? '2 / 1' : '16 / 9', background:'var(--bg)' }}>
+                      <img src={hero} alt="" loading="lazy" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', objectPosition:'center', display:'block', transition: 'transform .3s ease' }} />
                     </div>
-                  </a>
+                  </div>
                 )}
-                <a className="title" href={`#/post/${encodeAnchor(ev)}`} onClick={() => sessionStorage.removeItem('goto_comments')}>{title}</a>
-                <div className="meta"><span>{ts}</span>{summary ? <span> · {summary}</span> : null}</div>
-                <a
-                  href={`#/post/${encodeAnchor(ev)}`}
-                  onClick={() => sessionStorage.removeItem('goto_comments')}
-                  style={{
-                    display: 'inline-block',
-                    marginTop: 10,
-                    padding: '8px 12px',
-                    borderRadius: 12,
-                    border: '1px solid rgba(255,255,255,0.18)',
-                    textDecoration: 'none',
-                    fontWeight: 600,
-                    lineHeight: 1.1,
-                  }}
-                >
-                  Read more →
-                </a>
-                <div style={{ marginTop: 10 }}>
-                  <StatsBar key={`${ev.id}:${tag || 'home'}`} ev={ev} interactive />
+                <div className="title" style={{ fontSize: isFirst ? 'clamp(26px, 3.5vw, 38px)' : undefined }}>{title}</div>
+                {summary && <div style={{ color: 'var(--muted)', marginBottom: 8, lineHeight: 1.5 }}>{summary}</div>}
+                <div className="meta" style={{ marginBottom: 8 }}>
+                  <span>{ts}</span>
                 </div>
-              </div>
+                {tTags.length > 0 && (
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+                    {tTags.slice(0, 4).map(t => (
+                      <span key={t} style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        padding: '3px 10px',
+                        borderRadius: 'var(--radius-pill)',
+                        background: 'var(--tag-bg)',
+                        color: 'var(--tag-fg)',
+                        letterSpacing: '.03em',
+                        textTransform: 'uppercase',
+                      }}>{t}</span>
+                    ))}
+                  </div>
+                )}
+              </a>
             </li>
           )
         }
 
+        /* ---- Short note card ---- */
         if (ev.kind === 1) {
-          // Only show notes on home, or on tag pages that include notes and match the tag
           const lowerTag = (tag || '').toLowerCase()
           if (tag) {
             if (!TAGS_INCLUDE_NOTES.has(lowerTag)) return null
@@ -318,32 +347,29 @@ export default function PostList({ tag, filterFn }: { tag?: string; filterFn?: (
           const vids = extractVideoUrls(ev.content)
           const imgs = extractAllowedImageUrls(ev.content)
           const body = removeUrls(removeUrls(ev.content, vids), imgs)
+          const primalUrl = `https://primal.net/e/${encodeAnchor(ev)}`
           return (
             <li className="list-row" key={ev.id}>
-              <div className="card" style={{ padding: 16 }}>
-                <ShortNoteBubble pubkey={ev.pubkey} relays={relays}>
-                  <div style={{ whiteSpace:'pre-wrap', overflowWrap:'anywhere', wordBreak:'break-word' }}>{body}</div>
-                  {vids.length > 0 && (
-                    <div style={{ marginTop:10, display:'grid', gap:10 }}>
-                      {vids.map((u,i) => (
-                        <video key={u+i} src={u} controls preload="metadata" playsInline style={{ maxWidth:'100%', width:'100%', borderRadius:12 }} />
-                      ))}
-                    </div>
-                  )}
-                  {imgs.length > 0 && (
-                    <div style={{ marginTop:10, display:'grid', gap:10 }}>
-                      {imgs.map((u,i) => (
-                        <a key={u+i} href={u} target="_blank" rel="noopener noreferrer">
-                          <img src={u} alt="" loading="lazy" style={{ maxWidth:'100%', height:'auto', borderRadius:12, display:'block' }} />
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                  <div className="meta" style={{ marginTop: 8 }}><em>{ts} · short note</em></div>
-                </ShortNoteBubble>
-                <div style={{ marginTop: 6 }}>
-                  <StatsBar key={`${ev.id}:${tag || 'home'}`} ev={ev} interactive />
-                </div>
+              <div className="card card--note">
+                <NoteHeader pubkey={ev.pubkey} relays={relays} ts={ts} />
+                <div style={{ whiteSpace:'pre-wrap', overflowWrap:'anywhere', wordBreak:'break-word', marginTop: 12, lineHeight: 1.7 }}>{body}</div>
+                {vids.length > 0 && (
+                  <div style={{ marginTop: 14, display:'grid', gap: 10 }}>
+                    {vids.map((u,i) => (
+                      <video key={u+i} src={u} controls preload="metadata" playsInline style={{ maxWidth:'100%', width:'100%', borderRadius:12 }} />
+                    ))}
+                  </div>
+                )}
+                {imgs.length > 0 && <ImageGallery urls={imgs} />}
+                <a
+                  href={primalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="primal-link"
+                >
+                  <img src="/primal-icon.png" alt="" className="primal-link__icon" />
+                  view note →
+                </a>
               </div>
             </li>
           )
@@ -352,6 +378,66 @@ export default function PostList({ tag, filterFn }: { tag?: string; filterFn?: (
         return null
       })}
     </ul>
+    {totalPages > 1 && (
+      <Pagination page={safeePage} totalPages={totalPages} onPage={goPage} />
+    )}
+    </>
+  )
+}
+
+/* =================== Pagination =================== */
+function Pagination({ page, totalPages, onPage }: { page: number; totalPages: number; onPage: (p: number) => void }) {
+  // Show a window of page numbers around the current page
+  const maxButtons = 5
+  let start = Math.max(0, page - Math.floor(maxButtons / 2))
+  let end = Math.min(totalPages, start + maxButtons)
+  if (end - start < maxButtons) start = Math.max(0, end - maxButtons)
+
+  const pages: number[] = []
+  for (let i = start; i < end; i++) pages.push(i)
+
+  return (
+    <nav className="pagination" aria-label="Pagination">
+      <button
+        className="pagination__btn"
+        disabled={page === 0}
+        onClick={() => onPage(page - 1)}
+      >
+        ← Newer
+      </button>
+
+      <div className="pagination__pages">
+        {start > 0 && (
+          <>
+            <button className="pagination__num" onClick={() => onPage(0)}>1</button>
+            {start > 1 && <span className="pagination__dots">...</span>}
+          </>
+        )}
+        {pages.map(p => (
+          <button
+            key={p}
+            className={`pagination__num${p === page ? ' pagination__num--active' : ''}`}
+            onClick={() => onPage(p)}
+          >
+            {p + 1}
+          </button>
+        ))}
+        {end < totalPages && (
+          <>
+            {end < totalPages - 1 && <span className="pagination__dots">...</span>}
+            <button className="pagination__num" onClick={() => onPage(totalPages - 1)}>{totalPages}</button>
+          </>
+        )}
+      </div>
+
+      <button
+        className="pagination__btn"
+        disabled={page >= totalPages - 1}
+        onClick={() => onPage(page + 1)}
+      >
+        Older →
+      </button>
+    </nav>
   )
 }
 
@@ -375,14 +461,13 @@ function encodeNip19(ev: NEvent, kind: number): string {
   return ev.id
 }
 
-/* =================== Short Note Bubble (avatar + speech bubble) =================== */
-function ShortNoteBubble({ pubkey, relays, children }: { pubkey: string; relays: string[]; children: any }) {
-  // avatar: undefined => loading; string => url; null => no profile
+/* =================== Note Header (avatar + timestamp, clean inline) =================== */
+function NoteHeader({ pubkey, relays, ts }: { pubkey: string; relays: string[]; ts: string }) {
   const [avatar, setAvatar] = useState<string | null | undefined>(undefined)
 
   useEffect(() => {
     let stop = false
-    setAvatar(undefined) // show skeleton while loading
+    setAvatar(undefined)
     ;(async () => {
       const url = await fetchProfilePictureCached(pubkey, relays)
       if (!stop) setAvatar(url)
@@ -390,39 +475,110 @@ function ShortNoteBubble({ pubkey, relays, children }: { pubkey: string; relays:
     return () => { stop = true }
   }, [pubkey, relays.join(',')])
 
-  const size = 42
-  const bubbleBg = 'rgba(255,255,255,0.04)'
-  const bubbleBorder = '1px solid rgba(255,255,255,0.08)'
-  const skeletonBg = 'rgba(255,255,255,0.08)'
+  const size = 36
 
   return (
-    <div style={{ display:'grid', gridTemplateColumns: `${size}px 1fr`, alignItems:'start', gap:12 }}>
-      {/* avatar */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
       {avatar === undefined ? (
-        // skeleton circle (no text) while loading
-        <div style={{ width:size, height:size, borderRadius:'50%', background:skeletonBg }} />
+        <div style={{ width: size, height: size, borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }} />
       ) : avatar ? (
-        <img src={avatar} alt="" loading="lazy" style={{ width:size, height:size, borderRadius:'50%', objectFit:'cover', display:'block', border:'1px solid rgba(255,255,255,0.08)' }} />
+        <img src={avatar} alt="" loading="lazy" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', display: 'block', flexShrink: 0, border: '1px solid var(--border)' }} />
       ) : (
-        // fallback initials only if we definitively have no profile
-        <div style={{ width:size, height:size, borderRadius:'50%', display:'grid', placeItems:'center', background:skeletonBg, fontWeight:600, fontSize:12 }}>
-          {initialsFrom(pubkey)}
+        <div style={{ width: size, height: size, borderRadius: '50%', display: 'grid', placeItems: 'center', background: 'var(--border)', fontWeight: 600, fontSize: 11, flexShrink: 0, color: 'var(--muted)' }}>
+          {(pubkey || '').slice(0, 4).toUpperCase()}
         </div>
       )}
-
-      {/* speech bubble */}
-      <div style={{ position:'relative', maxWidth:'100%' }}>
-        <div style={{ background:bubbleBg, padding:'10px 12px', borderRadius:14, border:bubbleBorder }}>
-          {children}
-        </div>
-        {/* tail */}
-        <div style={{ position:'absolute', left:-8, top:14, width:0, height:0, borderTop:'8px solid transparent', borderBottom:'8px solid transparent', borderRight:`8px solid ${bubbleBg}` }} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <span style={{ fontSize: 13, color: 'var(--muted)' }}>{ts} · short note</span>
       </div>
     </div>
   )
 }
 
-/* avatar helpers */
-function initialsFrom(pubkey: string): string {
-  return (pubkey || '').slice(0, 4).toUpperCase()
+/* =================== Lightbox state (shared across all galleries) =================== */
+let __lightboxSet: ((s: { urls: string[]; idx: number } | null) => void) | null = null
+
+function Lightbox() {
+  const [state, setState] = useState<{ urls: string[]; idx: number } | null>(null)
+  __lightboxSet = setState
+
+  useEffect(() => {
+    if (!state) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setState(null)
+      if (e.key === 'ArrowRight') setState(s => s ? { ...s, idx: Math.min(s.idx + 1, s.urls.length - 1) } : null)
+      if (e.key === 'ArrowLeft') setState(s => s ? { ...s, idx: Math.max(s.idx - 1, 0) } : null)
+    }
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', onKey)
+    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = '' }
+  }, [state])
+
+  if (!state) return null
+  const { urls, idx } = state
+  const hasNext = idx < urls.length - 1
+  const hasPrev = idx > 0
+
+  return createPortal(
+    <div className="lightbox" onClick={() => setState(null)}>
+      <img
+        key={urls[idx]}
+        src={urls[idx]}
+        alt=""
+        className="lightbox__img"
+        onClick={e => e.stopPropagation()}
+      />
+      {hasPrev && (
+        <button className="lightbox__nav lightbox__nav--prev" onClick={e => { e.stopPropagation(); setState({ urls, idx: idx - 1 }) }} aria-label="Previous">
+          ‹
+        </button>
+      )}
+      {hasNext && (
+        <button className="lightbox__nav lightbox__nav--next" onClick={e => { e.stopPropagation(); setState({ urls, idx: idx + 1 }) }} aria-label="Next">
+          ›
+        </button>
+      )}
+      <button className="lightbox__close" onClick={() => setState(null)} aria-label="Close">×</button>
+      {urls.length > 1 && (
+        <div className="lightbox__counter">{idx + 1} / {urls.length}</div>
+      )}
+    </div>,
+    document.body
+  )
+}
+
+/* =================== Image Gallery (adaptive grid) =================== */
+function ImageGallery({ urls }: { urls: string[] }) {
+  if (!urls.length) return null
+  const maxShow = 4
+  const show = urls.slice(0, maxShow)
+  const extra = urls.length - maxShow
+
+  let layoutClass = 'img-gallery'
+  if (show.length === 1) layoutClass += ' img-gallery--1'
+  else if (show.length === 2) layoutClass += ' img-gallery--2'
+  else if (show.length === 3) layoutClass += ' img-gallery--3'
+  else layoutClass += ' img-gallery--grid'
+
+  const open = (i: number) => {
+    if (__lightboxSet) __lightboxSet({ urls, idx: i })
+  }
+
+  return (
+    <div className={layoutClass}>
+      {show.map((u, i) => (
+        <a
+          key={u + i}
+          href={u}
+          onClick={e => { e.preventDefault(); open(i) }}
+          style={{ cursor: 'zoom-in' }}
+        >
+          <img src={u} alt="" loading="lazy" />
+          {i === show.length - 1 && extra > 0 && (
+            <div className="gallery-more">+{extra}</div>
+          )}
+        </a>
+      ))}
+    </div>
+  )
 }

@@ -148,9 +148,9 @@ export default function App() {
         </div>
       </main>
 
-      <footer className="wrap" style={{ opacity: 0.7, paddingBottom: 28 }}>
-        <p className="meta">
-          Powered by public Nostr relays (NIP-23). No servers. Deploy anywhere.
+      <footer className="wrap">
+        <p className="meta" style={{ opacity: 0.5 }}>
+          Powered by Nostr relays. No servers. No middlemen.
         </p>
       </footer>
     </>
