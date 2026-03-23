@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Junto -- Where Builders Gather</title>
+  <meta name="description" content="A small-room experiment in craft, connection, and mutual improvement. Inspired by Benjamin Franklin's original Junto club. Philadelphia." />
+  <meta property="og:title" content="The Junto -- Where Builders Gather" />
+  <meta property="og:description" content="A small-room experiment in craft, connection, and mutual improvement. Inspired by Benjamin Franklin's original Junto club." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://brianflounders.com/junto/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ============ HERO ============ -->
+  <div class="hero-wrap">
+  <section class="hero" id="top">
+    <div class="hero__content">
+      <div class="hero__logo" aria-label="The Junto logo">
+        <img src="assets/junto-logo.png" alt="4819 Junto - Philadelphia, PA" width="180" />
+      </div>
+      <h1 class="hero__title">Where Builders Gather</h1>
+      <p class="hero__subtitle">A small-room experiment in craft, connection, and mutual improvement &mdash; inspired by Benjamin Franklin&rsquo;s original Junto club.</p>
+      <a href="#event" class="hero__cta">See the Next Gathering</a>
+    </div>
+    <div class="hero__illustration">
+      <picture>
+        <source srcset="assets/hero-woodcut.webp" type="image/webp" />
+        <img src="assets/hero-woodcut.png" alt="Woodcut illustration of Benjamin Franklin" class="hero__woodcut" loading="eager" />
+      </picture>
+    </div>
+  </section>
+  </div>
+
+  <!-- ============ ABOUT ============ -->
+  <section class="about" id="about">
+    <div class="container">
+
+      <div class="about__block">
+        <h2 class="section-heading">What is The Junto?</h2>
+        <p>A small gathering at a private residence in Philadelphia. Twenty chairs. Good food. Sharp people. One rule: nobody sits quietly in the corner.</p>
+        <p>Each meeting has a different shape. Sometimes someone pitches a business idea and the room tears it apart with love. Sometimes it&rsquo;s a live demo or a working session where something gets built from scratch on a projector. Sometimes it&rsquo;s a talk about something fascinating, a PowerPoint night, or a question that won&rsquo;t leave someone alone. The format changes. The energy doesn&rsquo;t.</p>
+        <p>This is a room for people who participate, not consume. Share an idea. Give honest feedback. Connect with someone you wouldn&rsquo;t have met otherwise. It&rsquo;s part working session, part dinner party, part collision of interesting minds &mdash; designed for people who think with their hands and show up ready to contribute.</p>
+      </div>
+
+      <div class="divider" aria-hidden="true"></div>
+
+      <div class="about__block">
+        <h2 class="section-heading">The Original Junto</h2>
+        <p>In 1727, a young Benjamin Franklin gathered twelve friends in Philadelphia to form a club for mutual improvement. They called it the Junto. Every Friday evening, they met to discuss morals, politics, and natural philosophy &mdash; and to help each other become better tradesmen, thinkers, and citizens.</p>
+        <blockquote class="junto-quote">
+          &ldquo;The Junto was the best school of philosophy, morality, and politics that then existed in the province.&rdquo;
+          <cite>&mdash; Benjamin Franklin</cite>
+        </blockquote>
+        <p>Three hundred years later, the tools have changed. The spirit hasn't. We still learn best in small rooms, from people we trust, working on problems that matter to us.</p>
+      </div>
+
+      <div class="divider" aria-hidden="true"></div>
+
+      <div class="about__block">
+        <h2 class="section-heading">What Happens at a Meeting</h2>
+        <ol class="steps">
+          <li><strong>Arrive.</strong> Grab a drink. Meet the room. No small talk required &mdash; dive in.</li>
+          <li><strong>Share.</strong> Someone presents &mdash; an idea, a demo, a question, a talk, whatever&rsquo;s on their mind.</li>
+          <li><strong>Engage.</strong> The room responds. Active discussion, honest feedback, sometimes a live build session, always real conversation.</li>
+          <li><strong>Connect.</strong> Meet someone you wouldn&rsquo;t have crossed paths with. Trade ideas, not business cards.</li>
+          <li><strong>Leave different.</strong> You walk out with a new perspective, a new connection, or something that didn&rsquo;t exist when you arrived.</li>
+        </ol>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ NEXT EVENT ============ -->
+  <section class="event" id="event">
+    <div class="container">
+      <h2 class="section-heading section-heading--light">The Next Gathering</h2>
+
+      <div class="broadside">
+        <div class="broadside__header">
+          <!-- EVENT: Update these for each gathering -->
+          <div class="broadside__date">Date TBD</div>
+          <div class="broadside__theme">Theme: To Be Announced</div>
+        </div>
+
+        <div class="broadside__details">
+          <p><strong>Location:</strong> A private residence in Philadelphia.<br /><em>Exact address shared after RSVP confirmation.</em></p>
+          <p><strong>Admission:</strong> $20 at the door &mdash; covers food and drinks.</p>
+        </div>
+
+        <div class="broadside__spots">
+          <span class="spots-label">Limited seats</span>
+        </div>
+
+        <!-- RSVP Form -->
+        <form id="rsvp-form" class="rsvp-form" action="https://formspree.io/f/xbdznrlj" method="POST">
+          <input type="text" name="name" placeholder="Your name" required autocomplete="name" />
+          <input type="email" name="email" placeholder="Your email" required autocomplete="email" />
+          <textarea name="idea" placeholder="What idea or question are you bringing?" required rows="3"></textarea>
+          <input type="hidden" name="_subject" value="New Junto RSVP" />
+          <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off" />
+          <button type="submit" class="btn-gold">Claim Your Spot</button>
+        </form>
+
+        <!-- Confirmation (hidden by default) -->
+        <div id="rsvp-confirmed" class="rsvp-confirmed" style="display:none;">
+          <h3>You&rsquo;re in.</h3>
+          <p><strong>Address:</strong> TBD &mdash; Philadelphia, PA</p>
+          <p><strong>Date:</strong> TBD</p>
+          <p><strong>Bring:</strong> $20 (cash or <a href="https://strike.me/brian" target="_blank" rel="noopener">Strike</a>) and a sharp mind.</p>
+          <p style="margin-top:16px; font-size:14px; opacity:0.7;">Save this page &mdash; this is your confirmation.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ PAYMENT ============ -->
+  <section class="payment" id="payment">
+    <div class="container">
+      <h2 class="section-heading">At the Door</h2>
+      <p class="payment__amount">$20</p>
+      <p>Covers food, drinks, and the evening.</p>
+      <p class="payment__bitcoin">Cash works. Bitcoin works better.</p>
+      <a href="https://strike.me/brian" class="btn-outline" target="_blank" rel="noopener noreferrer">
+        Pay with Strike
+      </a>
+      <p class="payment__note">New to Bitcoin? <a href="https://strike.me" target="_blank" rel="noopener noreferrer">Get Strike</a> &mdash; it takes 2 minutes.</p>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="junto-footer">
+    <div class="container">
+      <p class="junto-footer__brand">4819 Junto &mdash; Philadelphia, PA</p>
+      <p class="junto-footer__links">
+        <a href="/">brianflounders.com</a>
+        <span class="junto-footer__sep">&middot;</span>
+        <span>Built with Claude Code</span>
+      </p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

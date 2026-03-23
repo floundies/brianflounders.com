@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- EVENT: Update title -->
+  <title>Junto Gathering -- DATE TBD</title>
+  <meta name="description" content="RSVP for the next Junto gathering in Philadelphia." />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+
+  <section class="event" id="event" style="padding-top: 48px;">
+    <div class="container">
+      <p style="margin-bottom: 24px;"><a href="/junto/">&larr; Back to The Junto</a></p>
+
+      <h2 class="section-heading section-heading--light">Junto Gathering</h2>
+
+      <div class="broadside">
+        <div class="broadside__header">
+          <!-- EVENT: Date and time -->
+          <div class="broadside__date">April XX, 2026 &mdash; 7:00 PM</div>
+          <!-- EVENT: Theme -->
+          <div class="broadside__theme">Theme: TBD</div>
+        </div>
+
+        <div class="broadside__details">
+          <!-- EVENT: Description -->
+          <p>A short description of what this particular gathering will focus on.</p>
+          <p><strong>Location:</strong> A private residence in Philadelphia.<br /><em>Exact address shared after RSVP confirmation.</em></p>
+          <p><strong>Admission:</strong> $20 at the door &mdash; covers food and drinks.</p>
+        </div>
+
+        <div class="broadside__spots">
+          <!-- EVENT: Spots remaining (change the number) -->
+          <span class="spots-count" id="spots-remaining">12</span>
+          <span class="spots-label">of 12 spots remaining</span>
+        </div>
+
+        <!-- RSVP Form -->
+        <form id="rsvp-form" class="rsvp-form" action="https://formspree.io/f/xbdznrlj" method="POST">
+          <input type="text" name="name" placeholder="Your name" required autocomplete="name" />
+          <input type="email" name="email" placeholder="Your email" required autocomplete="email" />
+          <textarea name="idea" placeholder="What idea or question are you bringing?" required rows="3"></textarea>
+          <input type="hidden" name="_subject" value="Junto RSVP -- EVENT DATE" />
+          <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off" />
+          <button type="submit" class="btn-gold">Claim Your Spot</button>
+        </form>
+
+        <!-- Confirmation -->
+        <div id="rsvp-confirmed" class="rsvp-confirmed" style="display:none;">
+          <h3>You&rsquo;re in.</h3>
+          <p>Check your email for the address and details.<br />Bring $20 and a sharp mind.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="junto-footer">
+    <div class="container">
+      <p class="junto-footer__brand">The Junto &mdash; Philadelphia</p>
+      <p class="junto-footer__links">
+        <a href="/junto/">The Junto</a>
+        <span class="junto-footer__sep">&middot;</span>
+        <a href="/">brianflounders.com</a>
+      </p>
+    </div>
+  </footer>
+
+  <script src="../script.js"></script>
+</body>
+</html>
