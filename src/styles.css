@@ -650,6 +650,12 @@ hr.sep {
   .meta { font-size: 13px; }
   .list { gap: 18px; }
   .post-title { font-size: clamp(28px, 6vw, 40px); }
+  .subnav {
+    justify-content: flex-start;
+    mask-image: linear-gradient(to right, black 82%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 82%, transparent 100%);
+    padding-right: 24px;
+  }
 }
 
 /* ===================================================================
