@@ -75,20 +75,20 @@ a:hover { color: var(--j-gold-strong); }
   position: relative;
   background: var(--j-bg-dark);
   text-align: center;
-  padding: clamp(48px, 8vw, 96px) 24px clamp(64px, 8vw, 120px);
+  padding: clamp(48px, 8vw, 96px) 24px 10%;
   overflow: hidden;
 }
 
 /* Franklin as a pseudo-element watermark */
 .hero__bg {
   position: absolute;
-  bottom: -5%;
+  bottom: 0;
   right: -2%;
   width: 45%;
   max-width: 500px;
   aspect-ratio: 1600 / 893;
   background: url('assets/hero-woodcut.webp') no-repeat center / contain;
-  opacity: 0.12;
+  opacity: 0.45;
   pointer-events: none;
 }
 
