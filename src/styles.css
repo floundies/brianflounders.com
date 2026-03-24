@@ -285,6 +285,37 @@ main.page { padding-top: 16px; }
   pointer-events: none;
 }
 
+/* --- Read more indicator --- */
+.card__readmore {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.card__readmore-text {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--accent);
+  text-transform: lowercase;
+  font-variant: small-caps;
+}
+
+.card__readmore-arrow {
+  display: inline-block;
+  font-size: 16px;
+  color: var(--accent);
+  transition: transform .3s ease;
+}
+
+.card--article:hover .card__readmore-arrow {
+  transform: translateX(6px);
+}
+
 /* --- Repost card --- */
 .card--repost {
   background: var(--card-2);

@@ -328,6 +328,10 @@ export default function PostList({ tag, filterFn }: { tag?: string; filterFn?: (
                     ))}
                   </div>
                 )}
+                <div className="card__readmore">
+                  <span className="card__readmore-text">Full story</span>
+                  <span className="card__readmore-arrow">→</span>
+                </div>
               </a>
             </li>
           )
