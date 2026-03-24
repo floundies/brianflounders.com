@@ -82,39 +82,67 @@ a:hover { color: var(--accent-strong); text-decoration: underline; }
    HEADER (sticky)
    =================================================================== */
 
+/* Masthead — scrolls with page */
+.masthead {
+  background: var(--bg);
+  padding: 16px 0 8px;
+}
+
+/* Sticky nav */
 header.site {
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: rgba(26,24,20,.85);
+  background: rgba(26,24,20,.92);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
 }
 
 @media (prefers-color-scheme: light) {
+  .masthead {
+    background: var(--bg);
+  }
   header.site {
-    background: rgba(250,246,240,.85);
+    background: rgba(250,246,240,.92);
   }
 }
 
 .nav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 10px 0;
+  justify-content: center;
 }
 
 .brand a,
 .brand {
-  display: inline-block;
-  font-family: var(--font-heading);
-  font-weight: 600;
-  font-size: clamp(22px, 3.2vw, 30px);
-  letter-spacing: -.01em;
-  color: var(--fg);
+  display: inline-flex;
+  align-items: center;
   text-decoration: none;
+}
+
+.brand__monogram {
+  width: clamp(160px, 22vw, 240px);
+  height: auto;
+  display: block;
+  border-radius: 0;
+  filter: brightness(0) invert(1);
+  opacity: 0.85;
+  transition: opacity .2s ease;
+}
+
+.brand a:hover .brand__monogram {
+  opacity: 1;
+}
+
+@media (prefers-color-scheme: light) {
+  .brand__monogram {
+    filter: none;
+    opacity: 0.8;
+  }
+  .brand a:hover .brand__monogram {
+    opacity: 1;
+  }
 }
 
 .nav-links {
@@ -321,8 +349,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Back link */
 .post-back {
-  display: inline-block;
-  margin-bottom: 16px;
+  display: inline;
+  margin: 0;
   font-size: 14px;
   color: var(--muted);
   text-decoration: none;
@@ -331,6 +359,10 @@ h1, h2, h3, h4, h5, h6 {
 .post-back:hover {
   color: var(--accent);
   text-decoration: none;
+}
+
+.post-meta__sep {
+  color: var(--border);
 }
 
 /* --- Hero hybrid overlap --- */
@@ -373,7 +405,7 @@ h1, h2, h3, h4, h5, h6 {
 .post-hero__overlay {
   position: relative;
   margin-top: -80px;
-  max-width: 800px;
+  max-width: 720px;
   margin-left: auto;
   margin-right: auto;
   padding: 0 20px 0;
@@ -388,6 +420,12 @@ h1, h2, h3, h4, h5, h6 {
 
 .post-hero__meta {
   margin-bottom: 16px;
+  gap: 6px;
+}
+
+.post-hero__meta .post-back {
+  color: var(--muted);
+  font-size: 14px;
 }
 
 /* On light mode, the overlapping title still needs to be white since it's over the image */
@@ -415,6 +453,16 @@ h1, h2, h3, h4, h5, h6 {
 .post-article .post-body img {
   margin: 20px 0;
 }
+
+.post-summary {
+  font-family: var(--font-heading);
+  font-style: italic;
+  font-size: clamp(14px, 1.6vw, 16px);
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
 
 .post-title {
   font-family: var(--font-heading);
@@ -455,6 +503,7 @@ article p { margin: 14px 0; line-height: 1.75; }
 
 .subnav {
   display: flex;
+  justify-content: center;
   gap: 6px;
   flex-wrap: nowrap;
   overflow-x: auto;
@@ -493,6 +542,30 @@ article p { margin: 14px 0; line-height: 1.75; }
   color: #1a1814;
   border-color: var(--accent);
   font-weight: 700;
+}
+
+.subnav .pill--junto {
+  background: rgba(42, 74, 127, 0.25);
+  color: #7a9bcf;
+  border-color: rgba(42, 74, 127, 0.4);
+}
+.subnav .pill--junto:hover {
+  background: rgba(42, 74, 127, 0.5);
+  color: #fff;
+  border-color: rgba(42, 74, 127, 0.6);
+}
+
+@media (prefers-color-scheme: light) {
+  .subnav .pill--junto {
+    background: rgba(42, 74, 127, 0.1);
+    color: #2a4a7f;
+    border-color: rgba(42, 74, 127, 0.3);
+  }
+  .subnav .pill--junto:hover {
+    background: #2a4a7f;
+    color: #fff;
+    border-color: #2a4a7f;
+  }
 }
 
 @media (prefers-color-scheme: light) {

@@ -114,14 +114,17 @@ export default function App() {
 
   return (
     <>
-      {/* Sticky header */}
-      <header className="site">
+      {/* Masthead — scrolls away */}
+      <div className="masthead">
         <div className="wrap nav">
           <div className="brand">
-            <a href="#/">brianflounders.com</a>
+            <a href="#/"><img src="/bfmonogram.png" alt="brianflounders.com" className="brand__monogram" /></a>
           </div>
         </div>
-        {/* Sub-menu */}
+      </div>
+
+      {/* Sticky nav */}
+      <header className="site">
         <div className="wrap">
           <nav className="subnav" aria-label="Sections">
             <a className="pill" href="#/" aria-current={route.name === 'home' ? 'page' : undefined}>HOME</a>
@@ -133,6 +136,7 @@ export default function App() {
             <a className="pill" href="#/tag/create" aria-current={route.name === 'tag' && route.slug === 'create' ? 'page' : undefined}>CREATE</a>
             <a className="pill" href="#/tag/cook" aria-current={route.name === 'tag' && route.slug === 'cook' ? 'page' : undefined}>COOK</a>
             <a className="pill" href="#/tag/briantries" aria-current={route.name === 'tag' && route.slug === 'briantries' ? 'page' : undefined}>TRY</a>
+            <a className="pill pill--junto" href="/junto/">JUNTO</a>
           </nav>
         </div>
       </header>

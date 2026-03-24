@@ -432,8 +432,6 @@ const title = useMemo(() => {
 
   return (
     <article className="post-article">
-      {/* Back link */}
-      <a href="#/" className="post-back">← Back</a>
 
       {/* HERO with hybrid overlap layout (image only) */}
       {hasHeroImage && (
@@ -450,9 +448,11 @@ const title = useMemo(() => {
           {/* Title overlaps bottom of hero via negative margin */}
           <div className="post-hero__overlay">
             {title && <h1 className="post-title post-title--hero">{title}</h1>}
+            {summary && <p className="post-summary">{summary}</p>}
             <div className="meta post-hero__meta">
+              <a href="#/" className="post-back">← Back</a>
+              <span className="post-meta__sep">·</span>
               <span>{ts}</span>
-              {summary && <span style={{ opacity: .8 }}>· {summary}</span>}
             </div>
           </div>
         </div>
@@ -477,9 +477,11 @@ const title = useMemo(() => {
       {!hasHeroImage && (
         <>
           {title && <h1 className="post-title">{title}</h1>}
+          {summary && <p className="post-summary">{summary}</p>}
           <div className="meta" style={{ marginBottom: 12 }}>
+            <a href="#/" className="post-back">← Back</a>
+            <span className="post-meta__sep">·</span>
             <span>{ts}</span>
-            {summary && <span style={{ opacity: .8 }}>· {summary}</span>}
           </div>
         </>
       )}
@@ -488,7 +490,7 @@ const title = useMemo(() => {
 
       <div style={{ margin: '24px 0', borderTop: '1px solid var(--border)' }} />
 
-      <div className="post-body" style={{ maxWidth: 720 }} dangerouslySetInnerHTML={{ __html: html }} />
+      <div className="post-body" dangerouslySetInnerHTML={{ __html: html }} />
 
       {/* Comments section */}
       <div style={{ margin: '40px 0 8px', borderTop: '1px solid var(--border)' }} />
