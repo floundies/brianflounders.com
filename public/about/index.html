@@ -42,13 +42,17 @@
     </style>
   </head>
   <body>
-    <!-- Header (matches SPA chrome) -->
-    <header class="site">
+    <!-- Masthead — scrolls away -->
+    <div class="masthead">
       <div class="wrap nav">
         <div class="brand">
-          <a href="/#/">brianflounders.com</a>
+          <a href="/#/"><img src="/bfmonogram.png" alt="brianflounders.com" class="brand__monogram" /></a>
         </div>
       </div>
+    </div>
+
+    <!-- Sticky nav -->
+    <header class="site">
       <div class="wrap">
         <nav class="subnav" aria-label="Sections">
           <a class="pill" href="/#/">HOME</a>
@@ -60,6 +64,7 @@
           <a class="pill" href="/#/tag/create">CREATE</a>
           <a class="pill" href="/#/tag/cook">COOK</a>
           <a class="pill" href="/#/tag/briantries">TRY</a>
+          <a class="pill pill--junto" href="/junto/">JUNTO</a>
         </nav>
       </div>
     </header>
