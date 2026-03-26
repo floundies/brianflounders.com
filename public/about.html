@@ -39,6 +39,45 @@
         background: var(--accent-soft);
         border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
       }
+      article.content {
+        position: relative;
+      }
+      .about-sketch-bg {
+        position: absolute;
+        top: 0;
+        right: -150px;
+        width: 400px;
+        pointer-events: none;
+        z-index: 0;
+      }
+      .sketch-portrait {
+        width: 100%;
+        height: auto;
+        border-radius: 0;
+        opacity: 0.5;
+      }
+      article.content > *:not(.about-sketch-bg) {
+        position: relative;
+        z-index: 1;
+      }
+      .sketch-zone > * {
+        max-width: 70%;
+      }
+      @media (max-width: 600px) {
+        .about-sketch-bg {
+          right: -175px;
+          width: 320px;
+        }
+        .sketch-portrait { opacity: 0.5; }
+        .sketch-zone > h1,
+        .sketch-zone > h1 + p {
+          max-width: 65%;
+        }
+        .sketch-zone > h2,
+        .sketch-zone > h2 ~ p {
+          max-width: 100%;
+        }
+      }
       .closing-quote {
         text-align: center;
         font-family: var(--font-heading);
@@ -80,10 +119,14 @@
     <!-- Page content -->
     <main class="page">
       <div class="about-wrap">
-        <div class="card" style="margin-top:16px">
+        <div class="card" style="margin-top:16px; overflow:hidden;">
           <article class="content">
-          <h1>about brian</h1>
+          <div class="about-sketch-bg">
+            <img src="/sketchbrian.png" alt="" class="sketch-portrait" />
+          </div>
 
+          <div class="sketch-zone">
+          <h1>about brian</h1>
           <p>i'm brian flounders — a builder, bitcoiner, and lifelong experimenter from philadelphia.<br/>
           part problem-solver, part explorer in running shoes. if you're not learning, you're stalling.<br/>
           i build things that make life work a little better.</p>
@@ -97,6 +140,7 @@
           fewer meetings, more meaning.<br/>
           less noise, more clarity.<br/>
           projects that create value without burning people out.</p>
+          </div>
 
           <hr />
 
