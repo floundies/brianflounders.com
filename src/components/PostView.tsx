@@ -228,6 +228,17 @@ const title = useMemo(() => {
     [ev]
   )
 
+  // Set document title and fire GA once post title is loaded from Nostr
+  useEffect(() => {
+    if (!title && (!ev || ev.kind !== 1)) return
+    const dTag = ev?.tags?.find((t: string[]) => t[0] === 'd')?.[1] || ''
+    const pageTitle = title ? `${title} — brianflounders.com` : 'brianflounders.com'
+    const pagePath = dTag ? `/post/${dTag}` : `/post/${ev?.id?.slice(0, 12) || 'note'}`
+    document.title = pageTitle
+    const sendGA = (window as any).__sendPageView
+    sendGA?.(pagePath, pageTitle)
+  }, [title, ev])
+
   function embedInlineVideos(md: string): string {
     return md.replace(
       /(https?:\/\/[^\s<>'"()]+\.(?:mp4|webm|mov|m4v)(?:\?[^\s<>'"]*)?)/ig,

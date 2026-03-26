@@ -91,23 +91,29 @@ export default function App() {
   }, [])
 
   React.useEffect(() => {
-    // Let PostView handle its own title; don’t override here
+    // Let PostView handle its own title + GA
     if (route.name === 'post') return
 
+    const sendGA = (window as any).__sendPageView
     if (route.name === 'home') {
       document.title = SITE_TITLE
+      sendGA?.('/', SITE_TITLE)
       return
     }
     if (route.name === 'tag') {
-      document.title = `${formatTagLabel(route.slug)} — ${SITE_TITLE}`
+      const t = `${formatTagLabel(route.slug)} — ${SITE_TITLE}`
+      document.title = t
+      sendGA?.(`/tag/${route.slug}`, t)
       return
     }
     if (route.name === 'new') {
       document.title = `New Post — ${SITE_TITLE}`
+      sendGA?.('/new', document.title)
       return
     }
     if (route.name === 'edit') {
       document.title = `Edit Post — ${SITE_TITLE}`
+      sendGA?.('/edit', document.title)
       return
     }
   }, [route])

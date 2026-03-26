@@ -22,15 +22,21 @@
   gtag('config', 'G-W5VKC7V5Z8', { send_page_view: false });
 
   // SPA page_view: fire on load + hash navigation (no React dependency)
+  // Post routes (#/post/...) are handled by React after title loads from Nostr
+  window.__sendPageView = function(path, title) {
+    if (typeof window.gtag !== 'function') return;
+    window.gtag('event', 'page_view', {
+      page_path: path || (location.pathname + location.search + location.hash),
+      page_location: location.href,
+      page_title: title || document.title || undefined
+    });
+  };
   (function () {
     function send() {
-      if (typeof window.gtag !== 'function') return;
-      var path = location.pathname + location.search + location.hash;
-      window.gtag('event', 'page_view', {
-        page_path: path,
-        page_location: location.href,
-        page_title: document.title || undefined
-      });
+      // Skip post routes — React fires GA after loading the title from Nostr
+      var hash = location.hash || '';
+      if (hash.indexOf('#/post/') === 0) return;
+      window.__sendPageView();
     }
     // initial
     if (document.readyState === 'complete') send();
