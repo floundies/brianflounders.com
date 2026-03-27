@@ -129,12 +129,6 @@ header.site {
   filter: brightness(0) invert(1);
   opacity: 0.85;
   transition: opacity .2s ease;
-  animation: monogramReveal 1.2s ease both;
-}
-
-@keyframes monogramReveal {
-  from { clip-path: inset(100% 0 0 0); opacity: 0; }
-  to   { clip-path: inset(0 0 0 0); opacity: 0.85; }
 }
 
 .brand a:hover .brand__monogram {
