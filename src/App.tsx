@@ -158,10 +158,18 @@ export default function App() {
         </div>
       </main>
 
-      <footer className="wrap">
-        <p className="meta" style={{ opacity: 0.5 }}>
-          Powered by Nostr relays. No servers. No middlemen.
-        </p>
+      <footer className="site-footer">
+        <div className="wrap">
+          <p className="site-footer__name">brian flounders &middot; philadelphia</p>
+          <p className="site-footer__links">
+            <a href="#" className="site-footer__email" onClick={(e) => { e.preventDefault(); window.location.href = 'mai' + 'lto:br' + 'ian@' + 'thefloun' + 'ders.com' }}>say hi</a>
+            <span className="site-footer__sep">&middot;</span>
+            <a href="https://primal.net/p/npub1a3v8gjqppmskcuvg4j23d9dapl8ylznrmy3kg90kemvkspu9cgxq4w7hf3" target="_blank" rel="noopener noreferrer">nostr</a>
+            <span className="site-footer__sep">&middot;</span>
+            <a href="/junto/">junto</a>
+          </p>
+          <p className="site-footer__tagline">built on nostr. no algorithms. own your attention.</p>
+        </div>
       </footer>
     </>
   )

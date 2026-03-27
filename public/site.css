@@ -343,3 +343,42 @@ code {
   .card { padding: 20px; }
   .meta { font-size: 13px; }
 }
+
+/* ===================== FOOTER ===================== */
+.site-footer {
+  margin-top: 64px;
+  padding: 40px 0 48px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+.site-footer__name {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--fg);
+  letter-spacing: .02em;
+  margin-bottom: 8px;
+}
+.site-footer__links {
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+.site-footer__links a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+.site-footer__links a:hover {
+  color: var(--accent-strong);
+  text-decoration: underline;
+}
+.site-footer__sep {
+  margin: 0 8px;
+  color: var(--border);
+}
+.site-footer__tagline {
+  font-size: 13px;
+  color: var(--muted);
+  opacity: 0.6;
+  font-style: italic;
+}

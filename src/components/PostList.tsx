@@ -257,7 +257,7 @@ export default function PostList({ tag, filterFn }: { tag?: string; filterFn?: (
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  if (loading) return <p style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>Loading...</p>
+  if (loading) return <div style={{ textAlign: 'center', padding: '60px 0' }}><img src="/bf_favcream-transp.png" alt="" className="loading-monogram" /><p className="loading-text">loading...</p></div>
   if (err) return <div className="card"><p className="meta">Error: {err}</p></div>
   if (!items.length) return <div className="card"><p className="meta">{tag ? `No posts yet for "${tag}".` : 'No posts yet.'}</p></div>
 
