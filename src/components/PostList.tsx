@@ -355,7 +355,7 @@ export default function PostList({ tag, filterFn }: { tag?: string; filterFn?: (
           return (
             <li className="list-row" key={ev.id}>
               <div className="card card--note">
-                <NoteHeader pubkey={ev.pubkey} relays={relays} ts={ts} />
+                <NoteHeader pubkey={ev.pubkey} relays={relays} ts={ts} eventId={ev.id} />
                 <div style={{ whiteSpace:'pre-wrap', overflowWrap:'anywhere', wordBreak:'break-word', marginTop: 12, lineHeight: 1.7 }}>{body}</div>
                 {vids.length > 0 && (
                   <div style={{ marginTop: 14, display:'grid', gap: 10 }}>
@@ -465,8 +465,37 @@ function encodeNip19(ev: NEvent, kind: number): string {
   return ev.id
 }
 
+/* =================== Note labels (randomized per event) =================== */
+const NOTE_LABELS = [
+  'a passing thought...',
+  'brian wonders...',
+  'thinking out loud...',
+  'a fleeting thought...',
+  'just a thought...',
+  'brain dump...',
+  'note to self...',
+  'brian mutters...',
+  'overheard in brian\'s head...',
+  'dispatched from the campfire...',
+  'scribbled on a napkin...',
+  'briefly...',
+  'in passing...',
+  'a quick one...',
+  'brian thinks...',
+]
+
+function noteLabel(eventId: string): string {
+  // Simple hash from event ID for consistent label per note
+  let hash = 0
+  for (let i = 0; i < eventId.length; i++) {
+    hash = ((hash << 5) - hash) + eventId.charCodeAt(i)
+    hash |= 0
+  }
+  return NOTE_LABELS[Math.abs(hash) % NOTE_LABELS.length]
+}
+
 /* =================== Note Header (avatar + timestamp, clean inline) =================== */
-function NoteHeader({ pubkey, relays, ts }: { pubkey: string; relays: string[]; ts: string }) {
+function NoteHeader({ pubkey, relays, ts, eventId }: { pubkey: string; relays: string[]; ts: string; eventId: string }) {
   const [avatar, setAvatar] = useState<string | null | undefined>(undefined)
 
   useEffect(() => {
@@ -493,7 +522,7 @@ function NoteHeader({ pubkey, relays, ts }: { pubkey: string; relays: string[]; 
         </div>
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <span style={{ fontSize: 13, color: 'var(--muted)' }}>{ts} · short note</span>
+        <span style={{ fontSize: 13, color: 'var(--muted)' }}>{ts} · {noteLabel(eventId)}</span>
       </div>
     </div>
   )

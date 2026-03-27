@@ -200,7 +200,9 @@ main.page { padding-top: 16px; }
   border-left: 3px solid var(--accent);
   background: var(--card-2);
   max-width: 640px;
+  margin: 0 auto;
 }
+
 
 /* --- Image gallery for short notes --- */
 .img-gallery {
