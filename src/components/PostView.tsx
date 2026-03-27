@@ -244,7 +244,7 @@ const title = useMemo(() => {
       /(https?:\/\/[^\s<>'"()]+\.(?:mp4|webm|mov|m4v)(?:\?[^\s<>'"]*)?)/ig,
       (u) => {
         if (!isAllowedVideoUrl(u)) return u
-        return `<video src="${u}" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>`
+        return `<video src="${u}#t=0.1" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>`
       }
     )
   }
@@ -271,15 +271,15 @@ const title = useMemo(() => {
     const htmlAfter = parsed
       // <p>https://...mp4</p>
       .replace(/<p>\s*(https?:\/\/[^\s<>'"()]+\.(?:mp4|webm|mov|m4v)(?:\?[^<]*)?)\s*<\/p>/ig, (_m, u) =>
-        isAllowedVideoUrl(u) ? `<video src="${u}" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>` : _m
+        isAllowedVideoUrl(u) ? `<video src="${u}#t=0.1" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>` : _m
       )
       // <p><a href="https://...mp4">https://...mp4</a></p>
       .replace(/<p>\s*<a\s+[^>]*href="(https?:\/\/[^\"]+\.(?:mp4|webm|mov|m4v)(?:\?[^<]*)?)"[^>]*>\s*\1\s*<\/a>\s*<\/p>/ig, (_m, u) =>
-        isAllowedVideoUrl(u) ? `<video src="${u}" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>` : _m
+        isAllowedVideoUrl(u) ? `<video src="${u}#t=0.1" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>` : _m
       )
       // <p>&lt;https://...mp4&gt;</p>
       .replace(/<p>\s*&lt;\s*(https?:\/\/[^\s<>'"()]+\.(?:mp4|webm|mov|m4v)(?:\?[^<]*)?)\s*&gt;\s*<\/p>/ig, (_m, u) =>
-        isAllowedVideoUrl(u) ? `<video src="${u}" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>` : _m
+        isAllowedVideoUrl(u) ? `<video src="${u}#t=0.1" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>` : _m
       )
       // <p>https://...mp3</p>
       .replace(/<p>\s*(https?:\/\/[^\s<>'"()]+\.(?:mp3|wav|ogg|m4a)(?:\?[^<]*)?)\s*<\/p>/ig, (_m, u) =>
@@ -474,7 +474,7 @@ const title = useMemo(() => {
         <div style={{ margin: '0 -20px 24px', overflow: 'hidden', borderRadius: 'var(--radius-lg)' }}>
           <div style={{ position: 'relative', width: '100%', aspectRatio: '2 / 1', background: 'var(--bg)' }}>
             <video
-              src={heroUrl}
+              src={heroUrl + '#t=0.1'}
               controls
               preload="metadata"
               playsInline

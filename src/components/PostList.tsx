@@ -360,7 +360,7 @@ export default function PostList({ tag, filterFn }: { tag?: string; filterFn?: (
                 {vids.length > 0 && (
                   <div style={{ marginTop: 14, display:'grid', gap: 10 }}>
                     {vids.map((u,i) => (
-                      <video key={u+i} src={u} controls preload="metadata" playsInline style={{ maxWidth:'100%', width:'100%', borderRadius:12 }} />
+                      <video key={u+i} src={u + '#t=0.1'} controls preload="metadata" playsInline style={{ maxWidth:'100%', width:'100%', borderRadius:12 }} />
                     ))}
                   </div>
                 )}
@@ -513,9 +513,26 @@ function Lightbox() {
       if (e.key === 'ArrowRight') setState(s => s ? { ...s, idx: Math.min(s.idx + 1, s.urls.length - 1) } : null)
       if (e.key === 'ArrowLeft') setState(s => s ? { ...s, idx: Math.max(s.idx - 1, 0) } : null)
     }
+    // Swipe support for mobile
+    let touchStartX = 0
+    const onTouchStart = (e: TouchEvent) => { touchStartX = e.touches[0].clientX }
+    const onTouchEnd = (e: TouchEvent) => {
+      const diff = touchStartX - e.changedTouches[0].clientX
+      if (Math.abs(diff) > 50) {
+        if (diff > 0) setState(s => s ? { ...s, idx: Math.min(s.idx + 1, s.urls.length - 1) } : null)
+        else setState(s => s ? { ...s, idx: Math.max(s.idx - 1, 0) } : null)
+      }
+    }
     document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', onKey)
-    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = '' }
+    window.addEventListener('touchstart', onTouchStart)
+    window.addEventListener('touchend', onTouchEnd)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('touchstart', onTouchStart)
+      window.removeEventListener('touchend', onTouchEnd)
+      document.body.style.overflow = ''
+    }
   }, [state])
 
   if (!state) return null
