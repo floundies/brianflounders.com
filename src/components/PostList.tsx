@@ -214,8 +214,25 @@ export default function PostList({ tag, filterFn }: { tag?: string; filterFn?: (
           { kinds: [6], authors: [authorHex], limit: 50 },
         ]
 
-        const evs: NEvent[] = await pool.list(relays, filters)
+        const rawEvs: NEvent[] = await pool.list(relays, filters)
         if (stop) return
+
+        // Deduplicate kind 30023 by d-tag: keep only the newest version
+        const dTagMap = new Map<string, NEvent>()
+        const evs: NEvent[] = []
+        for (const ev of rawEvs) {
+          if (ev.kind === 30023) {
+            const d = ev.tags.find(t => t[0] === 'd')?.[1] || ''
+            const key = `30023:${ev.pubkey}:${d}`
+            const existing = dTagMap.get(key)
+            if (!existing || (ev.created_at || 0) > (existing.created_at || 0)) {
+              dTagMap.set(key, ev)
+            }
+          } else {
+            evs.push(ev)
+          }
+        }
+        evs.push(...dTagMap.values())
 
         let filtered = evs
         if (tag) {
