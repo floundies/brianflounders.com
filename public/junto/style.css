@@ -585,6 +585,85 @@ a:hover { color: var(--j-gold-strong); }
 /* ==========================================================================
    SELECTION & FOCUS
    ========================================================================== */
+/* ==========================================================================
+   INFO-TIP POPOVER
+   ========================================================================== */
+.info-tip {
+  position: relative;
+  display: inline;
+  cursor: pointer;
+}
+.info-tip__trigger {
+  color: var(--j-fg-dark);
+  border-bottom: 1px dashed var(--j-gold);
+}
+.info-tip:hover .info-tip__trigger,
+.info-tip.is-open .info-tip__trigger {
+  color: var(--j-burgundy);
+  border-bottom-color: var(--j-burgundy);
+}
+.info-tip__icon {
+  font-style: normal;
+  font-size: 0.8em;
+  color: var(--j-burgundy);
+  vertical-align: super;
+  margin-left: 1px;
+  user-select: none;
+  font-weight: 700;
+}
+.info-tip__popover {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 380px;
+  max-width: 90vw;
+  padding: 20px 22px;
+  font-family: var(--j-font-body);
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.7;
+  color: var(--j-fg-dark);
+  background: var(--j-bg-parchment);
+  border: 1px solid var(--j-border-light);
+  border-left: 3px solid var(--j-gold);
+  border-radius: var(--j-radius);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  z-index: 100;
+  cursor: default;
+}
+.info-tip__popover::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-top-color: var(--j-bg-parchment);
+}
+.info-tip.is-open .info-tip__popover {
+  display: block;
+}
+.info-tip.is-open .info-tip__icon {
+  color: var(--j-gold-strong);
+}
+
+@media (max-width: 680px) {
+  .info-tip__popover {
+    position: fixed;
+    bottom: auto;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100vw - 48px);
+    max-width: 380px;
+  }
+  .info-tip__popover::after {
+    display: none;
+  }
+}
+
 ::selection {
   background: var(--j-gold);
   color: var(--j-bg-dark);

@@ -9,6 +9,44 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // --- Info-tip popover ---
+  document.querySelectorAll('.info-tip').forEach(function (tip) {
+    function open() {
+      tip.classList.add('is-open');
+      tip.setAttribute('aria-expanded', 'true');
+    }
+    function close() {
+      tip.classList.remove('is-open');
+      tip.setAttribute('aria-expanded', 'false');
+    }
+    function toggle(e) {
+      e.stopPropagation();
+      tip.classList.contains('is-open') ? close() : open();
+    }
+    tip.addEventListener('click', toggle);
+    tip.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(e); }
+      if (e.key === 'Escape') close();
+    });
+    tip.querySelector('.info-tip__popover').addEventListener('click', function (e) {
+      e.stopPropagation();
+    });
+  });
+  document.addEventListener('click', function () {
+    document.querySelectorAll('.info-tip.is-open').forEach(function (tip) {
+      tip.classList.remove('is-open');
+      tip.setAttribute('aria-expanded', 'false');
+    });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.info-tip.is-open').forEach(function (tip) {
+        tip.classList.remove('is-open');
+        tip.setAttribute('aria-expanded', 'false');
+      });
+    }
+  });
+
   // --- RSVP form AJAX submission ---
   var form = document.getElementById('rsvp-form');
   var confirmed = document.getElementById('rsvp-confirmed');
