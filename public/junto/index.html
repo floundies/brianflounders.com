@@ -89,7 +89,8 @@
 
       <div class="broadside">
         <div class="broadside__header">
-          <div class="broadside__date">Sunday, March 29 &middot; 6:00 PM</div>
+          <div class="broadside__date">Friday, April 3 &middot; 6:00 PM</div>
+          <div class="broadside__sold-out">Sold Out</div>
         </div>
 
         <div class="broadside__details">
@@ -108,7 +109,7 @@
 
           <h3 class="broadside__section-title">The Details</h3>
           <p>
-            &#x1F4C5; Sunday, March 29th<br />
+            &#x1F4C5; Friday, April 3rd<br />
             &#x1F555; 6:00 PM<br />
             &#x1F4CD; Address sent upon RSVP<br />
             &#x1F4B5; $20 &mdash; pizza &amp; beer... maybe gelato if I have time
@@ -116,21 +117,19 @@
           <p><em>Spots are limited. This is a small room by design.</em></p>
         </div>
 
-        <!-- RSVP Form -->
-        <form id="rsvp-form" class="rsvp-form" action="https://formspree.io/f/xbdznrlj" method="POST">
-          <input type="text" name="name" placeholder="Your name" required autocomplete="name" />
-          <input type="email" name="email" placeholder="Your email" required autocomplete="email" />
-          <textarea name="idea" placeholder="What idea or question are you bringing?" required rows="3"></textarea>
-          <input type="hidden" name="_subject" value="New Junto RSVP" />
-          <input type="text" name="_gotcha" style="display:none" tabindex="-1" autocomplete="off" />
-          <button type="submit" class="btn-gold">Claim Your Spot</button>
+        <!-- RSVP Form (sold out) -->
+        <form id="rsvp-form" class="rsvp-form rsvp-form--disabled">
+          <input type="text" placeholder="Your name" disabled />
+          <input type="email" placeholder="Your email" disabled />
+          <textarea placeholder="What idea or question are you bringing?" disabled rows="3"></textarea>
+          <button type="button" class="btn-gold" disabled>Sold Out</button>
         </form>
 
         <!-- Confirmation (hidden by default) -->
         <div id="rsvp-confirmed" class="rsvp-confirmed" style="display:none;">
           <h3>You&rsquo;re in.</h3>
           <p><strong>Address:</strong> Sent to your email shortly.</p>
-          <p><strong>Date:</strong> Sunday, March 29th &middot; 6:00 PM</p>
+          <p><strong>Date:</strong> Friday, April 3rd &middot; 6:00 PM</p>
           <p><strong>Bring:</strong> $20 (cash or <a href="https://strike.me/brian" target="_blank" rel="noopener">Strike</a>) and a sharp mind.</p>
           <p style="margin-top:16px; font-size:14px; opacity:0.7;">Save this page &mdash; this is your confirmation.</p>
         </div>
@@ -150,6 +149,32 @@
         Pay with Strike
       </a>
       <p class="payment__note">New to Bitcoin? <a href="https://invite.strike.me/G1TQU3" target="_blank" rel="noopener noreferrer">Get Strike</a> &mdash; it takes 2 minutes.</p>
+    </div>
+  </section>
+
+  <!-- ============ PAST GATHERINGS ============ -->
+  <section class="past-gatherings" id="past">
+    <div class="container">
+      <h2 class="section-heading">Past Gatherings</h2>
+
+      <div class="gathering">
+        <button class="gathering__header" aria-expanded="false">
+          <span class="gathering__number">I</span>
+          <span class="gathering__meta">
+            <span class="gathering__theme">&ldquo;Good Libations&rdquo;</span>
+            <span class="gathering__details">October 16, 2019 &middot; 21 people</span>
+          </span>
+          <span class="gathering__toggle" aria-hidden="true">+</span>
+        </button>
+        <div class="gathering__body" hidden>
+          <p>The first one. A bottle of whiskey, twenty-one chairs, and a bet that interesting people would show up if you just asked them to.</p>
+          <p>Here&rsquo;s what I told everyone: look, you&rsquo;re really smart. You think outside the box, you&rsquo;re driven, you&rsquo;re maybe tired of your nine-to-five gig working for someone else. Or you want to be part of something bigger than collecting a paycheck. You may have even told me about a business idea you&rsquo;ve been noodling over.</p>
+          <p>The rules were simple. Come prepared to present something &mdash; a business idea you think could be revolutionary, something you can&rsquo;t stop thinking about, something you&rsquo;re actually working on, or fuck, something you just think will make you some money. Ten minutes max. The room responds. No commitments. No stealing ideas. Ideas are a dime a dozen &mdash; execution and people are what count.</p>
+          <p>My first topic was about natural body decomposition and repurposing cemeteries into viable land. That should tell you everything about the vibe.</p>
+          <p>Whiskey was provided. Pizza was ordered. The rest was up to whoever showed up. It was a successful first junto &mdash; can&rsquo;t believe that was six years ago.</p>
+        </div>
+      </div>
+
     </div>
   </section>
 

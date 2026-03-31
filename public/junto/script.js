@@ -47,6 +47,16 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  // --- Past gatherings accordion ---
+  document.querySelectorAll('.gathering__header').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var body = btn.nextElementSibling;
+      var open = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+      body.hidden = open;
+    });
+  });
+
   // --- RSVP form AJAX submission ---
   var form = document.getElementById('rsvp-form');
   var confirmed = document.getElementById('rsvp-confirmed');
