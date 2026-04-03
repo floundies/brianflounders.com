@@ -59,9 +59,9 @@
   }
   .btn:hover { background: #c73650; }
   #dinoFact {
-    max-width: 460px;
+    max-width: 520px;
     margin: 14px auto 0;
-    padding: 14px 18px;
+    padding: 16px 18px;
     background: rgba(10, 10, 30, 0.92);
     border: 2px solid #ffd700;
     border-radius: 10px;
@@ -70,8 +70,8 @@
     line-height: 1.5;
     text-align: left;
     display: flex;
-    gap: 14px;
-    align-items: flex-start;
+    gap: 16px;
+    align-items: center;
   }
   #dinoFact .fact-label {
     font-size: 11px;
@@ -82,8 +82,8 @@
     font-weight: bold;
   }
   #factImage {
-    width: 120px;
-    height: 120px;
+    width: 180px;
+    height: 180px;
     border-radius: 8px;
     object-fit: cover;
     flex-shrink: 0;
@@ -93,8 +93,8 @@
   }
   #factImage.loaded { display: block; }
   #factSpinner {
-    width: 120px;
-    height: 120px;
+    width: 180px;
+    height: 180px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -1031,7 +1031,7 @@ function getRandomFact() {
   return dinoFacts[idx];
 }
 
-const GEMINI_KEY = 'AIzaSyBVx9aUt6VD1s7wnpbx2S2n3d4tJ0-Zdhs';
+const GEMINI_KEY = 'AIzaSyC8bSL3IM867z8iOM5Y9TRM-ziHWXbrgm0';
 
 // Pre-fetched fact + image ready for next death
 let prefetchedFact = null;
