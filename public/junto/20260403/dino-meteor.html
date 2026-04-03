@@ -1031,8 +1031,6 @@ function getRandomFact() {
   return dinoFacts[idx];
 }
 
-const GEMINI_KEY = 'AIzaSyC8bSL3IM867z8iOM5Y9TRM-ziHWXbrgm0';
-
 // Pre-fetched fact + image ready for next death
 let prefetchedFact = null;
 let prefetchedImageSrc = null;
@@ -1047,7 +1045,7 @@ async function prefetchFactImage() {
   try {
     const prompt = `Create a single vivid illustration that directly depicts this specific scene or subject: "${prefetchedFact}". Do NOT draw a generic dinosaur. Instead, illustrate the specific thing described — for example: if it's about an asteroid crater, show the crater; if it's about feathered velociraptors, show a feathered velociraptor; if it's about T. rex bite force, show T. rex jaws crushing bone. Style: colorful cartoon, educational, suitable for kids. Absolutely no text, labels, or words in the image.`;
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_KEY}`,
+      `/api/gemini?model=gemini-2.5-flash-preview-05-20`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
