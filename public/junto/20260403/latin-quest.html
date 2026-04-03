@@ -523,7 +523,7 @@ function getLevelInfo() {
 async function fetchImage(prompt) {
   try {
     const res = await fetch(
-      `/api/gemini?model=gemini-2.5-flash`,
+      `/api/gemini?model=gemini-2.5-flash-image`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

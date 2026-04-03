@@ -1045,7 +1045,7 @@ async function prefetchFactImage() {
   try {
     const prompt = `Create a single vivid illustration that directly depicts this specific scene or subject: "${prefetchedFact}". Do NOT draw a generic dinosaur. Instead, illustrate the specific thing described — for example: if it's about an asteroid crater, show the crater; if it's about feathered velociraptors, show a feathered velociraptor; if it's about T. rex bite force, show T. rex jaws crushing bone. Style: colorful cartoon, educational, suitable for kids. Absolutely no text, labels, or words in the image.`;
     const res = await fetch(
-      `/api/gemini?model=gemini-2.5-flash`,
+      `/api/gemini?model=gemini-2.5-flash-image`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

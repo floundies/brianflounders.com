@@ -12,7 +12,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   }
 
   const url = new URL(context.request.url);
-  const model = url.searchParams.get('model') || 'gemini-2.5-flash';
+  const model = url.searchParams.get('model') || 'gemini-2.5-flash-image';
 
   const body = await context.request.arrayBuffer();
 
