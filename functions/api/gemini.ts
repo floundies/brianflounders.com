@@ -16,11 +16,17 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   const body = await context.request.arrayBuffer();
 
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const referer = context.request.headers.get('Referer');
+  if (referer) {
+    headers['Referer'] = referer;
+  }
+
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body,
     }
   );
