@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flounders Family Chore Tracker</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0f172a;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+  header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #fbbf24, #f97316);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 4px;
+  }
+  header .date {
+    color: #64748b;
+    font-size: 15px;
+  }
+  header .week-nav {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+  }
+  header .week-nav button {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #94a3b8;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  header .week-nav button:hover { background: #334155; color: #e2e8f0; }
+  header .week-nav span { color: #94a3b8; font-size: 14px; }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .child-card {
+    background: #1e293b;
+    border-radius: 16px;
+    padding: 20px;
+    border: 2px solid transparent;
+    transition: border-color 0.3s;
+  }
+  .child-card[data-color="amber"]  { border-color: #f59e0b33; }
+  .child-card[data-color="rose"]   { border-color: #f4366833; }
+  .child-card[data-color="sky"]    { border-color: #0ea5e933; }
+  .child-card[data-color="emerald"]{ border-color: #10b98133; }
+
+  .child-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .child-name {
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .child-card[data-color="amber"]  .child-name { color: #fbbf24; }
+  .child-card[data-color="rose"]   .child-name { color: #fb7185; }
+  .child-card[data-color="sky"]    .child-name { color: #38bdf8; }
+  .child-card[data-color="emerald"].child-name { color: #34d399; }
+
+  .points-badge {
+    font-size: 14px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: #0f172a;
+  }
+  .child-card[data-color="amber"]  .points-badge { color: #fbbf24; }
+  .child-card[data-color="rose"]   .points-badge { color: #fb7185; }
+  .child-card[data-color="sky"]    .points-badge { color: #38bdf8; }
+  .child-card[data-color="emerald"].points-badge { color: #34d399; }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #475569;
+    margin: 14px 0 8px;
+  }
+
+  .chore-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    user-select: none;
+  }
+  .chore-item:hover { background: #ffffff08; }
+
+  .chore-check {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    border: 2px solid #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .chore-item.done .chore-check {
+    border-color: transparent;
+  }
+  .child-card[data-color="amber"]  .chore-item.done .chore-check { background: #f59e0b; }
+  .child-card[data-color="rose"]   .chore-item.done .chore-check { background: #f43f5e; }
+  .child-card[data-color="sky"]    .chore-item.done .chore-check { background: #0ea5e9; }
+  .child-card[data-color="emerald"].chore-item.done .chore-check { background: #10b981; }
+
+  .chore-check svg {
+    width: 14px;
+    height: 14px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .chore-item.done .chore-check svg { opacity: 1; }
+
+  .chore-label {
+    font-size: 15px;
+    color: #cbd5e1;
+    transition: all 0.2s;
+  }
+  .chore-item.done .chore-label {
+    text-decoration: line-through;
+    color: #475569;
+  }
+
+  .chore-pts {
+    margin-left: auto;
+    font-size: 12px;
+    color: #475569;
+    font-weight: 600;
+  }
+  .chore-item.done .chore-pts { color: #64748b; }
+
+  .progress-bar {
+    margin-top: 16px;
+    height: 6px;
+    background: #0f172a;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+  .child-card[data-color="amber"]  .progress-fill { background: #f59e0b; }
+  .child-card[data-color="rose"]   .progress-fill { background: #f43f5e; }
+  .child-card[data-color="sky"]    .progress-fill { background: #0ea5e9; }
+  .child-card[data-color="emerald"].progress-fill { background: #10b981; }
+
+  .allowance-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #ffffff0a;
+  }
+  .allowance-label {
+    font-size: 12px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .allowance-amount {
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .child-card[data-color="amber"]  .allowance-amount { color: #fbbf24; }
+  .child-card[data-color="rose"]   .allowance-amount { color: #fb7185; }
+  .child-card[data-color="sky"]    .allowance-amount { color: #38bdf8; }
+  .child-card[data-color="emerald"].allowance-amount { color: #34d399; }
+
+  .bonus-tag {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 6px;
+    font-weight: 600;
+  }
+  .child-card[data-color="amber"]  .bonus-tag { background: #f59e0b22; color: #fbbf24; }
+  .child-card[data-color="rose"]   .bonus-tag { background: #f43f5e22; color: #fb7185; }
+  .child-card[data-color="sky"]    .bonus-tag { background: #0ea5e922; color: #38bdf8; }
+  .child-card[data-color="emerald"].bonus-tag { background: #10b98122; color: #34d399; }
+
+  @media (max-width: 1100px) {
+    .board { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .board { grid-template-columns: 1fr; }
+    body { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Flounders Family Chores</h1>
+  <div class="date" id="todayDate"></div>
+  <div class="week-nav">
+    <button id="prevWeek">&larr; Prev Week</button>
+    <span id="weekLabel"></span>
+    <button id="nextWeek">Next Week &rarr;</button>
+  </div>
+</header>
+
+<div class="board" id="board"></div>
+
+<script>
+// === Config ===
+const CHILDREN = [
+  { name: 'Henry',  color: 'amber'   },
+  { name: 'Isla',   color: 'rose'    },
+  { name: 'Jack',   color: 'sky'     },
+  { name: 'Conall', color: 'emerald' },
+];
+
+const DAILY_CHORES = [
+  { label: 'Make bed',           pts: 5  },
+  { label: 'Brush teeth (AM)',   pts: 5  },
+  { label: 'Brush teeth (PM)',   pts: 5  },
+  { label: 'Put away clothes',   pts: 5  },
+  { label: 'Clear plate after meals', pts: 5 },
+  { label: 'Homework / reading', pts: 10 },
+  { label: 'Tidy room',          pts: 10 },
+];
+
+const WEEKLY_CHORES = [
+  { label: 'Help with laundry',  pts: 15 },
+  { label: 'Vacuum a room',      pts: 15 },
+  { label: 'Take out trash',     pts: 10 },
+  { label: 'Help cook a meal',   pts: 20 },
+  { label: 'Clean bathroom',     pts: 20 },
+  { label: 'Yard work',          pts: 20 },
+];
+
+const BASE_ALLOWANCE = 5.00;       // dollars per week
+const POINTS_PER_DOLLAR = 100;     // bonus: every 100 pts = $1
+
+// === State ===
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function getWeekKey(date) {
+  const d = new Date(date);
+  d.setDate(d.getDate() - d.getDay());
+  return d.toISOString().slice(0, 10);
+}
+
+function getWeekDates(weekKey) {
+  const start = new Date(weekKey + 'T00:00:00');
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
+    return d.toISOString().slice(0, 10);
+  });
+}
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem('floundersChores') || '{}'); } catch { return {}; }
+}
+function saveState(state) {
+  localStorage.setItem('floundersChores', JSON.stringify(state));
+}
+
+function isChecked(state, child, choreKey) {
+  return !!(state[child] && state[child][choreKey]);
+}
+function toggleChore(state, child, choreKey) {
+  if (!state[child]) state[child] = {};
+  state[child][choreKey] = !state[child][choreKey];
+  saveState(state);
+}
+
+// === Week navigation ===
+let currentWeekKey = getWeekKey(new Date());
+
+function shiftWeek(delta) {
+  const d = new Date(currentWeekKey + 'T00:00:00');
+  d.setDate(d.getDate() + delta * 7);
+  currentWeekKey = getWeekKey(d);
+  render();
+}
+
+// === Render ===
+const checkSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+function render() {
+  const state = loadState();
+  const weekDates = getWeekDates(currentWeekKey);
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Header
+  const startDate = new Date(weekDates[0] + 'T00:00:00');
+  const endDate = new Date(weekDates[6] + 'T00:00:00');
+  const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  document.getElementById('weekLabel').textContent = `${fmt(startDate)} – ${fmt(endDate)}`;
+  document.getElementById('todayDate').textContent = new Date().toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+
+  CHILDREN.forEach(child => {
+    const card = document.createElement('div');
+    card.className = 'child-card';
+    card.dataset.color = child.color;
+
+    let totalPts = 0;
+    let totalPossible = 0;
+    let choreHTML = '';
+
+    // Daily chores — one row per day of the week
+    choreHTML += `<div class="section-label">Daily</div>`;
+    weekDates.forEach(date => {
+      const dayName = DAY_NAMES[new Date(date + 'T00:00:00').getDay()];
+      const isToday = date === today;
+      choreHTML += `<div style="margin-top:8px;margin-bottom:2px;font-size:12px;font-weight:600;color:${isToday ? '#e2e8f0' : '#475569'}">${dayName} ${date.slice(5)}${isToday ? ' (today)' : ''}</div>`;
+
+      DAILY_CHORES.forEach(chore => {
+        const key = `daily|${date}|${chore.label}`;
+        const done = isChecked(state, child.name, key);
+        if (done) totalPts += chore.pts;
+        totalPossible += chore.pts;
+        choreHTML += `
+          <div class="chore-item ${done ? 'done' : ''}" data-child="${child.name}" data-key="${key}">
+            <div class="chore-check">${checkSVG}</div>
+            <span class="chore-label">${chore.label}</span>
+            <span class="chore-pts">${chore.pts}pts</span>
+          </div>`;
+      });
+    });
+
+    // Weekly chores
+    choreHTML += `<div class="section-label" style="margin-top:18px">Weekly</div>`;
+    WEEKLY_CHORES.forEach(chore => {
+      const key = `weekly|${currentWeekKey}|${chore.label}`;
+      const done = isChecked(state, child.name, key);
+      if (done) totalPts += chore.pts;
+      totalPossible += chore.pts;
+      choreHTML += `
+        <div class="chore-item ${done ? 'done' : ''}" data-child="${child.name}" data-key="${key}">
+          <div class="chore-check">${checkSVG}</div>
+          <span class="chore-label">${chore.label}</span>
+          <span class="chore-pts">${chore.pts}pts</span>
+        </div>`;
+    });
+
+    const pct = totalPossible > 0 ? Math.round(totalPts / totalPossible * 100) : 0;
+    const bonus = totalPts / POINTS_PER_DOLLAR;
+    const allowance = BASE_ALLOWANCE + bonus;
+
+    card.innerHTML = `
+      <div class="child-header">
+        <span class="child-name">${child.name}</span>
+        <span class="points-badge">${totalPts} pts</span>
+      </div>
+      ${choreHTML}
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="allowance-row">
+        <span class="allowance-label">This week's allowance</span>
+        <span class="allowance-amount">$${allowance.toFixed(2)}${bonus > 0 ? `<span class="bonus-tag">+$${bonus.toFixed(2)}</span>` : ''}</span>
+      </div>
+    `;
+
+    board.appendChild(card);
+  });
+
+  // Attach click handlers
+  document.querySelectorAll('.chore-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const s = loadState();
+      toggleChore(s, el.dataset.child, el.dataset.key);
+      render();
+    });
+  });
+}
+
+// === Init ===
+document.getElementById('prevWeek').addEventListener('click', () => shiftWeek(-1));
+document.getElementById('nextWeek').addEventListener('click', () => shiftWeek(1));
+render();
+</script>
+</body>
+</html>

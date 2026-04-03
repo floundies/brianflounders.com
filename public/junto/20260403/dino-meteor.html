@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dino Meteor Escape!</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+  }
+  #gameContainer {
+    position: relative;
+  }
+  canvas {
+    border: 3px solid #e94560;
+    border-radius: 8px;
+    display: block;
+  }
+  #ui {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+  }
+  #ui.active { pointer-events: all; }
+  #startScreen, #gameOverScreen {
+    text-align: center;
+    color: #eee;
+    display: none;
+  }
+  #startScreen.show, #gameOverScreen.show { display: block; }
+  h1 { font-size: 42px; color: #e94560; margin-bottom: 10px; }
+  h2 { font-size: 32px; color: #e94560; margin-bottom: 10px; }
+  p { font-size: 18px; color: #ccc; margin: 8px 0; }
+  .btn {
+    margin-top: 20px;
+    padding: 14px 40px;
+    font-size: 20px;
+    font-family: 'Courier New', monospace;
+    background: #e94560;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    pointer-events: all;
+  }
+  .btn:hover { background: #c73650; }
+  #dinoFact {
+    max-width: 460px;
+    margin: 14px auto 0;
+    padding: 14px 18px;
+    background: rgba(10, 10, 30, 0.92);
+    border: 2px solid #ffd700;
+    border-radius: 10px;
+    font-size: 16px;
+    color: #fff;
+    line-height: 1.5;
+    text-align: left;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  #dinoFact .fact-label {
+    font-size: 11px;
+    color: #ffd700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    font-weight: bold;
+  }
+  #factImage {
+    width: 120px;
+    height: 120px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: #1a1a2e;
+    border: 1px solid #444;
+    display: none;
+  }
+  #factImage.loaded { display: block; }
+  #factSpinner {
+    width: 120px;
+    height: 120px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-size: 12px;
+    border-radius: 8px;
+    background: #1a1a2e;
+    border: 1px solid #333;
+  }
+  #score {
+    position: absolute;
+    top: 12px;
+    left: 16px;
+    color: #fff;
+    font-size: 20px;
+  }
+  #highScore {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    color: #aaa;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<div id="gameContainer">
+  <canvas id="game"></canvas>
+  <div id="score">Score: 0</div>
+  <div id="highScore">Best: 0</div>
+  <div id="ui" class="active">
+    <div id="startScreen" class="show">
+      <h1>DINO METEOR ESCAPE</h1>
+      <p>Arrow keys / WASD to move</p>
+      <p>Dodge meteors! High-five pterodactyls for bonus points!</p>
+      <button class="btn" id="startBtn">START</button>
+    </div>
+    <div id="gameOverScreen">
+      <h2>EXTINCTION!</h2>
+      <p id="finalScore"></p>
+      <p id="newHighScore" style="color:#e94560;display:none">NEW HIGH SCORE!</p>
+      <div id="dinoFact">
+        <div id="factSpinner">loading...</div>
+        <img id="factImage" alt="dino fact illustration">
+        <div>
+          <div class="fact-label">Did You Know?</div>
+          <span id="factText"></span>
+        </div>
+      </div>
+      <button class="btn" id="restartBtn">PLAY AGAIN</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+const W = 800, H = 500;
+
+// === Sound system (Web Audio API) ===
+let audioCtx;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+// === 8-bit NES Background Music ===
+let bgMusicPlaying = false;
+let bgMusicNodes = [];
+let bgMusicTimer = null;
+
+function stopBgMusic() {
+  bgMusicPlaying = false;
+  bgMusicNodes.forEach(n => { try { n.stop(); } catch(e) {} });
+  bgMusicNodes = [];
+  if (bgMusicTimer) { clearTimeout(bgMusicTimer); bgMusicTimer = null; }
+}
+
+function startBgMusic() {
+  stopBgMusic();
+  bgMusicPlaying = true;
+  const ctx = ensureAudio();
+
+  // NES-style melody in a minor key — energetic and loopable
+  // Notes as frequencies (A minor / C major pentatonic with some passing tones)
+  const NOTE = {
+    C3: 130.81, D3: 146.83, E3: 164.81, F3: 174.61, G3: 196.00, A3: 220.00, B3: 246.94,
+    C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392.00, A4: 440.00, B4: 493.88,
+    C5: 523.25, D5: 587.33, E5: 659.25, REST: 0
+  };
+
+  // Main melody (pulse wave) — catchy 8-bit adventure theme
+  const melody = [
+    // Phrase 1 - ascending energy
+    { n: NOTE.E4, d: 0.15 }, { n: NOTE.E4, d: 0.15 }, { n: NOTE.REST, d: 0.15 }, { n: NOTE.E4, d: 0.15 },
+    { n: NOTE.REST, d: 0.15 }, { n: NOTE.C4, d: 0.15 }, { n: NOTE.E4, d: 0.3 },
+    { n: NOTE.G4, d: 0.3 }, { n: NOTE.REST, d: 0.3 }, { n: NOTE.G3, d: 0.3 }, { n: NOTE.REST, d: 0.3 },
+    // Phrase 2 - playful descent
+    { n: NOTE.C4, d: 0.3 }, { n: NOTE.REST, d: 0.15 }, { n: NOTE.G3, d: 0.3 }, { n: NOTE.REST, d: 0.15 },
+    { n: NOTE.E3, d: 0.3 }, { n: NOTE.REST, d: 0.15 }, { n: NOTE.A3, d: 0.2 }, { n: NOTE.B3, d: 0.2 },
+    { n: NOTE.REST, d: 0.1 }, { n: NOTE.A3, d: 0.3 },
+    // Phrase 3 - rising action
+    { n: NOTE.G3, d: 0.2 }, { n: NOTE.E4, d: 0.2 }, { n: NOTE.G4, d: 0.2 }, { n: NOTE.A4, d: 0.3 },
+    { n: NOTE.F4, d: 0.15 }, { n: NOTE.G4, d: 0.15 }, { n: NOTE.REST, d: 0.15 }, { n: NOTE.E4, d: 0.3 },
+    { n: NOTE.C4, d: 0.15 }, { n: NOTE.D4, d: 0.15 }, { n: NOTE.B3, d: 0.3 }, { n: NOTE.REST, d: 0.3 },
+  ];
+
+  // Bass line (triangle wave feel)
+  const bass = [
+    { n: NOTE.C3, d: 0.3 }, { n: NOTE.C3, d: 0.3 }, { n: NOTE.G3, d: 0.3 }, { n: NOTE.G3, d: 0.3 },
+    { n: NOTE.E3, d: 0.3 }, { n: NOTE.E3, d: 0.3 }, { n: NOTE.G3, d: 0.3 }, { n: NOTE.G3, d: 0.3 },
+    { n: NOTE.A3, d: 0.3 }, { n: NOTE.A3, d: 0.3 }, { n: NOTE.E3, d: 0.3 }, { n: NOTE.E3, d: 0.3 },
+    { n: NOTE.F3, d: 0.3 }, { n: NOTE.F3, d: 0.3 }, { n: NOTE.G3, d: 0.3 }, { n: NOTE.G3, d: 0.3 },
+    { n: NOTE.C3, d: 0.3 }, { n: NOTE.E3, d: 0.3 }, { n: NOTE.G3, d: 0.3 }, { n: NOTE.C3, d: 0.3 },
+    { n: NOTE.A3, d: 0.3 }, { n: NOTE.E3, d: 0.3 }, { n: NOTE.G3, d: 0.6 },
+  ];
+
+  function scheduleTrack(notes, waveType, volume, detune) {
+    if (!bgMusicPlaying) return;
+    const startTime = ctx.currentTime + 0.05;
+    let time = startTime;
+
+    notes.forEach(note => {
+      if (note.n !== NOTE.REST) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = waveType;
+        osc.frequency.setValueAtTime(note.n, time);
+        if (detune) osc.detune.setValueAtTime(detune, time);
+        gain.gain.setValueAtTime(0, time);
+        gain.gain.linearRampToValueAtTime(volume, time + 0.01);
+        gain.gain.setValueAtTime(volume, time + note.d * 0.8);
+        gain.gain.linearRampToValueAtTime(0, time + note.d * 0.95);
+        osc.start(time);
+        osc.stop(time + note.d);
+        bgMusicNodes.push(osc);
+      }
+      time += note.d;
+    });
+
+    return time - startTime; // total duration
+  }
+
+  function playLoop() {
+    if (!bgMusicPlaying) return;
+    bgMusicNodes = [];
+    const melodyDur = scheduleTrack(melody, 'square', 0.06, 0);
+    scheduleTrack(bass, 'triangle', 0.08, 0);
+    // Schedule next loop
+    const loopDuration = Math.max(melodyDur, 0) * 1000;
+    bgMusicTimer = setTimeout(playLoop, loopDuration - 50);
+  }
+
+  playLoop();
+}
+
+function playJump(isDouble) {
+  const ctx = ensureAudio();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'sine';
+  const t = ctx.currentTime;
+  if (isDouble) {
+    // Double jump: quick two-note chirp
+    osc.frequency.setValueAtTime(500, t);
+    osc.frequency.linearRampToValueAtTime(900, t + 0.08);
+    osc.frequency.linearRampToValueAtTime(1200, t + 0.15);
+    gain.gain.setValueAtTime(0.15, t);
+    gain.gain.linearRampToValueAtTime(0, t + 0.18);
+    osc.start(t);
+    osc.stop(t + 0.18);
+  } else {
+    // Normal jump: simple rising tone
+    osc.frequency.setValueAtTime(300, t);
+    osc.frequency.linearRampToValueAtTime(600, t + 0.12);
+    gain.gain.setValueAtTime(0.15, t);
+    gain.gain.linearRampToValueAtTime(0, t + 0.15);
+    osc.start(t);
+    osc.stop(t + 0.15);
+  }
+}
+
+function playHighFive() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+  // Bright celebratory arpeggio
+  [523, 659, 784, 1047].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(freq, t + i * 0.06);
+    gain.gain.setValueAtTime(0.1, t + i * 0.06);
+    gain.gain.linearRampToValueAtTime(0, t + i * 0.06 + 0.15);
+    osc.start(t + i * 0.06);
+    osc.stop(t + i * 0.06 + 0.15);
+  });
+  // Slap sound (noise burst)
+  const bufSize = ctx.sampleRate * 0.05;
+  const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufSize);
+  const noise = ctx.createBufferSource();
+  const nGain = ctx.createGain();
+  noise.buffer = buf;
+  noise.connect(nGain);
+  nGain.connect(ctx.destination);
+  nGain.gain.setValueAtTime(0.15, t);
+  nGain.gain.linearRampToValueAtTime(0, t + 0.05);
+  noise.start(t);
+}
+
+function playMeteorImpact() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+  // Low thud
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(120, t);
+  osc.frequency.linearRampToValueAtTime(40, t + 0.2);
+  gain.gain.setValueAtTime(0.2, t);
+  gain.gain.linearRampToValueAtTime(0, t + 0.25);
+  osc.start(t);
+  osc.stop(t + 0.25);
+  // Crunch noise
+  const bufSize = ctx.sampleRate * 0.1;
+  const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufSize) * 0.6;
+  const noise = ctx.createBufferSource();
+  const nGain = ctx.createGain();
+  noise.buffer = buf;
+  noise.connect(nGain);
+  nGain.connect(ctx.destination);
+  nGain.gain.setValueAtTime(0.12, t);
+  nGain.gain.linearRampToValueAtTime(0, t + 0.1);
+  noise.start(t);
+}
+
+function playGameOver() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+  const duration = 0.7;
+
+  // Low rumbling oscillator - the core "flap"
+  const osc = ctx.createOscillator();
+  const oscGain = ctx.createGain();
+  osc.connect(oscGain);
+  oscGain.connect(ctx.destination);
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(80, t);
+  osc.frequency.linearRampToValueAtTime(60, t + 0.15);
+  osc.frequency.linearRampToValueAtTime(90, t + 0.3);
+  osc.frequency.linearRampToValueAtTime(50, t + 0.5);
+  osc.frequency.linearRampToValueAtTime(30, t + duration);
+  oscGain.gain.setValueAtTime(0.18, t);
+  oscGain.gain.setValueAtTime(0.2, t + 0.1);
+  oscGain.gain.linearRampToValueAtTime(0.12, t + 0.4);
+  oscGain.gain.linearRampToValueAtTime(0, t + duration);
+  osc.start(t);
+  osc.stop(t + duration);
+
+  // Sub-bass wobble for that fluttery vibration
+  const sub = ctx.createOscillator();
+  const subGain = ctx.createGain();
+  sub.connect(subGain);
+  subGain.connect(ctx.destination);
+  sub.type = 'sine';
+  sub.frequency.setValueAtTime(45, t);
+  sub.frequency.linearRampToValueAtTime(25, t + duration);
+  subGain.gain.setValueAtTime(0.2, t);
+  subGain.gain.linearRampToValueAtTime(0, t + duration);
+  sub.start(t);
+  sub.stop(t + duration);
+
+  // LFO to modulate the main osc for the "flapping" texture
+  const lfo = ctx.createOscillator();
+  const lfoGain = ctx.createGain();
+  lfo.connect(lfoGain);
+  lfoGain.connect(osc.frequency);
+  lfo.type = 'sine';
+  lfo.frequency.setValueAtTime(25, t);
+  lfo.frequency.linearRampToValueAtTime(15, t + duration);
+  lfoGain.gain.setValueAtTime(30, t);
+  lfoGain.gain.linearRampToValueAtTime(10, t + duration);
+  lfo.start(t);
+  lfo.stop(t + duration);
+
+  // Filtered noise for the airy/hissy part
+  const bufSize = Math.floor(ctx.sampleRate * duration);
+  const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+  const noise = ctx.createBufferSource();
+  const bandpass = ctx.createBiquadFilter();
+  const nGain = ctx.createGain();
+  noise.buffer = buf;
+  noise.connect(bandpass);
+  bandpass.connect(nGain);
+  nGain.connect(ctx.destination);
+  bandpass.type = 'bandpass';
+  bandpass.frequency.setValueAtTime(200, t);
+  bandpass.frequency.linearRampToValueAtTime(80, t + duration);
+  bandpass.Q.setValueAtTime(2, t);
+  nGain.gain.setValueAtTime(0.12, t);
+  nGain.gain.setValueAtTime(0.15, t + 0.1);
+  nGain.gain.linearRampToValueAtTime(0, t + duration);
+  noise.start(t);
+}
+canvas.width = W;
+canvas.height = H;
+
+const GROUND_Y = H - 60;
+
+// State
+let dino, meteors, particles, stars, flyers, floatingTexts, score, highScore, gameRunning, spawnTimer, flyerTimer, difficulty;
+let keys = {};
+
+highScore = parseInt(localStorage.getItem('dinoMeteorHigh') || '0');
+document.getElementById('highScore').textContent = `Best: ${highScore}`;
+
+// Stars background
+function createStars() {
+  stars = [];
+  for (let i = 0; i < 80; i++) {
+    stars.push({
+      x: Math.random() * W,
+      y: Math.random() * (GROUND_Y - 40),
+      r: Math.random() * 1.8 + 0.3,
+      twinkle: Math.random() * Math.PI * 2
+    });
+  }
+}
+
+function init() {
+  dino = {
+    x: W / 2,
+    y: GROUND_Y,
+    w: 40,
+    h: 50,
+    vx: 0,
+    vy: 0,
+    onGround: true,
+    jumpsLeft: 2,
+    frame: 0,
+    frameTimer: 0,
+    facing: 1
+  };
+  meteors = [];
+  particles = [];
+  flyers = [];
+  floatingTexts = [];
+  score = 0;
+  spawnTimer = 0;
+  flyerTimer = 0;
+  difficulty = 1;
+  gameRunning = true;
+  document.getElementById('ui').classList.remove('active');
+  document.getElementById('startScreen').classList.remove('show');
+  document.getElementById('gameOverScreen').classList.remove('show');
+  prefetchFactImage();
+  startBgMusic();
+}
+
+function spawnMeteor() {
+  const size = 18 + Math.random() * 22;
+  const x = Math.random() * (W - 60) + 30;
+  const speed = (2.5 + Math.random() * 2 + difficulty * 0.4);
+  const wobble = (Math.random() - 0.5) * 1.5;
+  meteors.push({ x, y: -size, size, speed, wobble, rotation: Math.random() * Math.PI * 2 });
+}
+
+function spawnExplosion(x, y, color, count) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 4 + 1;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 2,
+      life: 1,
+      decay: 0.015 + Math.random() * 0.025,
+      size: Math.random() * 4 + 2,
+      color
+    });
+  }
+}
+
+function spawnFlyer() {
+  const fromLeft = Math.random() > 0.5;
+  const baseY = 200 + Math.random() * 200;
+  const speed = 2 + Math.random() * 2;
+  const bonus = [50, 100, 150, 200][Math.floor(Math.random() * 4)];
+  flyers.push({
+    x: fromLeft ? -50 : W + 50,
+    y: baseY,
+    baseY,
+    dir: fromLeft ? 1 : -1,
+    speed,
+    wingPhase: Math.random() * Math.PI * 2,
+    bonus,
+    highFived: false,
+    highFiveTimer: 0
+  });
+}
+
+function addFloatingText(x, y, text, color) {
+  floatingTexts.push({ x, y, text, color, life: 1, vy: -2 });
+}
+
+// Drawing functions
+function drawFlyer(f) {
+  ctx.save();
+  ctx.translate(f.x, f.y);
+  ctx.scale(f.dir, 1);
+
+  const wingFlap = Math.sin(f.wingPhase) * 0.6;
+
+  // Body
+  ctx.fillStyle = f.highFived ? '#ffd700' : '#c084fc';
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 20, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Head / beak
+  ctx.fillStyle = f.highFived ? '#ffd700' : '#a855f7';
+  ctx.beginPath();
+  ctx.ellipse(18, -4, 8, 6, 0.1, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Beak
+  ctx.fillStyle = '#f59e0b';
+  ctx.beginPath();
+  ctx.moveTo(25, -4);
+  ctx.lineTo(34, -2);
+  ctx.lineTo(25, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  // Eye
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(21, -6, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.arc(22, -6, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Crest
+  ctx.fillStyle = '#e879f9';
+  ctx.beginPath();
+  ctx.moveTo(12, -8);
+  ctx.lineTo(6, -18);
+  ctx.lineTo(16, -10);
+  ctx.fill();
+
+  // Wings
+  ctx.fillStyle = f.highFived ? '#ffe066' : '#d8b4fe';
+  // Left wing
+  ctx.save();
+  ctx.translate(-4, -4);
+  ctx.rotate(wingFlap - 0.3);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(-15, -25, -35, -15);
+  ctx.quadraticCurveTo(-20, -5, 0, 0);
+  ctx.fill();
+  ctx.restore();
+  // Right wing
+  ctx.save();
+  ctx.translate(-4, 4);
+  ctx.rotate(-wingFlap + 0.3);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(-15, 25, -35, 15);
+  ctx.quadraticCurveTo(-20, 5, 0, 0);
+  ctx.fill();
+  ctx.restore();
+
+  // Tail
+  ctx.fillStyle = f.highFived ? '#ffe066' : '#c084fc';
+  ctx.beginPath();
+  ctx.moveTo(-18, 0);
+  ctx.lineTo(-32, -8);
+  ctx.lineTo(-28, 0);
+  ctx.lineTo(-32, 8);
+  ctx.closePath();
+  ctx.fill();
+
+  // Bonus label
+  if (!f.highFived) {
+    ctx.scale(f.dir, 1); // undo flip for text
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 14px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText(`+${f.bonus}`, 0, -22);
+  }
+
+  ctx.restore();
+
+  // High five burst effect
+  if (f.highFived && f.highFiveTimer > 0) {
+    ctx.save();
+    ctx.globalAlpha = f.highFiveTimer;
+    const r = (1 - f.highFiveTimer) * 40;
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawFloatingTexts() {
+  for (const ft of floatingTexts) {
+    ctx.save();
+    ctx.globalAlpha = ft.life;
+    ctx.fillStyle = ft.color;
+    ctx.font = 'bold 22px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText(ft.text, ft.x, ft.y);
+    ctx.restore();
+  }
+}
+
+function drawDino(d) {
+  ctx.save();
+  ctx.translate(d.x, d.y);
+  ctx.scale(d.facing, 1);
+
+  // Body
+  ctx.fillStyle = '#4ade80';
+  ctx.beginPath();
+  ctx.ellipse(0, -25, 18, 22, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Head
+  ctx.fillStyle = '#4ade80';
+  ctx.beginPath();
+  ctx.ellipse(16, -42, 13, 11, 0.2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eye
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(21, -45, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.arc(22.5, -45, 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Mouth
+  ctx.strokeStyle = '#2d7a4a';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(25, -38);
+  ctx.lineTo(29, -37);
+  ctx.stroke();
+
+  // Spikes on back
+  ctx.fillStyle = '#22c55e';
+  for (let i = 0; i < 4; i++) {
+    const sx = -8 + i * 7;
+    const sy = -45 + Math.abs(i - 1.5) * 2;
+    ctx.beginPath();
+    ctx.moveTo(sx - 3, -35);
+    ctx.lineTo(sx, sy);
+    ctx.lineTo(sx + 3, -35);
+    ctx.fill();
+  }
+
+  // Tail
+  ctx.fillStyle = '#4ade80';
+  ctx.beginPath();
+  ctx.moveTo(-16, -20);
+  ctx.quadraticCurveTo(-32, -30, -28, -40);
+  ctx.quadraticCurveTo(-24, -32, -14, -28);
+  ctx.fill();
+
+  // Legs (animated)
+  ctx.fillStyle = '#3bba6b';
+  const legOffset = Math.sin(d.frame * 0.5) * 6;
+  // Front leg
+  ctx.fillRect(6, -6, 6, 8 + (d.onGround ? legOffset : 0));
+  // Back leg
+  ctx.fillRect(-8, -6, 6, 8 + (d.onGround ? -legOffset : 0));
+
+  // Arms (tiny T-rex arms!)
+  ctx.fillStyle = '#3bba6b';
+  ctx.fillRect(12, -28, 8, 4);
+  ctx.fillRect(10, -22, 8, 4);
+
+  ctx.restore();
+}
+
+function drawMeteor(m) {
+  ctx.save();
+  ctx.translate(m.x, m.y);
+  ctx.rotate(m.rotation);
+
+  // Glow
+  const grad = ctx.createRadialGradient(0, 0, m.size * 0.3, 0, 0, m.size * 1.5);
+  grad.addColorStop(0, 'rgba(255, 100, 20, 0.6)');
+  grad.addColorStop(1, 'rgba(255, 50, 0, 0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(0, 0, m.size * 1.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Rock body
+  ctx.fillStyle = '#8B4513';
+  ctx.beginPath();
+  ctx.moveTo(-m.size, 0);
+  ctx.lineTo(-m.size * 0.5, -m.size * 0.8);
+  ctx.lineTo(m.size * 0.3, -m.size);
+  ctx.lineTo(m.size, -m.size * 0.3);
+  ctx.lineTo(m.size * 0.7, m.size * 0.6);
+  ctx.lineTo(0, m.size);
+  ctx.lineTo(-m.size * 0.6, m.size * 0.5);
+  ctx.closePath();
+  ctx.fill();
+
+  // Hot spots
+  ctx.fillStyle = '#ff6b35';
+  ctx.beginPath();
+  ctx.arc(-m.size * 0.2, -m.size * 0.2, m.size * 0.25, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#ffcc00';
+  ctx.beginPath();
+  ctx.arc(m.size * 0.2, m.size * 0.15, m.size * 0.15, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Trail
+  ctx.restore();
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  for (let i = 1; i <= 5; i++) {
+    ctx.fillStyle = `rgba(255, ${80 + i * 20}, 0, ${0.4 - i * 0.07})`;
+    ctx.beginPath();
+    ctx.arc(m.x - m.wobble * i * 2, m.y - m.speed * i * 4, m.size * (0.6 - i * 0.08), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawGround() {
+  // Ground
+  const grd = ctx.createLinearGradient(0, GROUND_Y, 0, H);
+  grd.addColorStop(0, '#3d2b1f');
+  grd.addColorStop(1, '#2a1a0e');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, GROUND_Y, W, H - GROUND_Y);
+
+  // Grass tufts
+  ctx.fillStyle = '#4a7a3a';
+  for (let i = 0; i < W; i += 25) {
+    ctx.beginPath();
+    ctx.moveTo(i, GROUND_Y);
+    ctx.lineTo(i + 5, GROUND_Y - 8);
+    ctx.lineTo(i + 10, GROUND_Y);
+    ctx.fill();
+  }
+}
+
+function drawStars() {
+  for (const s of stars) {
+    s.twinkle += 0.03;
+    const alpha = 0.4 + Math.sin(s.twinkle) * 0.3;
+    ctx.fillStyle = `rgba(255, 255, 220, ${alpha})`;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawParticles() {
+  for (const p of particles) {
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Warning indicators
+function drawWarnings() {
+  for (const m of meteors) {
+    if (m.y < 0) {
+      ctx.fillStyle = `rgba(255, 60, 60, ${0.5 + Math.sin(Date.now() * 0.01) * 0.3})`;
+      ctx.beginPath();
+      ctx.moveTo(m.x, 10);
+      ctx.lineTo(m.x - 8, 0);
+      ctx.lineTo(m.x + 8, 0);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+}
+
+function update() {
+  if (!gameRunning) return;
+
+  // Input
+  const accel = 0.6;
+  const friction = 0.85;
+  const maxSpeed = 6;
+
+  if (keys['ArrowLeft'] || keys['KeyA']) {
+    dino.vx -= accel;
+    dino.facing = -1;
+  }
+  if (keys['ArrowRight'] || keys['KeyD']) {
+    dino.vx += accel;
+    dino.facing = 1;
+  }
+  if ((keys['ArrowUp'] || keys['KeyW'] || keys['Space']) && dino.jumpsLeft > 0) {
+    if (!dino._jumpKeyHeld) {
+      const isDouble = !dino.onGround;
+      dino.vy = isDouble ? -10 : -12;
+      dino.onGround = false;
+      dino.jumpsLeft--;
+      dino._jumpKeyHeld = true;
+      playJump(isDouble);
+    }
+  }
+  if (!(keys['ArrowUp'] || keys['KeyW'] || keys['Space'])) {
+    dino._jumpKeyHeld = false;
+  }
+
+  dino.vx *= friction;
+  if (Math.abs(dino.vx) > maxSpeed) dino.vx = Math.sign(dino.vx) * maxSpeed;
+
+  dino.vy += 0.6; // gravity
+  dino.x += dino.vx;
+  dino.y += dino.vy;
+
+  // Ground collision
+  if (dino.y >= GROUND_Y) {
+    dino.y = GROUND_Y;
+    dino.vy = 0;
+    dino.onGround = true;
+    dino.jumpsLeft = 2;
+  }
+
+  // Screen wrap
+  if (dino.x < -20) dino.x = W + 20;
+  if (dino.x > W + 20) dino.x = -20;
+
+  // Walking animation
+  if (Math.abs(dino.vx) > 0.5 && dino.onGround) {
+    dino.frameTimer++;
+    if (dino.frameTimer > 4) {
+      dino.frame++;
+      dino.frameTimer = 0;
+    }
+  }
+
+  // Spawn meteors
+  spawnTimer++;
+  const spawnRate = Math.max(20, 60 - difficulty * 4);
+  if (spawnTimer >= spawnRate) {
+    spawnMeteor();
+    spawnTimer = 0;
+  }
+
+  // Update meteors
+  for (let i = meteors.length - 1; i >= 0; i--) {
+    const m = meteors[i];
+    m.y += m.speed;
+    m.x += m.wobble;
+    m.rotation += 0.03;
+
+    // Ground impact
+    if (m.y > GROUND_Y) {
+      spawnExplosion(m.x, GROUND_Y, '#ff6b35', 15);
+      spawnExplosion(m.x, GROUND_Y, '#8B4513', 8);
+      playMeteorImpact();
+      meteors.splice(i, 1);
+      continue;
+    }
+
+    // Collision with dino
+    const dx = m.x - dino.x;
+    const dy = m.y - (dino.y - 25);
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < m.size + 18) {
+      gameOver();
+      return;
+    }
+  }
+
+  // Update particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += 0.1;
+    p.life -= p.decay;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  // Spawn flyers
+  flyerTimer++;
+  const flyerRate = Math.max(120, 300 - difficulty * 15);
+  if (flyerTimer >= flyerRate) {
+    spawnFlyer();
+    flyerTimer = 0;
+  }
+
+  // Update flyers
+  for (let i = flyers.length - 1; i >= 0; i--) {
+    const f = flyers[i];
+    f.x += f.dir * f.speed;
+    f.wingPhase += 0.15;
+    f.y = f.baseY + Math.sin(f.wingPhase * 0.5) * 20;
+
+    if (f.highFived) {
+      f.highFiveTimer -= 0.03;
+      if (f.highFiveTimer <= 0 && (f.x < -60 || f.x > W + 60)) {
+        flyers.splice(i, 1);
+        continue;
+      }
+    }
+
+    // Collision with dino (high five!)
+    if (!f.highFived) {
+      const dx = f.x - dino.x;
+      const dy = f.y - (dino.y - 30);
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 35) {
+        f.highFived = true;
+        f.highFiveTimer = 1;
+        score += f.bonus;
+        addFloatingText(f.x, f.y - 30, `HIGH FIVE! +${f.bonus}`, '#ffd700');
+        spawnExplosion(f.x, f.y, '#ffd700', 12);
+        spawnExplosion(f.x, f.y, '#c084fc', 8);
+        playHighFive();
+      }
+    }
+
+    // Remove if off screen
+    if (f.x < -80 || f.x > W + 80) {
+      flyers.splice(i, 1);
+    }
+  }
+
+  // Update floating texts
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    const ft = floatingTexts[i];
+    ft.y += ft.vy;
+    ft.life -= 0.015;
+    if (ft.life <= 0) floatingTexts.splice(i, 1);
+  }
+
+  // Score & difficulty
+  score++;
+  difficulty = 1 + Math.floor(score / 300);
+  document.getElementById('score').textContent = `Score: ${score}`;
+}
+
+function draw() {
+  // Sky gradient
+  const sky = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+  sky.addColorStop(0, '#0f0c29');
+  sky.addColorStop(0.5, '#1a1a3e');
+  sky.addColorStop(1, '#24243e');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, W, H);
+
+  drawStars();
+  drawGround();
+  drawWarnings();
+
+  for (const m of meteors) drawMeteor(m);
+  for (const f of flyers) drawFlyer(f);
+  drawParticles();
+  drawFloatingTexts();
+
+  if (gameRunning || !gameRunning) drawDino(dino);
+}
+
+const dinoFacts = [
+  "The asteroid that caused the dinosaur extinction was about 7.5 miles (12 km) wide — roughly the size of Mount Everest.",
+  "Dinosaurs ruled the Earth for over 165 million years. Humans have been around for only about 300,000 years.",
+  "Pteranodons were not actually dinosaurs — they were flying reptiles called pterosaurs. Their wingspan could reach 20 feet.",
+  "The impact that killed the dinosaurs released energy equivalent to 10 billion nuclear bombs and created the 110-mile-wide Chicxulub crater in Mexico.",
+  "T. rex had the strongest bite of any land animal ever — about 12,800 pounds of force, enough to crush bone.",
+  "Not all dinosaurs went extinct! Birds are living dinosaurs, descended from small feathered theropods.",
+  "The extinction 66 million years ago wiped out about 75% of all species on Earth, not just dinosaurs.",
+  "Some dinosaurs had feathers. Velociraptor was actually covered in feathers and was about the size of a turkey.",
+  "Before the asteroid hit, massive volcanic eruptions called the Deccan Traps in India were already stressing ecosystems with toxic gases.",
+  "The asteroid impact caused a \"nuclear winter\" — dust and soot blocked sunlight for months, collapsing food chains worldwide.",
+  "Triceratops and T. rex lived at the very end of the dinosaur age. More time separates them from Stegosaurus than separates them from us.",
+  "The first dinosaur fossils were scientifically described in 1824. Before that, people thought they were dragon bones.",
+  "After the asteroid impact, the Earth's surface temperature may have risen by 15°C (27°F) for several hours due to re-entering debris.",
+  "Crocodiles, turtles, and small mammals survived the extinction because they could burrow, swim, or hide underground.",
+  "The Chicxulub asteroid hit at roughly 45,000 mph — about 20 times faster than a bullet.",
+  "Quetzalcoatlus, the largest known pterosaur, had a wingspan of 36 feet — as wide as a small airplane.",
+  "Dinosaur bones have been found on every continent, including Antarctica, which was much warmer during the Mesozoic era.",
+  "The word \"dinosaur\" means \"terrible lizard\" in Greek, coined by Sir Richard Owen in 1842.",
+  "Some sauropod dinosaurs like Argentinosaurus weighed up to 70 tons — heavier than 10 elephants.",
+  "The impact winter after the asteroid killed most plants. Herbivores starved first, then the carnivores that ate them.",
+  "Ammonites, marine reptiles, and most plankton also went extinct alongside the dinosaurs — it wasn't just a land event.",
+  "Many scientists believe dinosaurs were warm-blooded, not cold-blooded like modern reptiles.",
+  "The Chicxulub impact triggered mega-tsunamis over 300 feet tall that swept across the Gulf of Mexico.",
+  "Hadrosaurs (duck-billed dinosaurs) had up to 1,600 teeth arranged in complex dental batteries for grinding plants.",
+  "The extinction allowed mammals to diversify and grow larger, eventually leading to primates — and us.",
+];
+let lastFactIndex = -1;
+
+function getRandomFact() {
+  let idx;
+  do {
+    idx = Math.floor(Math.random() * dinoFacts.length);
+  } while (idx === lastFactIndex);
+  lastFactIndex = idx;
+  return dinoFacts[idx];
+}
+
+const GEMINI_KEY = 'AIzaSyBVx9aUt6VD1s7wnpbx2S2n3d4tJ0-Zdhs';
+
+// Pre-fetched fact + image ready for next death
+let prefetchedFact = null;
+let prefetchedImageSrc = null;
+let prefetchInFlight = false;
+
+async function prefetchFactImage() {
+  if (prefetchInFlight) return;
+  prefetchInFlight = true;
+  prefetchedFact = getRandomFact();
+  prefetchedImageSrc = null;
+
+  try {
+    const prompt = `Create a single vivid illustration that directly depicts this specific scene or subject: "${prefetchedFact}". Do NOT draw a generic dinosaur. Instead, illustrate the specific thing described — for example: if it's about an asteroid crater, show the crater; if it's about feathered velociraptors, show a feathered velociraptor; if it's about T. rex bite force, show T. rex jaws crushing bone. Style: colorful cartoon, educational, suitable for kids. Absolutely no text, labels, or words in the image.`;
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseModalities: ['IMAGE'] }
+        })
+      }
+    );
+    const json = await res.json();
+    const parts = json?.candidates?.[0]?.content?.parts || [];
+    const imgPart = parts.find(p => p.inlineData);
+    if (imgPart) {
+      prefetchedImageSrc = `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
+    }
+  } catch (e) {
+    console.warn('Prefetch image failed:', e);
+  }
+  prefetchInFlight = false;
+}
+
+function showFactCard() {
+  const img = document.getElementById('factImage');
+  const spinner = document.getElementById('factSpinner');
+  const factText = document.getElementById('factText');
+
+  factText.textContent = prefetchedFact || getRandomFact();
+
+  if (prefetchedImageSrc) {
+    img.src = prefetchedImageSrc;
+    img.classList.add('loaded');
+    spinner.style.display = 'none';
+  } else {
+    // Image still loading or failed — show fallback
+    img.classList.remove('loaded');
+    img.src = '';
+    spinner.style.display = 'flex';
+    spinner.textContent = '🦕';
+    spinner.style.fontSize = '48px';
+  }
+}
+
+function gameOver() {
+  gameRunning = false;
+  stopBgMusic();
+  spawnExplosion(dino.x, dino.y - 20, '#4ade80', 25);
+  spawnExplosion(dino.x, dino.y - 20, '#ff6b35', 20);
+  playGameOver();
+
+  const isNew = score > highScore;
+  if (isNew) {
+    highScore = score;
+    localStorage.setItem('dinoMeteorHigh', highScore);
+    document.getElementById('highScore').textContent = `Best: ${highScore}`;
+  }
+
+  document.getElementById('finalScore').textContent = `Score: ${score}`;
+  document.getElementById('newHighScore').style.display = isNew ? 'block' : 'none';
+  showFactCard();
+
+  setTimeout(() => {
+    document.getElementById('ui').classList.add('active');
+    document.getElementById('gameOverScreen').classList.add('show');
+  }, 600);
+}
+
+let lastFrameTime = 0;
+const FRAME_INTERVAL = 1000 / 60; // cap at 60fps
+
+function gameLoop(timestamp) {
+  const elapsed = timestamp - lastFrameTime;
+  if (elapsed >= FRAME_INTERVAL) {
+    lastFrameTime = timestamp - (elapsed % FRAME_INTERVAL);
+    update();
+    draw();
+  }
+  requestAnimationFrame(gameLoop);
+}
+
+// Input
+document.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+    e.preventDefault();
+  }
+});
+document.addEventListener('keyup', e => { keys[e.code] = false; });
+
+// Buttons
+document.getElementById('startBtn').addEventListener('click', () => { init(); });
+document.getElementById('restartBtn').addEventListener('click', () => { init(); });
+
+// Init display
+createStars();
+dino = { x: W / 2, y: GROUND_Y, w: 40, h: 50, vx: 0, vy: 0, onGround: true, frame: 0, frameTimer: 0, facing: 1 };
+meteors = [];
+particles = [];
+flyers = [];
+floatingTexts = [];
+gameRunning = false;
+requestAnimationFrame(gameLoop);
+</script>
+
+</body>
+</html>

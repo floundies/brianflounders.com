@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>4819 Junto III &mdash; Don&rsquo;t Get Left Behind</title>
+  <meta name="description" content="Junto III: AI, live coding, and the tools changing everything. April 3, 2026." />
+  <meta property="og:title" content="4819 Junto III &mdash; Don't Get Left Behind" />
+  <meta property="og:description" content="We opened Claude Code on a projector and built apps live. From scratch. In front of everyone." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://brianflounders.com/junto/20260403/" />
+  <link rel="icon" href="/favicon.ico" sizes="32x32" />
+  <link rel="icon" href="/favicon-192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --j-bg: #02265e;
+      --j-bg-deep: #011840;
+      --j-bg-card: #071e45;
+      --j-bg-parchment: #f5f0e8;
+      --j-bg-parchment-deep: #ebe4d8;
+      --j-fg: #ede8e0;
+      --j-fg-dark: #1a1610;
+      --j-fg-dim: #9a9289;
+      --j-fg-muted-dark: #6b6358;
+      --j-fg-faint: #5e5850;
+      --j-gold: #d4a854;
+      --j-gold-bright: #ecd08a;
+      --j-gold-soft: rgba(212, 168, 84, 0.08);
+      --j-gold-border: rgba(212, 168, 84, 0.18);
+      --j-border: #152d56;
+      --j-border-light: #d5cfc4;
+      --j-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+      --j-body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font: 17px/1.7 var(--j-body);
+      color: var(--j-fg);
+      background: var(--j-bg);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    a { color: var(--j-gold); text-decoration: none; transition: color 0.2s; }
+    a:hover { color: var(--j-gold-bright); }
+
+    ::selection { background: var(--j-gold); color: var(--j-bg); }
+
+    .wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 28px;
+    }
+
+    /* ================================================================
+       HERO — dark with Franklin
+       ================================================================ */
+    .hero {
+      position: relative;
+      text-align: center;
+      padding: clamp(72px, 14vw, 160px) 28px clamp(56px, 8vw, 100px);
+      overflow: hidden;
+      min-height: 80vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero__franklin {
+      position: absolute;
+      bottom: 0;
+      right: -3%;
+      width: clamp(280px, 45vw, 560px);
+      aspect-ratio: 1600 / 893;
+      background: url('../assets/hero-woodcut.webp') no-repeat bottom right / contain;
+      opacity: 0.35;
+      pointer-events: none;
+      mask-image: linear-gradient(to right, transparent 0%, black 25%, black 100%),
+                  linear-gradient(to bottom, transparent 0%, black 20%, black 100%);
+      mask-composite: intersect;
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 25%, black 100%),
+                          linear-gradient(to bottom, transparent 0%, black 20%, black 100%);
+      -webkit-mask-composite: destination-in;
+    }
+
+    .hero__back {
+      position: absolute;
+      top: 28px;
+      left: 28px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--j-fg-dim);
+      letter-spacing: 0.03em;
+      z-index: 2;
+      opacity: 0;
+      animation: fadeIn 0.6s ease 0.8s forwards;
+    }
+    .hero__back:hover { color: var(--j-gold); }
+
+    .hero__content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero__number {
+      font-family: var(--j-display);
+      font-weight: 900;
+      font-size: clamp(80px, 18vw, 180px);
+      line-height: 1;
+      color: transparent;
+      -webkit-text-stroke: 2px rgba(212, 168, 84, 0.35);
+      letter-spacing: -0.04em;
+      margin-bottom: -8px;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.1s forwards;
+      user-select: none;
+    }
+
+    .hero__title {
+      font-family: var(--j-display);
+      font-weight: 900;
+      font-size: clamp(34px, 6.5vw, 62px);
+      line-height: 1.05;
+      color: var(--j-fg);
+      letter-spacing: -0.025em;
+      margin-bottom: 16px;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.25s forwards;
+    }
+
+    .hero__subtitle {
+      font-family: var(--j-display);
+      font-style: italic;
+      font-size: clamp(16px, 2.2vw, 20px);
+      color: var(--j-gold);
+      line-height: 1.4;
+      max-width: 480px;
+      margin: 0 auto 28px;
+      opacity: 0;
+      animation: fadeUp 0.8s ease 0.4s forwards;
+    }
+
+    .hero__meta {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      font-size: 13px;
+      color: var(--j-fg-dim);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      opacity: 0;
+      animation: fadeUp 0.6s ease 0.55s forwards;
+    }
+    .hero__meta-sep {
+      width: 4px;
+      height: 4px;
+      background: var(--j-gold);
+      border-radius: 50%;
+      opacity: 0.5;
+    }
+
+    @media (max-width: 680px) {
+      .hero {
+        min-height: auto;
+        padding-bottom: 56px;
+      }
+      .hero__franklin {
+        width: 65%;
+        right: -5%;
+        bottom: -5%;
+        opacity: 0.12;
+        mask-image: none;
+        -webkit-mask-image: none;
+      }
+    }
+
+    /* ================================================================
+       STORY — parchment section
+       ================================================================ */
+    .story {
+      background: var(--j-bg-parchment);
+      color: var(--j-fg-dark);
+      padding: clamp(56px, 10vw, 110px) 0;
+    }
+
+    .story__label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--j-gold);
+      margin-bottom: 32px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--j-border-light);
+    }
+
+    .story p {
+      margin-bottom: 24px;
+      color: var(--j-fg-muted-dark);
+      font-size: 17px;
+      line-height: 1.8;
+    }
+
+    .story__emphasis {
+      color: var(--j-fg-dark) !important;
+      font-weight: 500;
+    }
+
+    .pullquote {
+      position: relative;
+      font-family: var(--j-display);
+      font-style: italic;
+      font-size: clamp(21px, 3vw, 28px);
+      color: var(--j-fg-dark);
+      line-height: 1.45;
+      margin: 48px 0;
+      padding: 32px 0 32px 32px;
+      border-left: 3px solid var(--j-gold);
+      background: rgba(212, 168, 84, 0.06);
+      border-radius: 0 8px 8px 0;
+      padding: 24px 24px 24px 28px;
+    }
+
+    /* ================================================================
+       DIVIDER (on parchment)
+       ================================================================ */
+    .section-break-parchment {
+      background: var(--j-bg-parchment);
+      padding: 0;
+    }
+    .section-break {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin: 0 auto;
+      max-width: 200px;
+    }
+    .section-break__line {
+      flex: 1;
+      height: 1px;
+      background: var(--j-border-light);
+    }
+    .section-break__dot {
+      width: 8px;
+      height: 8px;
+      background: var(--j-bg-parchment);
+      border: 1px solid var(--j-border-light);
+      border-radius: 50%;
+    }
+
+    /* ================================================================
+       PROJECTS — dark section
+       ================================================================ */
+    .projects {
+      background: var(--j-bg);
+      padding: clamp(56px, 10vw, 110px) 0;
+    }
+
+    .projects__header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .projects__heading {
+      font-family: var(--j-display);
+      font-weight: 900;
+      font-size: clamp(30px, 5vw, 46px);
+      line-height: 1.1;
+      color: var(--j-fg);
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+    .projects__sub {
+      color: var(--j-fg-dim);
+      font-size: 15px;
+      font-style: italic;
+    }
+
+    .project-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .project-card {
+      position: relative;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 20px;
+      background: var(--j-bg-card);
+      border: 1px solid var(--j-border);
+      border-radius: 10px;
+      padding: 24px 28px;
+      transition: border-color 0.3s, background 0.3s, transform 0.2s;
+      text-decoration: none;
+      color: inherit;
+    }
+    .project-card:hover {
+      border-color: var(--j-gold-border);
+      background: rgba(212, 168, 84, 0.03);
+      transform: translateY(-1px);
+      color: inherit;
+    }
+
+    .project-card__icon {
+      font-size: 32px;
+      width: 56px;
+      height: 56px;
+      display: grid;
+      place-items: center;
+      background: var(--j-gold-soft);
+      border: 1px solid var(--j-gold-border);
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+
+    .project-card__body {
+      min-width: 0;
+    }
+    .project-card__title {
+      font-family: var(--j-display);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--j-fg);
+      margin-bottom: 4px;
+    }
+    .project-card__desc {
+      font-size: 14px;
+      color: var(--j-fg-dim);
+      line-height: 1.55;
+    }
+    .project-card__tech {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 8px;
+    }
+    .tech-tag {
+      font-size: 10px;
+      font-weight: 500;
+      padding: 2px 8px;
+      background: transparent;
+      border: 1px solid var(--j-border);
+      border-radius: 4px;
+      color: var(--j-fg-faint);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .project-card__arrow {
+      font-size: 18px;
+      color: var(--j-fg-faint);
+      transition: color 0.2s, transform 0.2s;
+      flex-shrink: 0;
+    }
+    .project-card:hover .project-card__arrow {
+      color: var(--j-gold);
+      transform: translateX(3px);
+    }
+
+    @media (max-width: 560px) {
+      .project-card {
+        grid-template-columns: auto 1fr;
+        gap: 14px;
+        padding: 20px;
+      }
+      .project-card__arrow { display: none; }
+      .project-card__icon {
+        width: 44px;
+        height: 44px;
+        font-size: 24px;
+        border-radius: 10px;
+      }
+    }
+
+    /* ================================================================
+       FOOTER
+       ================================================================ */
+    .footer {
+      text-align: center;
+      padding: 56px 28px;
+      background: var(--j-bg-deep);
+    }
+    .footer__brand {
+      font-family: var(--j-display);
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--j-fg-dim);
+      margin-bottom: 6px;
+    }
+    .footer__brand a { color: var(--j-fg-dim); }
+    .footer__brand a:hover { color: var(--j-gold); }
+    .footer__tagline {
+      font-size: 13px;
+      color: var(--j-fg-faint);
+      font-style: italic;
+    }
+    .footer__built {
+      margin-top: 20px;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--j-fg-faint);
+      opacity: 0.6;
+    }
+
+    /* ================================================================
+       ANIMATIONS
+       ================================================================ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+  </style>
+</head>
+<body>
+
+  <!-- HERO -->
+  <section class="hero">
+    <a href="/junto/" class="hero__back">&larr; 4819 Junto</a>
+    <div class="hero__franklin" aria-hidden="true"></div>
+    <div class="hero__content wrap">
+      <div class="hero__number">III</div>
+      <h1 class="hero__title">Don&rsquo;t Get Left Behind</h1>
+      <p class="hero__subtitle">We opened Claude Code on a projector and built apps live. From scratch. In front of everyone.</p>
+      <div class="hero__meta">
+        <span>April 3, 2026</span>
+        <span class="hero__meta-sep"></span>
+        <span>Philadelphia</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- STORY (parchment) -->
+  <section class="story">
+    <div class="wrap">
+      <div class="story__label">What Happened</div>
+
+      <p class="reveal">The Junto lost its way after COVID hit. Five years of silence. But it came back &mdash; and it came back loud.</p>
+
+      <div class="pullquote reveal">
+        &ldquo;The tools that used to require a developer, a budget, and six months &mdash; now require an afternoon and curiosity.&rdquo;
+      </div>
+
+      <p class="reveal">Something fundamental is shifting in how software gets built, how businesses get started, and who gets to do both. It&rsquo;s not coming. It&rsquo;s here. And most people are still sitting on the sidelines wondering if they should pay attention.</p>
+
+      <p class="reveal story__emphasis">This Junto, we paid attention.</p>
+
+      <p class="reveal">We started with an honest talk about what AI is actually doing to the working world &mdash; not the hype, not the doom, just the real picture of how the landscape is changing for entrepreneurs, professionals, and anyone who has ever said &ldquo;I&rsquo;d need to hire someone for that.&rdquo;</p>
+
+      <p class="reveal">Then we opened Claude Code on the projector and built things live. In real time. In front of everyone. No editing, no safety net, no &ldquo;we prepared this earlier.&rdquo;</p>
+
+      <p class="reveal">The goal wasn&rsquo;t to make anyone a developer. The goal was to show that the rabbit hole exists &mdash; and let everyone decide if they wanted to jump in.</p>
+    </div>
+  </section>
+
+  <!-- DIVIDER (parchment bg) -->
+  <div class="section-break-parchment">
+    <div class="wrap">
+      <div class="section-break">
+        <div class="section-break__line"></div>
+        <div class="section-break__dot"></div>
+        <div class="section-break__line"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECTS (dark) -->
+  <section class="projects">
+    <div class="wrap">
+      <div class="projects__header reveal">
+        <h2 class="projects__heading">What We Built</h2>
+        <p class="projects__sub">Everything below was built live, from scratch, with AI &mdash; during the event.</p>
+      </div>
+
+      <div class="project-grid">
+
+        <a href="dino-meteor.html" class="project-card reveal reveal-delay-1">
+          <div class="project-card__icon">&#x1F995;</div>
+          <div class="project-card__body">
+            <div class="project-card__title">Dino Meteor Escape</div>
+            <div class="project-card__desc">A retro arcade game &mdash; dodge falling meteors, high-five pterodactyls for bonus points, and learn a new dinosaur fact every time you die. Complete with 8-bit chiptune music.</div>
+            <div class="project-card__tech">
+              <span class="tech-tag">Canvas</span>
+              <span class="tech-tag">Web Audio</span>
+              <span class="tech-tag">Gemini</span>
+            </div>
+          </div>
+          <span class="project-card__arrow">&rarr;</span>
+        </a>
+
+        <a href="latin-quest.html" class="project-card reveal reveal-delay-2">
+          <div class="project-card__icon">&#x1F3DB;</div>
+          <div class="project-card__body">
+            <div class="project-card__title">Latin Quest</div>
+            <div class="project-card__desc">A vocabulary game that teaches Latin through translation, fill-in-the-blank, root identification, and famous phrases. Tracks progress with XP and levels.</div>
+            <div class="project-card__tech">
+              <span class="tech-tag">JavaScript</span>
+              <span class="tech-tag">Web Audio</span>
+              <span class="tech-tag">Gemini</span>
+            </div>
+          </div>
+          <span class="project-card__arrow">&rarr;</span>
+        </a>
+
+        <a href="chores.html" class="project-card reveal reveal-delay-3">
+          <div class="project-card__icon">&#x2705;</div>
+          <div class="project-card__body">
+            <div class="project-card__title">Family Chore Tracker</div>
+            <div class="project-card__desc">A chore management app for a household with kids. Assign tasks, track completion, keep everyone accountable without the nagging.</div>
+            <div class="project-card__tech">
+              <span class="tech-tag">HTML/CSS/JS</span>
+              <span class="tech-tag">LocalStorage</span>
+            </div>
+          </div>
+          <span class="project-card__arrow">&rarr;</span>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <p class="footer__brand"><a href="/junto/">4819 Junto</a> &middot; Philadelphia</p>
+    <p class="footer__tagline">An experiment in craft, connection, and mutual improvement.</p>
+    <p class="footer__built">Built with Claude Code</p>
+  </footer>
+
+  <script>
+    (function () {
+      var els = document.querySelectorAll('.reveal');
+      if (!('IntersectionObserver' in window)) {
+        els.forEach(function (el) { el.classList.add('is-visible'); });
+        return;
+      }
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+      els.forEach(function (el) { observer.observe(el); });
+    })();
+  </script>
+
+</body>
+</html>

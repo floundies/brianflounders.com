@@ -639,6 +639,18 @@ a:hover { color: var(--j-gold-strong); }
 .gathering__body p:last-child {
   margin-bottom: 0;
 }
+.gathering__link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--j-gold);
+  letter-spacing: 0.02em;
+  transition: color 0.2s ease;
+}
+.gathering__link:hover {
+  color: var(--j-burgundy);
+}
 
 @media (max-width: 680px) {
   .gathering__header {

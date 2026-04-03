@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Latin Quest!</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0f0a1a;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    color: #e0d6c8;
+    overflow-y: auto;
+  }
+
+  #app {
+    width: 700px;
+    max-width: 95vw;
+    padding: 30px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .header h1 {
+    font-size: 38px;
+    color: #d4a54a;
+    text-shadow: 0 0 20px rgba(212,165,74,0.3);
+    letter-spacing: 3px;
+  }
+  .header .subtitle {
+    color: #8a7b6b;
+    font-size: 14px;
+    margin-top: 4px;
+  }
+
+  /* Stats bar */
+  .stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(30,22,40,0.8);
+    border: 1px solid #3a2a50;
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin-bottom: 20px;
+    font-size: 15px;
+  }
+  .stats .xp { color: #d4a54a; font-weight: bold; }
+  .stats .streak { color: #5ae05a; }
+  .stats .level { color: #a78bfa; }
+
+  /* Level progress bar */
+  .level-bar-container {
+    background: #1e1630;
+    border: 1px solid #3a2a50;
+    border-radius: 8px;
+    padding: 10px 20px;
+    margin-bottom: 20px;
+  }
+  .level-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #8a7b6b;
+    margin-bottom: 6px;
+  }
+  .level-bar-track {
+    height: 8px;
+    background: #2a1e3a;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .level-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #a78bfa, #d4a54a);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+
+  /* Mode selection */
+  .mode-select {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .mode-btn {
+    flex: 1;
+    padding: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    background: #1e1630;
+    color: #8a7b6b;
+    border: 1px solid #3a2a50;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .mode-btn:hover { border-color: #d4a54a; color: #d4a54a; }
+  .mode-btn.active {
+    background: #2a1e3a;
+    border-color: #d4a54a;
+    color: #d4a54a;
+  }
+
+  /* Question card */
+  .card {
+    background: linear-gradient(135deg, #1e1630 0%, #261e3a 100%);
+    border: 2px solid #3a2a50;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 20px;
+    text-align: center;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #d4a54a, #a78bfa, #d4a54a);
+  }
+
+  .question-type {
+    font-size: 11px;
+    color: #8a7b6b;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 16px;
+  }
+
+  .latin-word {
+    font-size: 36px;
+    color: #d4a54a;
+    font-weight: bold;
+    margin-bottom: 6px;
+    text-shadow: 0 0 15px rgba(212,165,74,0.2);
+  }
+  .pronunciation {
+    font-size: 14px;
+    color: #6a5a7b;
+    font-style: italic;
+    margin-bottom: 16px;
+  }
+  .hint-text {
+    font-size: 14px;
+    color: #7a6a8b;
+    margin-bottom: 8px;
+  }
+  .sentence-context {
+    font-size: 15px;
+    color: #c0b0d0;
+    margin: 10px 0;
+    line-height: 1.5;
+  }
+  .sentence-context .blank {
+    color: #d4a54a;
+    font-weight: bold;
+    border-bottom: 2px solid #d4a54a;
+    padding: 0 8px;
+  }
+
+  /* AI Image */
+  .ai-image-container {
+    margin: 16px auto 10px;
+    width: 200px;
+    height: 200px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid #3a2a50;
+    background: #1a1228;
+    display: none;
+  }
+  .ai-image-container.show { display: block; }
+  .ai-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .ai-image-container .loading {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  /* Answer options */
+  .options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .option-btn {
+    padding: 16px 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    background: #1e1630;
+    color: #c0b0d0;
+    border: 2px solid #3a2a50;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .option-btn:hover:not(.locked) {
+    border-color: #d4a54a;
+    color: #d4a54a;
+    background: #261e3a;
+  }
+  .option-btn.correct {
+    border-color: #5ae05a;
+    background: rgba(90,224,90,0.15);
+    color: #5ae05a;
+  }
+  .option-btn.wrong {
+    border-color: #e05a5a;
+    background: rgba(224,90,90,0.15);
+    color: #e05a5a;
+  }
+  .option-btn.locked { cursor: default; }
+
+  /* Feedback area */
+  .feedback {
+    text-align: center;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .feedback-text {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 8px;
+  }
+  .feedback-text.correct { color: #5ae05a; }
+  .feedback-text.wrong { color: #e05a5a; }
+  .etymology {
+    font-size: 13px;
+    color: #8a7b6b;
+    max-width: 500px;
+    line-height: 1.5;
+  }
+
+  /* Next button */
+  .next-btn {
+    display: none;
+    margin: 0 auto;
+    padding: 14px 40px;
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    background: #d4a54a;
+    color: #0f0a1a;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  .next-btn:hover { background: #e0b85a; }
+  .next-btn.show { display: block; }
+
+  /* Scroll area for learned words */
+  .learned-section {
+    margin-top: 24px;
+    border-top: 1px solid #2a1e3a;
+    padding-top: 16px;
+  }
+  .learned-title {
+    font-size: 13px;
+    color: #6a5a7b;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+  .learned-words {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .learned-tag {
+    font-size: 12px;
+    padding: 4px 10px;
+    background: #1e1630;
+    border: 1px solid #2a1e3a;
+    border-radius: 12px;
+    color: #8a7b6b;
+  }
+  .learned-tag.mastered {
+    border-color: #d4a54a;
+    color: #d4a54a;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="header">
+    <h1>LATIN QUEST</h1>
+    <div class="subtitle">Learn the language of empires</div>
+  </div>
+
+  <div class="stats">
+    <span class="level" id="levelDisplay">Level 1: Discipulus</span>
+    <span class="streak" id="streakDisplay">Streak: 0</span>
+    <span class="xp" id="xpDisplay">XP: 0</span>
+  </div>
+
+  <div class="level-bar-container">
+    <div class="level-bar-label">
+      <span id="levelName">Discipulus</span>
+      <span id="xpProgress">0 / 50 XP</span>
+    </div>
+    <div class="level-bar-track">
+      <div class="level-bar-fill" id="levelBar" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <div class="mode-select">
+    <button class="mode-btn active" data-mode="vocab" onclick="setMode('vocab')">Vocabulary</button>
+    <button class="mode-btn" data-mode="sentence" onclick="setMode('sentence')">Sentences</button>
+    <button class="mode-btn" data-mode="roots" onclick="setMode('roots')">Root Words</button>
+    <button class="mode-btn" data-mode="phrases" onclick="setMode('phrases')">Famous Phrases</button>
+  </div>
+
+  <div class="card" id="questionCard">
+    <div class="question-type" id="questionType">TRANSLATE THIS WORD</div>
+    <div class="ai-image-container" id="aiImageBox">
+      <div class="loading" id="aiImageLoading">🏛️</div>
+      <img id="aiImage" style="display:none" />
+    </div>
+    <div class="latin-word" id="latinWord">-</div>
+    <div class="pronunciation" id="pronunciation"></div>
+    <div class="hint-text" id="hintText"></div>
+    <div class="sentence-context" id="sentenceContext"></div>
+  </div>
+
+  <div class="options" id="options"></div>
+
+  <div class="feedback" id="feedback">
+    <div class="feedback-text" id="feedbackText"></div>
+    <div class="etymology" id="etymology"></div>
+  </div>
+
+  <button class="next-btn" id="nextBtn" onclick="nextQuestion()">NEXT</button>
+
+  <div class="learned-section">
+    <div class="learned-title">Words Encountered</div>
+    <div class="learned-words" id="learnedWords"></div>
+  </div>
+</div>
+
+<script>
+const GEMINI_KEY = 'AIzaSyBVx9aUt6VD1s7wnpbx2S2n3d4tJ0-Zdhs';
+
+// === GAME STATE ===
+let xp = 0;
+let streak = 0;
+let level = 1;
+let currentMode = 'vocab';
+let currentQuestion = null;
+let answered = false;
+let wordHistory = {}; // word -> { seen, correct }
+let prefetchedImage = null;
+
+// Levels with Latin titles
+const LEVELS = [
+  { name: 'Discipulus', xp: 0 },      // Student
+  { name: 'Lector', xp: 50 },          // Reader
+  { name: 'Scriptor', xp: 150 },       // Writer
+  { name: 'Grammaticus', xp: 300 },    // Grammarian
+  { name: 'Rhetoricus', xp: 500 },     // Rhetorician
+  { name: 'Magister', xp: 800 },       // Master
+  { name: 'Doctus', xp: 1200 },        // Learned one
+  { name: 'Philosophus', xp: 1800 },   // Philosopher
+  { name: 'Sapiens', xp: 2500 },       // Wise one
+  { name: 'Imperator', xp: 3500 },     // Commander
+];
+
+// === WORD DATABASE ===
+const VOCAB = [
+  // Tier 1 - basics
+  { latin: 'aqua', english: 'water', pronunciation: 'AH-kwah', etymology: '"Aqua" gives us aquarium, aquatic, and aqueduct — the Roman water channels that still stand today.', tier: 1 },
+  { latin: 'terra', english: 'earth/land', pronunciation: 'TEH-rah', etymology: '"Terra" gives us terrain, territory, and terrace. The word "Mediterranean" means "middle of the land."', tier: 1 },
+  { latin: 'ignis', english: 'fire', pronunciation: 'IG-nis', etymology: '"Ignis" gives us ignite and ignition. Romans kept an eternal flame in the Temple of Vesta.', tier: 1 },
+  { latin: 'caelum', english: 'sky/heaven', pronunciation: 'KAI-lum', etymology: '"Caelum" gives us celestial. The Romans named the sky after the god Caelus, father of Saturn.', tier: 1 },
+  { latin: 'sol', english: 'sun', pronunciation: 'SOHL', etymology: '"Sol" gives us solar and solstice. "Solstice" literally means "sun stands still."', tier: 1 },
+  { latin: 'luna', english: 'moon', pronunciation: 'LOO-nah', etymology: '"Luna" gives us lunar and lunatic — Romans believed the full moon caused madness.', tier: 1 },
+  { latin: 'stella', english: 'star', pronunciation: 'STEH-lah', etymology: '"Stella" gives us stellar and constellation. Romans navigated by the stars across their empire.', tier: 1 },
+  { latin: 'rex', english: 'king', pronunciation: 'REKS', etymology: '"Rex" gives us regal, royal, and reign. Rome expelled its last king in 509 BC to become a republic.', tier: 1 },
+  { latin: 'bellum', english: 'war', pronunciation: 'BEH-lum', etymology: '"Bellum" gives us belligerent and rebel. Julius Caesar wrote "De Bello Gallico" about his wars in Gaul.', tier: 1 },
+  { latin: 'pax', english: 'peace', pronunciation: 'PAHKS', etymology: '"Pax" gives us pacify and Pacific Ocean (peaceful ocean). The "Pax Romana" was 200 years of relative peace.', tier: 1 },
+  { latin: 'vita', english: 'life', pronunciation: 'WEE-tah', etymology: '"Vita" gives us vital, vitamin, and vitality. "Curriculum vitae" means "course of life."', tier: 1 },
+  { latin: 'mors', english: 'death', pronunciation: 'MOHRS', etymology: '"Mors" gives us mortal, mortgage (death pledge), and mortician.', tier: 1 },
+  { latin: 'magnus', english: 'great/large', pronunciation: 'MAG-nus', etymology: '"Magnus" gives us magnificent, magnify, and magnitude. Alexander "the Great" was Alexander Magnus.', tier: 1 },
+  { latin: 'bonus', english: 'good', pronunciation: 'BOH-nus', etymology: 'We still use "bonus" in English! It also gives us bounty and bona fide (in good faith).', tier: 1 },
+  { latin: 'malus', english: 'bad/evil', pronunciation: 'MAH-lus', etymology: '"Malus" gives us malice, malevolent, and malfunction. A "mal" prefix almost always means something bad.', tier: 1 },
+
+  // Tier 2 - intermediate
+  { latin: 'amor', english: 'love', pronunciation: 'AH-mohr', etymology: '"Amor" gives us amorous and amour. Cupid was also called Amor by the Romans.', tier: 2 },
+  { latin: 'tempus', english: 'time', pronunciation: 'TEM-pus', etymology: '"Tempus" gives us temporary, tempo, and contemporary. "Tempus fugit" means "time flies."', tier: 2 },
+  { latin: 'via', english: 'road/way', pronunciation: 'WEE-ah', etymology: '"Via" is still used in English! The Via Appia was Rome\'s most famous road, connecting Rome to southern Italy.', tier: 2 },
+  { latin: 'gladius', english: 'sword', pronunciation: 'GLAH-dee-us', etymology: '"Gladius" gives us gladiator — literally "swordsman." The Roman short sword was their most iconic weapon.', tier: 2 },
+  { latin: 'urbs', english: 'city', pronunciation: 'URBS', etymology: '"Urbs" gives us urban, suburban, and urbanize. Rome was simply called "Urbs" — THE city.', tier: 2 },
+  { latin: 'lex', english: 'law', pronunciation: 'LEKS', etymology: '"Lex" gives us legal, legislation, and legitimate. Roman law is the foundation of most Western legal systems.', tier: 2 },
+  { latin: 'liber', english: 'book/free', pronunciation: 'LEE-behr', etymology: '"Liber" gives us library and liberty — two meanings from one word. "Liber" originally meant the bark used for writing.', tier: 2 },
+  { latin: 'fortis', english: 'strong/brave', pronunciation: 'FOR-tis', etymology: '"Fortis" gives us fort, fortify, and comfort (with strength). "Fortis fortuna adiuvat" — fortune favors the brave.', tier: 2 },
+  { latin: 'navis', english: 'ship', pronunciation: 'NAH-wis', etymology: '"Navis" gives us navy, navigate, and nave (the main body of a church, shaped like a ship).', tier: 2 },
+  { latin: 'corpus', english: 'body', pronunciation: 'KOR-pus', etymology: '"Corpus" gives us corpse, corporation, and corporal. "Habeas corpus" means "you shall have the body."', tier: 2 },
+  { latin: 'lux', english: 'light', pronunciation: 'LUKS', etymology: '"Lux" gives us luxury (originally "excess of light"), lucid, and translucent.', tier: 2 },
+  { latin: 'nox', english: 'night', pronunciation: 'NOKS', etymology: '"Nox" gives us nocturnal and equinox (equal night). Nox was also the goddess of night.', tier: 2 },
+  { latin: 'vox', english: 'voice', pronunciation: 'WOKS', etymology: '"Vox" gives us vocal, vocabulary, and advocate (to call to). "Vox populi" means "voice of the people."', tier: 2 },
+  { latin: 'animus', english: 'mind/spirit', pronunciation: 'AH-nih-mus', etymology: '"Animus" gives us animal (having a spirit), animate, and unanimous (one mind).', tier: 2 },
+  { latin: 'caput', english: 'head', pronunciation: 'KAH-put', etymology: '"Caput" gives us capital, captain, and chapter. A capital city is the "head" city.', tier: 2 },
+
+  // Tier 3 - advanced
+  { latin: 'imperium', english: 'command/empire', pronunciation: 'im-PEH-ree-um', etymology: '"Imperium" gives us empire, emperor, and imperial. It originally meant the power to command armies.', tier: 3 },
+  { latin: 'virtus', english: 'courage/virtue', pronunciation: 'WIR-toos', etymology: '"Virtus" gives us virtue and virtuoso. For Romans it meant specifically manly courage, from "vir" (man).', tier: 3 },
+  { latin: 'senatus', english: 'senate/council of elders', pronunciation: 'seh-NAH-tus', etymology: '"Senatus" comes from "senex" (old man). Senators were originally the elder statesmen of Rome.', tier: 3 },
+  { latin: 'philosophia', english: 'philosophy', pronunciation: 'fih-loh-SOH-fee-ah', etymology: 'Borrowed from Greek: "philos" (love) + "sophia" (wisdom). Romans adopted Greek philosophy wholesale.', tier: 3 },
+  { latin: 'aeternus', english: 'eternal', pronunciation: 'ai-TEHR-nus', etymology: '"Aeternus" gives us eternal and eternity. Rome called itself "Urbs Aeterna" — the Eternal City.', tier: 3 },
+  { latin: 'triumphus', english: 'triumph', pronunciation: 'tree-UM-fus', etymology: 'A "triumphus" was a grand military parade through Rome. Generals rode in a chariot while a slave whispered "remember you are mortal."', tier: 3 },
+  { latin: 'memoria', english: 'memory', pronunciation: 'meh-MOH-ree-ah', etymology: '"Memoria" gives us memory, memorial, and memorize. Romans used "memory palaces" to remember speeches.', tier: 3 },
+  { latin: 'iustitia', english: 'justice', pronunciation: 'yoo-STIH-tee-ah', etymology: '"Iustitia" gives us justice and justify. Lady Justice with her scales is the Roman goddess Iustitia.', tier: 3 },
+];
+
+const SENTENCES = [
+  { sentence: 'The ___ shines brightly today.', blank: 'sol', answer: 'sun', options: ['sun', 'moon', 'star', 'fire'] },
+  { sentence: 'The Roman ___ led his armies to victory.', blank: 'rex', answer: 'king', options: ['king', 'soldier', 'senator', 'priest'] },
+  { sentence: 'After years of ___, the empire found ___.', blank: 'bellum...pax', answer: 'war...peace', options: ['war...peace', 'love...hate', 'fire...water', 'day...night'] },
+  { sentence: 'The ___ sailed across the Mediterranean.', blank: 'navis', answer: 'ship', options: ['ship', 'army', 'road', 'bird'] },
+  { sentence: 'Fresh ___ flowed through the aqueduct.', blank: 'aqua', answer: 'water', options: ['water', 'wine', 'blood', 'light'] },
+  { sentence: 'The gladiator drew his ___ in the arena.', blank: 'gladius', answer: 'sword', options: ['sword', 'shield', 'bow', 'spear'] },
+  { sentence: 'By ___, the ___ filled the sky.', blank: 'nox...luna', answer: 'night...moon', options: ['night...moon', 'day...sun', 'dawn...star', 'dusk...fire'] },
+  { sentence: 'The ___ debated the new ___.', blank: 'senatus...lex', answer: 'senate...law', options: ['senate...law', 'king...war', 'army...road', 'priest...book'] },
+  { sentence: 'Rome was a great ___ of many people.', blank: 'urbs', answer: 'city', options: ['city', 'war', 'road', 'book'] },
+  { sentence: 'The scholar spent his ___ reading every ___.', blank: 'vita...liber', answer: 'life...book', options: ['life...book', 'time...law', 'night...letter', 'day...word'] },
+  { sentence: 'She spoke with a powerful ___.', blank: 'vox', answer: 'voice', options: ['voice', 'sword', 'light', 'mind'] },
+  { sentence: 'The ___ of the empire stretched across all the ___.', blank: 'imperium...terra', answer: 'command...land', options: ['command...land', 'road...water', 'law...sky', 'war...sea'] },
+];
+
+const ROOTS = [
+  { root: 'aqua-', meaning: 'water', examples: ['aquarium', 'aquatic', 'aqueduct', 'aquamarine'], question: 'What do aquarium, aquatic, and aqueduct have in common?', answer: 'water', options: ['water', 'air', 'stone', 'glass'], etymology: 'The Latin root "aqua" appears in over 30 English words. An aqueduct is literally a "water channel."' },
+  { root: 'terra-', meaning: 'earth/land', examples: ['terrain', 'territory', 'terrace', 'subterranean'], question: 'What root meaning connects terrain, territory, and terrace?', answer: 'earth/land', options: ['earth/land', 'building', 'height', 'travel'], etymology: 'Subterranean means "under the earth." A terracotta pot is literally "cooked earth."' },
+  { root: 'sol-', meaning: 'sun', examples: ['solar', 'solstice', 'parasol', 'solarium'], question: 'Solar, solstice, and parasol all relate to the...', answer: 'sun', options: ['sun', 'moon', 'earth', 'sky'], etymology: 'A parasol literally means "against the sun." Solstice means "sun stands still."' },
+  { root: 'luc-/lux-', meaning: 'light', examples: ['lucid', 'translucent', 'elucidate', 'Lucifer'], question: 'Lucid, translucent, and elucidate share a root meaning...', answer: 'light', options: ['light', 'clear', 'glass', 'truth'], etymology: 'Even "Lucifer" means "light-bearer." To elucidate is to "bring to light."' },
+  { root: 'mort-', meaning: 'death', examples: ['mortal', 'mortgage', 'mortician', 'immortal'], question: 'What connects mortal, mortgage, and mortician?', answer: 'death', options: ['death', 'money', 'house', 'legal'], etymology: 'A mortgage is literally a "death pledge" — the deal dies when paid off or foreclosed.' },
+  { root: 'vit-/viv-', meaning: 'life', examples: ['vital', 'vitamin', 'vivid', 'survive'], question: 'Vital, vivid, and survive all come from the root for...', answer: 'life', options: ['life', 'strength', 'color', 'health'], etymology: '"Survive" is literally "super-vivere" — to live beyond. Vitamins are "life-amines."' },
+  { root: 'scrib-/script-', meaning: 'write', examples: ['scribe', 'scripture', 'prescribe', 'manuscript'], question: 'Scribe, scripture, and manuscript share the root for...', answer: 'write', options: ['write', 'read', 'speak', 'carve'], etymology: 'A manuscript is "written by hand" (manu + scriptus). To prescribe is to "write before."' },
+  { root: 'port-', meaning: 'carry', examples: ['transport', 'portable', 'export', 'passport'], question: 'Transport, portable, and export all contain the root for...', answer: 'carry', options: ['carry', 'door', 'travel', 'trade'], etymology: 'Transport = carry across. Export = carry out. A passport "carries" you through a port.' },
+  { root: 'dict-', meaning: 'say/speak', examples: ['dictate', 'dictionary', 'predict', 'verdict'], question: 'Dictate, predict, and verdict share the root meaning...', answer: 'say/speak', options: ['say/speak', 'write', 'judge', 'command'], etymology: 'A verdict is a "true saying" (vere + dictum). To predict is to "say before."' },
+  { root: 'rupt-', meaning: 'break', examples: ['rupture', 'interrupt', 'corrupt', 'erupt'], question: 'Rupture, interrupt, and erupt share the root for...', answer: 'break', options: ['break', 'explode', 'force', 'noise'], etymology: 'To interrupt is to "break between." Corrupt means "thoroughly broken." Erupt = break out.' },
+];
+
+const PHRASES = [
+  { latin: 'Carpe diem', english: 'Seize the day', pronunciation: 'KAR-peh DEE-em', etymology: 'From the poet Horace. He actually wrote "carpe diem, quam minimum credula postero" — seize the day, trusting as little as possible in tomorrow.' },
+  { latin: 'Veni, vidi, vici', english: 'I came, I saw, I conquered', pronunciation: 'WEH-nee WEE-dee WEE-kee', etymology: 'Julius Caesar reportedly wrote this in a letter to the Roman Senate after a quick victory in 47 BC. The alliteration was intentional — Caesar was also a brilliant writer.' },
+  { latin: 'E pluribus unum', english: 'Out of many, one', pronunciation: 'EH PLOOR-ih-bus OO-num', etymology: 'The motto of the United States, found on every coin. Originally from a poem about making a salad — blending many ingredients into one dish!' },
+  { latin: 'Cogito, ergo sum', english: 'I think, therefore I am', pronunciation: 'KOH-gih-toh EHR-goh SOOM', etymology: 'Descartes wrote this in 1637. Though he wrote in Latin, Descartes was French — Latin was the language of philosophy across Europe for centuries.' },
+  { latin: 'Alea iacta est', english: 'The die is cast', pronunciation: 'AH-leh-ah YAK-tah EST', etymology: 'Caesar said this when crossing the Rubicon river with his army in 49 BC — an act of war against Rome. There was no going back.' },
+  { latin: 'Tempus fugit', english: 'Time flies', pronunciation: 'TEM-pus FOO-git', etymology: 'From Virgil\'s Georgics. The full line is "sed fugit interea, fugit irreparabile tempus" — but meanwhile it flees, time flees irretrievably.' },
+  { latin: 'Memento mori', english: 'Remember you will die', pronunciation: 'meh-MEN-toh MOH-ree', etymology: 'During Roman triumphs, a slave stood behind the victorious general whispering this reminder. Not morbid — a call to live fully.' },
+  { latin: 'Ad astra per aspera', english: 'To the stars through difficulties', pronunciation: 'AHD AHS-trah PEHR AHS-peh-rah', etymology: 'The motto of Kansas and NASA\'s unofficial motto. Captures the Roman belief that glory requires struggle.' },
+  { latin: 'Fortis fortuna adiuvat', english: 'Fortune favors the brave', pronunciation: 'FOR-tis for-TOO-nah ah-dee-OO-wat', etymology: 'From the playwright Terence. The Romans deeply believed in this — courage was the highest virtue (virtus) a citizen could show.' },
+  { latin: 'Sic semper tyrannis', english: 'Thus always to tyrants', pronunciation: 'SEEK SEM-pehr tih-RAH-nis', etymology: 'The motto of Virginia. Attributed to Brutus at Caesar\'s assassination, though this is likely legend.' },
+  { latin: 'In vino veritas', english: 'In wine there is truth', pronunciation: 'IN WEE-noh WEH-rih-tahs', etymology: 'Originally Greek (Pliny the Elder wrote about it). Romans believed wine removed social masks and revealed true character.' },
+  { latin: 'Dulce et decorum est pro patria mori', english: 'It is sweet and proper to die for one\'s country', pronunciation: 'DUL-keh et deh-KOH-rum est proh PAH-tree-ah MOH-ree', etymology: 'From Horace. The poet Wilfred Owen called this "the old lie" in his famous WWI poem about the horrors of war.' },
+];
+
+// === HELPER FUNCTIONS ===
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function getAvailableTier() {
+  if (level >= 7) return 3;
+  if (level >= 4) return 2;
+  return 1;
+}
+
+function getLevelInfo() {
+  let current = LEVELS[0];
+  let next = LEVELS[1];
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (xp >= LEVELS[i].xp) {
+      current = LEVELS[i];
+      next = LEVELS[i + 1] || null;
+      level = i + 1;
+      break;
+    }
+  }
+  return { current, next };
+}
+
+// === IMAGE PREFETCH ===
+async function fetchImage(prompt) {
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseModalities: ['IMAGE'] }
+        })
+      }
+    );
+    const json = await res.json();
+    const parts = json?.candidates?.[0]?.content?.parts || [];
+    const imgPart = parts.find(p => p.inlineData);
+    if (imgPart) {
+      return `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
+    }
+  } catch (e) {
+    console.warn('Image fetch failed:', e);
+  }
+  return null;
+}
+
+function showImage(src) {
+  const box = document.getElementById('aiImageBox');
+  const img = document.getElementById('aiImage');
+  const loading = document.getElementById('aiImageLoading');
+  if (src) {
+    img.src = src;
+    img.style.display = 'block';
+    loading.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    loading.style.display = 'flex';
+  }
+  box.classList.add('show');
+}
+
+function hideImage() {
+  document.getElementById('aiImageBox').classList.remove('show');
+}
+
+// Prefetch image for current word
+function prefetchForWord(word, meaning) {
+  prefetchedImage = null;
+  const prompt = `Create a simple, iconic illustration representing the concept "${meaning}" as the ancient Romans would have understood it. Style: clean, colorful, cartoon, like a vocabulary flashcard for kids. No text or labels in the image. Show the concept clearly with Roman/ancient visual style.`;
+  fetchImage(prompt).then(src => {
+    prefetchedImage = src;
+  });
+}
+
+// === QUESTION GENERATORS ===
+function generateVocabQuestion() {
+  const maxTier = getAvailableTier();
+  const pool = VOCAB.filter(w => w.tier <= maxTier);
+
+  // Weight toward words seen less or gotten wrong
+  const weighted = pool.map(w => {
+    const hist = wordHistory[w.latin] || { seen: 0, correct: 0 };
+    const weight = hist.seen === 0 ? 3 : (hist.correct / hist.seen < 0.5 ? 2 : 1);
+    return { word: w, weight };
+  });
+
+  // Weighted random pick
+  const totalWeight = weighted.reduce((s, w) => s + w.weight, 0);
+  let r = Math.random() * totalWeight;
+  let chosen = weighted[0].word;
+  for (const w of weighted) {
+    r -= w.weight;
+    if (r <= 0) { chosen = w; break; }
+  }
+  if (chosen.word) chosen = chosen.word;
+
+  // Generate wrong answers from same tier range
+  const wrongs = shuffle(pool.filter(w => w.latin !== chosen.latin))
+    .slice(0, 3)
+    .map(w => w.english);
+
+  const options = shuffle([chosen.english, ...wrongs]);
+
+  // Randomly flip direction (Latin→English or English→Latin)
+  const reverse = Math.random() > 0.5 && streak > 2;
+
+  prefetchForWord(chosen.latin, chosen.english);
+
+  return {
+    type: 'vocab',
+    word: chosen,
+    reverse,
+    options: reverse
+      ? shuffle([chosen.latin, ...shuffle(pool.filter(w => w.latin !== chosen.latin)).slice(0, 3).map(w => w.latin)])
+      : options,
+    correctAnswer: reverse ? chosen.latin : chosen.english,
+  };
+}
+
+function generateSentenceQuestion() {
+  const q = pickRandom(SENTENCES);
+  return {
+    type: 'sentence',
+    sentence: q,
+    options: shuffle(q.options),
+    correctAnswer: q.answer,
+  };
+}
+
+function generateRootQuestion() {
+  const q = pickRandom(ROOTS);
+  return {
+    type: 'roots',
+    root: q,
+    options: shuffle(q.options),
+    correctAnswer: q.answer,
+  };
+}
+
+function generatePhraseQuestion() {
+  const phrase = pickRandom(PHRASES);
+  const wrongs = shuffle(PHRASES.filter(p => p.latin !== phrase.latin))
+    .slice(0, 3)
+    .map(p => p.english);
+  const options = shuffle([phrase.english, ...wrongs]);
+
+  return {
+    type: 'phrases',
+    phrase,
+    options,
+    correctAnswer: phrase.english,
+  };
+}
+
+// === DISPLAY ===
+function updateStats() {
+  const info = getLevelInfo();
+  document.getElementById('xpDisplay').textContent = `XP: ${xp}`;
+  document.getElementById('streakDisplay').textContent = `Streak: ${streak}`;
+  document.getElementById('levelDisplay').textContent = `Level ${level}: ${info.current.name}`;
+  document.getElementById('levelName').textContent = info.current.name;
+
+  if (info.next) {
+    const progress = ((xp - info.current.xp) / (info.next.xp - info.current.xp)) * 100;
+    document.getElementById('levelBar').style.width = `${Math.min(100, progress)}%`;
+    document.getElementById('xpProgress').textContent = `${xp - info.current.xp} / ${info.next.xp - info.current.xp} XP`;
+  } else {
+    document.getElementById('levelBar').style.width = '100%';
+    document.getElementById('xpProgress').textContent = 'MAX';
+  }
+
+  updateLearnedWords();
+}
+
+function updateLearnedWords() {
+  const container = document.getElementById('learnedWords');
+  container.innerHTML = '';
+  const entries = Object.entries(wordHistory).sort((a, b) => b[1].seen - a[1].seen);
+  entries.forEach(([word, data]) => {
+    const tag = document.createElement('span');
+    tag.className = 'learned-tag' + (data.correct >= 3 ? ' mastered' : '');
+    tag.textContent = word;
+    tag.title = `${data.correct}/${data.seen} correct`;
+    container.appendChild(tag);
+  });
+}
+
+function displayQuestion() {
+  answered = false;
+  hideImage();
+  document.getElementById('feedbackText').textContent = '';
+  document.getElementById('etymology').textContent = '';
+  document.getElementById('nextBtn').classList.remove('show');
+  document.getElementById('sentenceContext').textContent = '';
+  document.getElementById('hintText').textContent = '';
+
+  let q;
+  switch (currentMode) {
+    case 'vocab': q = generateVocabQuestion(); break;
+    case 'sentence': q = generateSentenceQuestion(); break;
+    case 'roots': q = generateRootQuestion(); break;
+    case 'phrases': q = generatePhraseQuestion(); break;
+  }
+  currentQuestion = q;
+
+  const typeEl = document.getElementById('questionType');
+  const wordEl = document.getElementById('latinWord');
+  const pronEl = document.getElementById('pronunciation');
+
+  switch (q.type) {
+    case 'vocab':
+      if (q.reverse) {
+        typeEl.textContent = 'WHAT IS THE LATIN WORD FOR';
+        wordEl.textContent = q.word.english;
+        pronEl.textContent = '';
+      } else {
+        typeEl.textContent = 'TRANSLATE THIS WORD';
+        wordEl.textContent = q.word.latin;
+        pronEl.textContent = q.word.pronunciation;
+      }
+      break;
+    case 'sentence':
+      typeEl.textContent = 'FILL IN THE BLANK';
+      wordEl.textContent = q.sentence.blank;
+      pronEl.textContent = '';
+      document.getElementById('sentenceContext').innerHTML =
+        q.sentence.sentence.replace('___', '<span class="blank">___</span>');
+      break;
+    case 'roots':
+      typeEl.textContent = 'IDENTIFY THE ROOT MEANING';
+      wordEl.textContent = q.root.root;
+      pronEl.textContent = '';
+      document.getElementById('hintText').textContent = q.root.question;
+      document.getElementById('sentenceContext').textContent =
+        'Examples: ' + q.root.examples.join(', ');
+      break;
+    case 'phrases':
+      typeEl.textContent = 'TRANSLATE THIS FAMOUS PHRASE';
+      wordEl.textContent = q.phrase.latin;
+      pronEl.textContent = q.phrase.pronunciation;
+      break;
+  }
+
+  // Render options
+  const optionsEl = document.getElementById('options');
+  optionsEl.innerHTML = '';
+  q.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.textContent = opt;
+    btn.onclick = () => handleAnswer(opt, btn);
+    optionsEl.appendChild(btn);
+  });
+}
+
+function handleAnswer(selected, btn) {
+  if (answered) return;
+  answered = true;
+
+  const q = currentQuestion;
+  const correct = selected === q.correctAnswer;
+
+  // Lock all buttons
+  document.querySelectorAll('.option-btn').forEach(b => {
+    b.classList.add('locked');
+    if (b.textContent === q.correctAnswer) b.classList.add('correct');
+  });
+
+  if (!correct) btn.classList.add('wrong');
+
+  // Update scores
+  if (correct) {
+    const bonus = streak >= 5 ? 15 : streak >= 3 ? 12 : 10;
+    xp += bonus;
+    streak++;
+    document.getElementById('feedbackText').textContent =
+      streak > 1 ? `Correct! +${bonus} XP (${streak} streak!)` : `Correct! +${bonus} XP`;
+    document.getElementById('feedbackText').className = 'feedback-text correct';
+  } else {
+    streak = 0;
+    document.getElementById('feedbackText').textContent = `Not quite. The answer is: ${q.correctAnswer}`;
+    document.getElementById('feedbackText').className = 'feedback-text wrong';
+  }
+
+  // Track word history
+  let wordKey = null;
+  if (q.type === 'vocab') wordKey = q.word.latin;
+  else if (q.type === 'sentence') wordKey = q.sentence.blank;
+  else if (q.type === 'roots') wordKey = q.root.root;
+  else if (q.type === 'phrases') wordKey = q.phrase.latin;
+
+  if (wordKey) {
+    if (!wordHistory[wordKey]) wordHistory[wordKey] = { seen: 0, correct: 0 };
+    wordHistory[wordKey].seen++;
+    if (correct) wordHistory[wordKey].correct++;
+  }
+
+  // Show etymology
+  let ety = '';
+  if (q.type === 'vocab') ety = q.word.etymology;
+  else if (q.type === 'roots') ety = q.root.etymology;
+  else if (q.type === 'phrases') ety = q.phrase.etymology;
+  document.getElementById('etymology').textContent = ety;
+
+  // Show image if available
+  if (prefetchedImage) {
+    showImage(prefetchedImage);
+  } else if (q.type === 'vocab') {
+    // Show loading, wait for it
+    showImage(null);
+    const checkImg = setInterval(() => {
+      if (prefetchedImage) {
+        showImage(prefetchedImage);
+        clearInterval(checkImg);
+      }
+    }, 500);
+    setTimeout(() => clearInterval(checkImg), 10000);
+  }
+
+  updateStats();
+  document.getElementById('nextBtn').classList.add('show');
+
+  // Save progress
+  saveProgress();
+}
+
+function nextQuestion() {
+  prefetchedImage = null;
+  displayQuestion();
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+  nextQuestion();
+}
+
+// === PERSISTENCE ===
+function saveProgress() {
+  const data = { xp, streak, wordHistory };
+  localStorage.setItem('latinQuestSave', JSON.stringify(data));
+}
+
+function loadProgress() {
+  try {
+    const data = JSON.parse(localStorage.getItem('latinQuestSave'));
+    if (data) {
+      xp = data.xp || 0;
+      streak = data.streak || 0;
+      wordHistory = data.wordHistory || {};
+    }
+  } catch (e) {}
+}
+
+// === 8-BIT AUDIO ===
+let audioCtx;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playCorrectSound() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+  [523, 659, 784].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(freq, t + i * 0.08);
+    gain.gain.setValueAtTime(0.08, t + i * 0.08);
+    gain.gain.linearRampToValueAtTime(0, t + i * 0.08 + 0.15);
+    osc.start(t + i * 0.08);
+    osc.stop(t + i * 0.08 + 0.15);
+  });
+}
+
+function playWrongSound() {
+  const ctx = ensureAudio();
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'square';
+  osc.frequency.setValueAtTime(200, t);
+  osc.frequency.linearRampToValueAtTime(100, t + 0.3);
+  gain.gain.setValueAtTime(0.1, t);
+  gain.gain.linearRampToValueAtTime(0, t + 0.3);
+  osc.start(t);
+  osc.stop(t + 0.3);
+}
+
+// Hook sounds into answer handler
+const _origHandleAnswer = handleAnswer;
+handleAnswer = function(selected, btn) {
+  const correct = selected === currentQuestion.correctAnswer;
+  if (!answered) {
+    if (correct) playCorrectSound();
+    else playWrongSound();
+  }
+  _origHandleAnswer(selected, btn);
+};
+
+// === INIT ===
+loadProgress();
+updateStats();
+displayQuestion();
+</script>
+
+</body>
+</html>
