@@ -3,6 +3,7 @@ import PostList from './components/PostList'
 import PostView from './components/PostView'
 import NewPost from './components/NewPost'
 import EditPost from './components/EditPost'
+import PantryScanner from './components/PantryScanner'
 // import './styles/subnav.css'
 
 const SITE_TITLE = 'brianflounders.com'
@@ -27,6 +28,7 @@ type Route =
   | { name: 'new' }
   | { name: 'edit'; id: string }
   | { name: 'tag'; slug: string }
+  | { name: 'pantry' }
 
 function parseHash(): Route {
   const h = (location.hash || '').replace(/^#/, '')
@@ -40,6 +42,8 @@ function parseHash(): Route {
   // /edit/<id>
   const mEdit = h.match(/^\/edit\/(.+)$/)
   if (mEdit) return { name: 'edit', id: decodeURIComponent(mEdit[1]) }
+  // /pantry
+  if (h === '/pantry') return { name: 'pantry' }
   // /tag/<slug>
   const mTag = h.match(/^\/tag\/([^\/]+)$/)
   if (mTag) return { name: 'tag', slug: decodeURIComponent(mTag[1]) }
@@ -116,6 +120,11 @@ export default function App() {
       sendGA?.('/edit', document.title)
       return
     }
+    if (route.name === 'pantry') {
+      document.title = `Pantry Scanner — ${SITE_TITLE}`
+      sendGA?.('/pantry', document.title)
+      return
+    }
   }, [route])
 
   return (
@@ -142,6 +151,7 @@ export default function App() {
             <a className="pill" href="#/tag/create" aria-current={route.name === 'tag' && route.slug === 'create' ? 'page' : undefined}>CREATE</a>
             <a className="pill" href="#/tag/cook" aria-current={route.name === 'tag' && route.slug === 'cook' ? 'page' : undefined}>COOK</a>
             <a className="pill" href="#/tag/briantries" aria-current={route.name === 'tag' && route.slug === 'briantries' ? 'page' : undefined}>TRY</a>
+            <a className="pill pill--pantry" href="#/pantry" aria-current={route.name === 'pantry' ? 'page' : undefined}>PANTRY</a>
             <a className="pill pill--junto" href="/junto/">JUNTO</a>
           </nav>
         </div>
@@ -155,6 +165,7 @@ export default function App() {
           {route.name === 'post' && <PostView id={route.id} />}
           {route.name === 'new' && <NewPost />}
           {route.name === 'edit' && <EditPost id={route.id} />}
+          {route.name === 'pantry' && <PantryScanner />}
         </div>
       </main>
 

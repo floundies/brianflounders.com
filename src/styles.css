@@ -1026,3 +1026,359 @@ main.page > .wrap {
   opacity: 0.6;
   font-style: italic;
 }
+
+/* ===================================================================
+   PANTRY SCANNER
+   =================================================================== */
+
+.pantry {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.pantry__header {
+  margin-bottom: 28px;
+}
+
+.pantry__title {
+  font-family: var(--font-heading);
+  font-size: clamp(28px, 5vw, 42px);
+  margin: 12px 0 8px;
+}
+
+.pantry__subtitle {
+  color: var(--muted);
+  font-size: 16px;
+  margin: 0;
+}
+
+.pantry__error {
+  background: rgba(200, 60, 60, .12);
+  color: #e06060;
+  border: 1px solid rgba(200, 60, 60, .25);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+/* Capture step */
+.pantry__start {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.pantry__dropzone {
+  width: 100%;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s ease;
+  color: var(--muted);
+}
+
+.pantry__dropzone:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.pantry__dropzone-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.pantry__dropzone p {
+  margin: 4px 0;
+  font-weight: 600;
+}
+
+.pantry__dropzone-hint {
+  font-size: 13px;
+  font-weight: 400 !important;
+  opacity: .7;
+}
+
+.pantry__camera-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Camera */
+.pantry__camera {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.pantry__video {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  background: #000;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.pantry__shutter {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Preview */
+.pantry__preview {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pantry__preview-img {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  max-height: 400px;
+  object-fit: cover;
+}
+
+.pantry__preview-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.pantry__preview-actions .btn {
+  flex: 1;
+  justify-content: center;
+}
+
+/* Primary button style */
+.pantry__btn--primary {
+  background: var(--accent) !important;
+  color: #1a1814 !important;
+  border-color: var(--accent) !important;
+  font-weight: 700;
+}
+
+.pantry__btn--primary:hover {
+  background: var(--accent-strong) !important;
+  border-color: var(--accent-strong) !important;
+}
+
+.pantry__btn--primary:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+@media (prefers-color-scheme: light) {
+  .pantry__btn--primary {
+    color: #fff !important;
+  }
+}
+
+/* Ingredients step */
+.pantry__ingredients {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pantry__thumb {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+.pantry__label {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--fg);
+}
+
+.pantry__textarea {
+  width: 100%;
+  padding: 14px 16px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.6;
+  background: var(--card);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+  transition: border-color .2s ease;
+}
+
+.pantry__textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.pantry__ingredient-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.pantry__ingredient-actions .btn {
+  flex: 1;
+  justify-content: center;
+}
+
+/* Recipes step */
+.pantry__recipes-header {
+  margin-bottom: 24px;
+}
+
+.pantry__recipes-header h2 {
+  font-family: var(--font-heading);
+  font-size: clamp(24px, 4vw, 34px);
+  margin: 0 0 8px;
+}
+
+.pantry__recipes-from {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.pantry__recipe-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pantry__recipe {
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.pantry__recipe-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  cursor: pointer;
+  list-style: none;
+  transition: background .15s ease;
+}
+
+.pantry__recipe-summary::-webkit-details-marker { display: none; }
+.pantry__recipe-summary::marker { content: ''; }
+
+.pantry__recipe-summary:hover {
+  background: var(--accent-soft);
+}
+
+.pantry__recipe-name {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.pantry__recipe-time {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  margin-left: 16px;
+}
+
+.pantry__recipe[open] .pantry__recipe-summary {
+  border-bottom: 1px solid var(--border);
+}
+
+.pantry__recipe-desc,
+.pantry__recipe h4,
+.pantry__recipe ul,
+.pantry__recipe ol {
+  padding: 0 24px;
+}
+
+.pantry__recipe-desc {
+  color: var(--muted);
+  font-style: italic;
+  font-size: 15px;
+  margin: 16px 0 8px;
+}
+
+.pantry__recipe h4 {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  margin: 16px 0 8px;
+  color: var(--accent);
+}
+
+.pantry__recipe-ingredients {
+  margin: 0 0 8px;
+  padding-left: 44px !important;
+}
+
+.pantry__recipe-ingredients li {
+  font-size: 15px;
+  margin: 4px 0;
+  color: var(--fg);
+}
+
+.pantry__recipe-steps {
+  margin: 0 0 20px;
+  padding-left: 44px !important;
+}
+
+.pantry__recipe-steps li {
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 8px 0;
+  color: var(--fg);
+}
+
+.pantry__recipe-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.pantry__recipe-actions .btn {
+  flex: 1;
+  justify-content: center;
+}
+
+/* Pantry nav pill */
+.subnav .pill--pantry {
+  background: rgba(76, 140, 76, 0.2);
+  color: #7dbf7d;
+  border-color: rgba(76, 140, 76, 0.35);
+}
+.subnav .pill--pantry:hover {
+  background: rgba(76, 140, 76, 0.45);
+  color: #fff;
+  border-color: rgba(76, 140, 76, 0.55);
+}
+
+@media (prefers-color-scheme: light) {
+  .subnav .pill--pantry {
+    background: rgba(34, 100, 34, 0.08);
+    color: #2d7a2d;
+    border-color: rgba(34, 100, 34, 0.25);
+  }
+  .subnav .pill--pantry:hover {
+    background: #2d7a2d;
+    color: #fff;
+    border-color: #2d7a2d;
+  }
+}
+
+@media (max-width: 680px) {
+  .pantry__preview-actions,
+  .pantry__ingredient-actions,
+  .pantry__recipe-actions {
+    flex-direction: column;
+  }
+  .pantry__recipe-summary { padding: 16px 18px; }
+  .pantry__recipe-desc,
+  .pantry__recipe h4,
+  .pantry__recipe ul,
+  .pantry__recipe ol { padding: 0 18px; }
+  .pantry__recipe-ingredients,
+  .pantry__recipe-steps { padding-left: 36px !important; }
+}
