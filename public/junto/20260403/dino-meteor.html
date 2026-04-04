@@ -194,22 +194,6 @@ function ensureAudio() {
   if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
-// Unlock audio on first user interaction — iOS requires this from touchend or click
-function unlockAudioOnce() {
-  document.removeEventListener('touchend', unlockAudioOnce);
-  document.removeEventListener('click', unlockAudioOnce);
-  var ctx = ensureAudio();
-  // Play a silent oscillator to fully unlock (more reliable than buffer on Chrome iOS)
-  var osc = ctx.createOscillator();
-  var gain = ctx.createGain();
-  gain.gain.value = 0;
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start(0);
-  osc.stop(ctx.currentTime + 0.001);
-}
-document.addEventListener('touchend', unlockAudioOnce);
-document.addEventListener('click', unlockAudioOnce);
 
 // === 8-bit NES Background Music ===
 let bgMusicPlaying = false;
@@ -1243,11 +1227,18 @@ if (isMobile) {
 }
 
 function startGame() {
-  var ctx = ensureAudio();
-  // Ensure context is running, then start
-  ctx.resume().then(function() {
-    init();
-  });
+  // MUST be synchronous — iOS kills audio permission in async callbacks
+  ensureAudio();
+  // Play a real (silent) oscillator RIGHT NOW in the gesture to unlock
+  var osc = audioCtx.createOscillator();
+  var g = audioCtx.createGain();
+  g.gain.value = 0.001;
+  osc.connect(g);
+  g.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.01);
+  // Now init synchronously — startBgMusic will schedule in the same call stack
+  init();
 }
 document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('restartBtn').addEventListener('click', startGame);
