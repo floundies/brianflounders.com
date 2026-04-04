@@ -543,7 +543,7 @@ function spawnExplosion(x, y, color, count) {
 
 function spawnFlyer() {
   const fromLeft = Math.random() > 0.5;
-  const baseY = 200 + Math.random() * 200;
+  const baseY = GROUND_Y * 0.4 + Math.random() * (GROUND_Y * 0.45);
   const speed = 2 + Math.random() * 2;
   const bonus = [50, 100, 150, 200][Math.floor(Math.random() * 4)];
   flyers.push({
