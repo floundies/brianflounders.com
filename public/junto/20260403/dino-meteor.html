@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Dino Meteor Escape!</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -11,9 +11,12 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    height: 100dvh;
     font-family: 'Courier New', monospace;
     overflow: hidden;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
   }
   #gameContainer {
     position: relative;
@@ -92,6 +95,16 @@
     display: none;
   }
   #factImage.loaded { display: block; }
+  @media (max-width: 600px) {
+    h1 { font-size: 24px; }
+    h2 { font-size: 20px; }
+    p { font-size: 13px; }
+    .btn { padding: 10px 28px; font-size: 15px; }
+    #score { font-size: 14px; top: 8px; left: 10px; }
+    #highScore { font-size: 12px; top: 8px; right: 10px; }
+    #dinoFact { max-width: 90%; padding: 10px 12px; font-size: 13px; }
+    #factImage { max-height: 150px; }
+  }
   #factSpinner {
     width: 100%;
     height: 120px;
@@ -129,7 +142,7 @@
   <div id="ui" class="active">
     <div id="startScreen" class="show">
       <h1>DINO METEOR ESCAPE</h1>
-      <p>Arrow keys / WASD to move</p>
+      <p>Arrow keys / WASD to move &mdash; or tap left/right to run, tap to jump</p>
       <p>Dodge meteors! High-five pterodactyls for bonus points!</p>
       <button class="btn" id="startBtn">START</button>
     </div>
@@ -152,7 +165,20 @@
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
-const W = 800, H = 500;
+// Responsive canvas sizing
+var W, H;
+function sizeCanvas() {
+  var maxW = Math.min(window.innerWidth - 6, 800);
+  var maxH = Math.min(window.innerHeight - 6, 500);
+  // maintain roughly 8:5 ratio but fit the screen
+  if (maxW / maxH > 1.6) maxW = Math.floor(maxH * 1.6);
+  else maxH = Math.floor(maxW / 1.6);
+  W = maxW;
+  H = maxH;
+  canvas.width = W;
+  canvas.height = H;
+}
+sizeCanvas();
 
 // === Sound system (Web Audio API) ===
 let audioCtx;
@@ -413,10 +439,8 @@ function playGameOver() {
   nGain.gain.linearRampToValueAtTime(0, t + duration);
   noise.start(t);
 }
-canvas.width = W;
-canvas.height = H;
-
-const GROUND_Y = H - 60;
+var GROUND_Y;
+function updateGround() { GROUND_Y = H - Math.max(40, H * 0.12); }
 
 // State
 let dino, meteors, particles, stars, flyers, floatingTexts, score, highScore, gameRunning, spawnTimer, flyerTimer, difficulty;
@@ -439,6 +463,8 @@ function createStars() {
 }
 
 function init() {
+  sizeCanvas();
+  updateGround();
   dino = {
     x: W / 2,
     y: GROUND_Y,
@@ -1122,7 +1148,7 @@ function gameLoop(timestamp) {
   requestAnimationFrame(gameLoop);
 }
 
-// Input
+// Input — keyboard
 document.addEventListener('keydown', e => {
   keys[e.code] = true;
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
@@ -1131,11 +1157,61 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('keyup', e => { keys[e.code] = false; });
 
+// Input — touch controls
+// Left half of screen = move left, right half = move right
+// Tap anywhere = jump (double tap = double jump)
+var touchLeftActive = false;
+var touchRightActive = false;
+var touchIds = {};
+
+canvas.addEventListener('touchstart', function(e) {
+  e.preventDefault();
+  for (var i = 0; i < e.changedTouches.length; i++) {
+    var t = e.changedTouches[i];
+    var rect = canvas.getBoundingClientRect();
+    var x = t.clientX - rect.left;
+    var midX = rect.width / 2;
+    touchIds[t.identifier] = x < midX ? 'left' : 'right';
+    if (x < midX) { touchLeftActive = true; keys['ArrowLeft'] = true; }
+    else { touchRightActive = true; keys['ArrowRight'] = true; }
+    // every touch also triggers jump
+    keys['Space'] = true;
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', function(e) {
+  for (var i = 0; i < e.changedTouches.length; i++) {
+    var id = e.changedTouches[i].identifier;
+    var side = touchIds[id];
+    delete touchIds[id];
+    // check if any remaining touches are on that side
+    var hasLeft = false, hasRight = false;
+    for (var k in touchIds) {
+      if (touchIds[k] === 'left') hasLeft = true;
+      if (touchIds[k] === 'right') hasRight = true;
+    }
+    if (!hasLeft) { touchLeftActive = false; keys['ArrowLeft'] = false; }
+    if (!hasRight) { touchRightActive = false; keys['ArrowRight'] = false; }
+    keys['Space'] = false;
+    if (dino) dino._jumpKeyHeld = false;
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchcancel', function(e) {
+  touchIds = {};
+  touchLeftActive = false;
+  touchRightActive = false;
+  keys['ArrowLeft'] = false;
+  keys['ArrowRight'] = false;
+  keys['Space'] = false;
+}, { passive: false });
+
 // Buttons
-document.getElementById('startBtn').addEventListener('click', () => { init(); });
-document.getElementById('restartBtn').addEventListener('click', () => { init(); });
+document.getElementById('startBtn').addEventListener('click', () => { ensureAudio(); init(); });
+document.getElementById('restartBtn').addEventListener('click', () => { ensureAudio(); init(); });
 
 // Init display
+updateGround();
 createStars();
 dino = { x: W / 2, y: GROUND_Y, w: 40, h: 50, vx: 0, vy: 0, onGround: true, frame: 0, frameTimer: 0, facing: 1 };
 meteors = [];
