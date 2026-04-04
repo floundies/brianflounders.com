@@ -279,61 +279,70 @@
     if (actx.state === 'suspended') actx.resume();
   }
 
-  // Real fart sound library — variety is the spice of life
-  const fartSounds = [
-    'short-fart.mp3',
-    'fart-bean.mp3',
-    'fart-squeak.mp3',
-    'fart-rumble.mp3',
-    'fart-rapid.mp3',
-  ].map(function(src) {
-    const a = new Audio(src);
-    a.preload = 'auto';
-    return a;
-  });
-  // big farts for the apocalypse
-  const megaFarts = [
-    'long-fart.mp3',
-    'fart-long.mp3',
-    'fart-bean.mp3',
-  ].map(function(src) {
-    const a = new Audio(src);
-    a.preload = 'auto';
-    return a;
-  });
-
-  let lastFartIdx = -1;
-  function playFart() {
-    // pick a random sound, avoid repeating the same one twice
-    var idx;
-    do { idx = Math.floor(Math.random() * fartSounds.length); } while (idx === lastFartIdx && fartSounds.length > 1);
-    lastFartIdx = idx;
-    var snd = fartSounds[idx].cloneNode();
-    snd.volume = 1.0;
-    // vary the pitch for even more variety
-    snd.playbackRate = 0.7 + Math.random() * 0.6;
+  // Sound pool — mobile Safari won't play cloneNode() Audio without user gesture,
+  // so we pre-create a pool of Audio elements and reuse them.
+  var POOL_SIZE = 4;
+  function makePool(src) {
+    var pool = [];
+    for (var i = 0; i < POOL_SIZE; i++) {
+      var a = new Audio(src);
+      a.preload = 'auto';
+      pool.push(a);
+    }
+    pool._idx = 0;
+    return pool;
+  }
+  function poolPlay(pool, vol, rate) {
+    var snd = pool[pool._idx % pool.length];
+    pool._idx++;
+    snd.currentTime = 0;
+    snd.volume = vol || 1.0;
+    snd.playbackRate = rate || 1.0;
     snd.play().catch(function(){});
   }
 
+  // Unlock all audio on first user tap (mobile Safari requirement)
+  var audioUnlocked = false;
+  function unlockAudio() {
+    if (audioUnlocked) return;
+    audioUnlocked = true;
+    fartPools.forEach(function(pool) {
+      pool.forEach(function(a) {
+        a.play().then(function() { a.pause(); a.currentTime = 0; }).catch(function(){});
+      });
+    });
+    megaPools.forEach(function(pool) {
+      pool.forEach(function(a) {
+        a.play().then(function() { a.pause(); a.currentTime = 0; }).catch(function(){});
+      });
+    });
+  }
+
+  var fartSrcs = ['short-fart.mp3', 'fart-bean.mp3', 'fart-squeak.mp3', 'fart-rumble.mp3', 'fart-rapid.mp3'];
+  var megaSrcs = ['long-fart.mp3', 'fart-long.mp3', 'fart-bean.mp3'];
+  var fartPools = fartSrcs.map(makePool);
+  var megaPools = megaSrcs.map(makePool);
+
+  var lastFartIdx = -1;
+  function playFart() {
+    var idx;
+    do { idx = Math.floor(Math.random() * fartPools.length); } while (idx === lastFartIdx && fartPools.length > 1);
+    lastFartIdx = idx;
+    poolPlay(fartPools[idx], 1.0, 0.7 + Math.random() * 0.6);
+  }
+
   function playMegaFart() {
-    // play ALL the big farts layered on top of each other for maximum devastation
-    megaFarts.forEach(function(src, i) {
+    megaPools.forEach(function(pool, i) {
       setTimeout(function() {
-        var snd = src.cloneNode();
-        snd.volume = 1.0;
-        snd.playbackRate = 0.6 + Math.random() * 0.3;
-        snd.play().catch(function(){});
+        poolPlay(pool, 1.0, 0.6 + Math.random() * 0.3);
       }, i * 400);
     });
-    // bonus: play a couple short ones rapid-fire after a delay for the sputtering finale
     setTimeout(function() {
       for (var i = 0; i < 4; i++) {
         (function(j) {
           setTimeout(function() {
-            var snd = fartSounds[Math.floor(Math.random() * fartSounds.length)].cloneNode();
-            snd.volume = 0.8;
-            snd.playbackRate = 1.2 + Math.random() * 0.8;
-            snd.play().catch(function(){});
+            var pool = fartPools[Math.floor(Math.random() * fartPools.length)];
+            poolPlay(pool, 0.8, 1.2 + Math.random() * 0.8);
           }, j * 200);
         })(i);
       }
@@ -490,6 +499,7 @@
   // --- Buttons ---
   document.getElementById('startBtn').addEventListener('click', () => {
     ensureAudio();
+    unlockAudio();
     startScreen.classList.remove('show');
     overlay.classList.remove('active');
     init();
@@ -497,6 +507,7 @@
   });
   document.getElementById('restartBtn').addEventListener('click', () => {
     ensureAudio();
+    unlockAudio();
     gameOverScreen.classList.remove('show');
     overlay.classList.remove('active');
     init();
