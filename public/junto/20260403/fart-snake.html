@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Fart Snake</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0e08;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100dvh;
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    overflow: hidden;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .back-link {
+    position: fixed;
+    top: 14px;
+    left: 18px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: #5a6b45;
+    text-decoration: none;
+    z-index: 100;
+    letter-spacing: 0.02em;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: #8bba4a; }
+  #gameWrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  #hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px 4px 8px;
+    font-size: 11px;
+    color: #8bba4a;
+    letter-spacing: 0.06em;
+  }
+  #hud span { display: inline-flex; align-items: center; gap: 6px; }
+  .hud-label { color: #5a6b45; font-size: 9px; }
+  #timerBar {
+    width: 100%;
+    height: 6px;
+    background: #1a2212;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  #timerFill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #4a7a20, #8bba4a, #c5e84b);
+    border-radius: 3px;
+    transition: width 0.3s linear;
+  }
+  #timerFill.danger { background: linear-gradient(90deg, #7a3020, #ba4a3a, #e84b4b); }
+  canvas {
+    border: 2px solid #2a3a1a;
+    border-radius: 4px;
+    display: block;
+    background: #0d1209;
+    image-rendering: pixelated;
+  }
+  #overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    z-index: 10;
+  }
+  #overlay.active { pointer-events: all; }
+  .screen {
+    text-align: center;
+    color: #d5e8b5;
+    display: none;
+    padding: 20px;
+  }
+  .screen.show { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .screen h1 {
+    font-size: clamp(22px, 5vw, 36px);
+    color: #8bba4a;
+    text-shadow: 0 0 20px rgba(139,186,74,0.5), 0 3px 0 #2a4a10;
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+  .screen h2 {
+    font-size: clamp(16px, 4vw, 24px);
+    color: #ba7a3a;
+    text-shadow: 0 0 12px rgba(186,122,58,0.4);
+  }
+  .screen p {
+    font-size: clamp(8px, 2vw, 11px);
+    color: #7a9a5a;
+    line-height: 1.8;
+    max-width: 340px;
+  }
+  .screen .score-display {
+    font-size: clamp(28px, 6vw, 48px);
+    color: #c5e84b;
+    text-shadow: 0 0 30px rgba(197,232,75,0.6);
+    margin: 4px 0;
+  }
+  .screen .hi-score {
+    font-size: 10px;
+    color: #5a6b45;
+  }
+  .btn {
+    margin-top: 12px;
+    padding: 14px 32px;
+    font-size: clamp(11px, 2.5vw, 14px);
+    font-family: 'Press Start 2P', monospace;
+    background: linear-gradient(180deg, #5a8a2a, #3a6a15);
+    color: #d5e8b5;
+    border: 2px solid #8bba4a;
+    border-radius: 4px;
+    cursor: pointer;
+    pointer-events: all;
+    text-shadow: 0 1px 0 #1a3a05;
+    box-shadow: 0 4px 0 #1a3a05, 0 0 20px rgba(139,186,74,0.2);
+    transition: all 0.1s;
+    letter-spacing: 0.04em;
+  }
+  .btn:hover {
+    background: linear-gradient(180deg, #6a9a3a, #4a7a20);
+    box-shadow: 0 4px 0 #1a3a05, 0 0 30px rgba(139,186,74,0.4);
+  }
+  .btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #1a3a05;
+  }
+  .emoji-title { font-size: clamp(36px, 8vw, 56px); margin-bottom: 6px; filter: drop-shadow(0 0 12px rgba(139,186,74,0.4)); }
+  /* Fart apocalypse overlay */
+  #fartApocalypse {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    display: none;
+    overflow: hidden;
+  }
+  #fartApocalypse.active { display: block; }
+  #fartApocalypse .fog {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(80,120,20,0.0) 0%, rgba(60,90,10,0.95) 100%);
+    animation: fogPulse 0.6s ease-in-out infinite alternate;
+  }
+  @keyframes fogPulse {
+    from { background: radial-gradient(ellipse at center, rgba(80,120,20,0.7) 0%, rgba(40,65,5,0.97) 100%); }
+    to   { background: radial-gradient(ellipse at center, rgba(100,140,30,0.8) 0%, rgba(50,80,10,0.98) 100%); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translate(0); }
+    10% { transform: translate(-8px, 6px); }
+    20% { transform: translate(7px, -5px); }
+    30% { transform: translate(-6px, 8px); }
+    40% { transform: translate(8px, -4px); }
+    50% { transform: translate(-5px, -7px); }
+    60% { transform: translate(6px, 5px); }
+    70% { transform: translate(-7px, -3px); }
+    80% { transform: translate(4px, 7px); }
+    90% { transform: translate(-3px, -6px); }
+  }
+  .shake { animation: shake 0.15s linear infinite; }
+  .fart-emoji {
+    position: absolute;
+    font-size: 48px;
+    pointer-events: none;
+    animation: floatUp 2.5s ease-out forwards;
+    filter: drop-shadow(0 0 8px rgba(139,186,74,0.6));
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: scale(0.3) rotate(0deg); }
+    30% { opacity: 1; transform: scale(1.4) rotate(20deg); }
+    100% { opacity: 0; transform: scale(2) rotate(-15deg) translateY(-120px); }
+  }
+  #fartApocalypse .apoc-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 2;
+    font-family: 'Press Start 2P', monospace;
+  }
+  #fartApocalypse .apoc-text h1 {
+    font-size: clamp(20px, 5vw, 40px);
+    color: #c5e84b;
+    text-shadow: 0 0 40px rgba(197,232,75,0.8), 0 4px 0 #2a4a10;
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+  #fartApocalypse .apoc-text p {
+    font-size: clamp(9px, 2vw, 13px);
+    color: #a5c870;
+    margin: 6px 0;
+  }
+  #fartApocalypse .apoc-text .btn {
+    margin-top: 20px;
+  }
+  /* Mobile d-pad */
+  #dpad {
+    display: none;
+    margin-top: 12px;
+    position: relative;
+    width: 150px;
+    height: 150px;
+  }
+  .dpad-btn {
+    position: absolute;
+    width: 48px;
+    height: 48px;
+    background: rgba(139,186,74,0.12);
+    border: 1px solid rgba(139,186,74,0.3);
+    border-radius: 6px;
+    color: #8bba4a;
+    font-size: 22px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.1s;
+  }
+  .dpad-btn:active { background: rgba(139,186,74,0.35); }
+  .dpad-up    { top: 0; left: 50%; transform: translateX(-50%); }
+  .dpad-down  { bottom: 0; left: 50%; transform: translateX(-50%); }
+  .dpad-left  { top: 50%; left: 0; transform: translateY(-50%); }
+  .dpad-right { top: 50%; right: 0; transform: translateY(-50%); }
+  @media (pointer: coarse) {
+    #dpad { display: block; }
+  }
+  @media (max-height: 600px) {
+    #hud { padding: 6px 4px 4px; font-size: 9px; }
+    #timerBar { height: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back-link">&larr; JUNTO III</a>
+
+<div id="gameWrap">
+  <div id="hud">
+    <span><span class="hud-label">SCORE</span> <span id="scoreText">0</span></span>
+    <span><span class="hud-label">HI</span> <span id="hiText">0</span></span>
+    <span><span class="hud-label">TIME</span> <span id="timeText">60</span></span>
+  </div>
+  <div id="timerBar"><div id="timerFill"></div></div>
+  <canvas id="game"></canvas>
+  <div id="overlay" class="active">
+    <div id="startScreen" class="screen show">
+      <div class="emoji-title">💨🐍</div>
+      <h1>FART SNAKE</h1>
+      <p>Collect fart clouds before time runs out.<br>If the clock hits zero... you don't want to know.</p>
+      <p>Arrow keys / swipe to move</p>
+      <button class="btn" id="startBtn">LET IT RIP</button>
+    </div>
+    <div id="gameOverScreen" class="screen">
+      <h2>GAME OVER</h2>
+      <div class="score-display" id="finalScore">0</div>
+      <p id="finalMsg">You crashed!</p>
+      <p class="hi-score" id="finalHi"></p>
+      <button class="btn" id="restartBtn">AGAIN</button>
+    </div>
+  </div>
+  <div id="dpad">
+    <div class="dpad-btn dpad-up" data-dir="up">▲</div>
+    <div class="dpad-btn dpad-down" data-dir="down">▼</div>
+    <div class="dpad-btn dpad-left" data-dir="left">◀</div>
+    <div class="dpad-btn dpad-right" data-dir="right">▶</div>
+  </div>
+</div>
+
+<!-- Fart apocalypse fullscreen overlay -->
+<div id="fartApocalypse">
+  <div class="fog"></div>
+  <div class="apoc-text">
+    <h1>THE FART<br>CONSUMED ALL</h1>
+    <p>💨 Too slow... the gas has won. 💨</p>
+    <p id="apocScore"></p>
+    <p class="hi-score" id="apocHi"></p>
+    <button class="btn" id="apocBtn">CLEAR THE AIR</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  // --- Audio ---
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  let actx;
+  function ensureAudio() { if (!actx) actx = new AudioCtx(); }
+
+  function playFart() {
+    ensureAudio();
+    const dur = 0.12 + Math.random() * 0.1;
+    const osc = actx.createOscillator();
+    const gain = actx.createGain();
+    const now = actx.currentTime;
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(120 + Math.random() * 80, now);
+    osc.frequency.exponentialRampToValueAtTime(60 + Math.random() * 40, now + dur);
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    osc.connect(gain).connect(actx.destination);
+    osc.start(now);
+    osc.stop(now + dur);
+    // noise burst
+    const bufLen = actx.sampleRate * dur;
+    const buf = actx.createBuffer(1, bufLen, actx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1) * 0.15;
+    const noise = actx.createBufferSource();
+    const ng = actx.createGain();
+    noise.buffer = buf;
+    ng.gain.setValueAtTime(0.2, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    noise.connect(ng).connect(actx.destination);
+    noise.start(now);
+  }
+
+  function playMegaFart() {
+    ensureAudio();
+    const dur = 2.5;
+    const now = actx.currentTime;
+    // deep rumble
+    for (let i = 0; i < 4; i++) {
+      const osc = actx.createOscillator();
+      const g = actx.createGain();
+      osc.type = i % 2 === 0 ? 'sawtooth' : 'square';
+      osc.frequency.setValueAtTime(40 + i * 15, now);
+      osc.frequency.linearRampToValueAtTime(20 + i * 5, now + dur);
+      g.gain.setValueAtTime(0.15, now);
+      g.gain.setValueAtTime(0.2, now + 0.3);
+      g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+      osc.connect(g).connect(actx.destination);
+      osc.start(now + i * 0.1);
+      osc.stop(now + dur);
+    }
+    // long noise
+    const bufLen = actx.sampleRate * dur;
+    const buf = actx.createBuffer(1, bufLen, actx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < bufLen; i++) d[i] = (Math.random() * 2 - 1);
+    const noise = actx.createBufferSource();
+    const ng = actx.createGain();
+    const filt = actx.createBiquadFilter();
+    filt.type = 'lowpass';
+    filt.frequency.setValueAtTime(300, now);
+    filt.frequency.linearRampToValueAtTime(80, now + dur);
+    noise.buffer = buf;
+    ng.gain.setValueAtTime(0.3, now);
+    ng.gain.setValueAtTime(0.35, now + 0.5);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    noise.connect(filt).connect(ng).connect(actx.destination);
+    noise.start(now);
+    noise.stop(now + dur);
+    // squeaky flutter
+    for (let i = 0; i < 6; i++) {
+      const o = actx.createOscillator();
+      const g2 = actx.createGain();
+      o.type = 'square';
+      o.frequency.setValueAtTime(200 + Math.random() * 200, now + 0.3 + i * 0.15);
+      o.frequency.exponentialRampToValueAtTime(80, now + 0.3 + i * 0.15 + 0.12);
+      g2.gain.setValueAtTime(0.08, now + 0.3 + i * 0.15);
+      g2.gain.exponentialRampToValueAtTime(0.001, now + 0.3 + i * 0.15 + 0.12);
+      o.connect(g2).connect(actx.destination);
+      o.start(now + 0.3 + i * 0.15);
+      o.stop(now + 0.3 + i * 0.15 + 0.15);
+    }
+  }
+
+  function playDeath() {
+    ensureAudio();
+    const now = actx.currentTime;
+    const osc = actx.createOscillator();
+    const g = actx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(300, now);
+    osc.frequency.exponentialRampToValueAtTime(50, now + 0.5);
+    g.gain.setValueAtTime(0.2, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    osc.connect(g).connect(actx.destination);
+    osc.start(now);
+    osc.stop(now + 0.6);
+  }
+
+  // --- Game constants ---
+  const CELL = 20;
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  let COLS, ROWS;
+
+  function sizeCanvas() {
+    const maxW = Math.min(window.innerWidth - 24, 600);
+    const maxH = Math.min(window.innerHeight - 200, 600);
+    COLS = Math.floor(maxW / CELL);
+    ROWS = Math.floor(maxH / CELL);
+    if (COLS < 10) COLS = 10;
+    if (ROWS < 10) ROWS = 10;
+    canvas.width = COLS * CELL;
+    canvas.height = ROWS * CELL;
+  }
+  sizeCanvas();
+
+  // --- State ---
+  let snake, dir, nextDir, food, score, hiScore, timeLeft, gameState;
+  let lastTick, tickInterval, timerAcc;
+  let particles = [];
+  let fartClouds = []; // floating cloud particles on the board
+
+  const LS_KEY = 'fartsnake_hi';
+  hiScore = parseInt(localStorage.getItem(LS_KEY)) || 0;
+  document.getElementById('hiText').textContent = hiScore;
+
+  // --- UI refs ---
+  const overlay = document.getElementById('overlay');
+  const startScreen = document.getElementById('startScreen');
+  const gameOverScreen = document.getElementById('gameOverScreen');
+  const scoreText = document.getElementById('scoreText');
+  const hiText = document.getElementById('hiText');
+  const timeText = document.getElementById('timeText');
+  const timerFill = document.getElementById('timerFill');
+  const finalScore = document.getElementById('finalScore');
+  const finalMsg = document.getElementById('finalMsg');
+  const finalHi = document.getElementById('finalHi');
+  const fartApocalypse = document.getElementById('fartApocalypse');
+  const apocScore = document.getElementById('apocScore');
+  const apocHi = document.getElementById('apocHi');
+
+  function init() {
+    sizeCanvas();
+    const cx = Math.floor(COLS / 2);
+    const cy = Math.floor(ROWS / 2);
+    snake = [{ x: cx, y: cy }, { x: cx - 1, y: cy }, { x: cx - 2, y: cy }];
+    dir = { x: 1, y: 0 };
+    nextDir = { x: 1, y: 0 };
+    score = 0;
+    timeLeft = 60;
+    tickInterval = 130;
+    lastTick = 0;
+    timerAcc = 0;
+    particles = [];
+    fartClouds = [];
+    scoreText.textContent = '0';
+    timeText.textContent = '60';
+    timerFill.style.width = '100%';
+    timerFill.classList.remove('danger');
+    gameState = 'playing';
+    placeFood();
+  }
+
+  function placeFood() {
+    let attempts = 0;
+    do {
+      food = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) };
+      attempts++;
+    } while (snake.some(s => s.x === food.x && s.y === food.y) && attempts < 500);
+  }
+
+  function spawnParticles(x, y) {
+    for (let i = 0; i < 6; i++) {
+      particles.push({
+        x: x * CELL + CELL / 2,
+        y: y * CELL + CELL / 2,
+        vx: (Math.random() - 0.5) * 4,
+        vy: (Math.random() - 0.5) * 4,
+        life: 1,
+        size: 3 + Math.random() * 4,
+        color: Math.random() > 0.5 ? '#8bba4a' : '#c5e84b',
+      });
+    }
+    // add a floating cloud
+    fartClouds.push({
+      x: x * CELL + CELL / 2,
+      y: y * CELL + CELL / 2,
+      life: 1,
+      size: 20 + Math.random() * 15,
+    });
+  }
+
+  // --- Input ---
+  const dirMap = {
+    ArrowUp: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 },
+    ArrowLeft: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 },
+    w: { x: 0, y: -1 }, s: { x: 0, y: 1 },
+    a: { x: -1, y: 0 }, d: { x: 1, y: 0 },
+  };
+  document.addEventListener('keydown', e => {
+    const d = dirMap[e.key];
+    if (d && gameState === 'playing') {
+      if (d.x !== -dir.x || d.y !== -dir.y) { nextDir = d; }
+      e.preventDefault();
+    }
+  });
+
+  // Swipe
+  let touchStartX, touchStartY;
+  document.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (gameState !== 'playing') return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return;
+    let nd;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      nd = dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 };
+    } else {
+      nd = dy > 0 ? { x: 0, y: 1 } : { x: 0, y: -1 };
+    }
+    if (nd.x !== -dir.x || nd.y !== -dir.y) nextDir = nd;
+  }, { passive: true });
+
+  // D-pad
+  document.querySelectorAll('.dpad-btn').forEach(btn => {
+    const dMap = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
+    btn.addEventListener('touchstart', e => {
+      e.preventDefault();
+      ensureAudio();
+      const d = dMap[btn.dataset.dir];
+      if (d && gameState === 'playing' && (d.x !== -dir.x || d.y !== -dir.y)) nextDir = d;
+    });
+    btn.addEventListener('mousedown', e => {
+      ensureAudio();
+      const d = dMap[btn.dataset.dir];
+      if (d && gameState === 'playing' && (d.x !== -dir.x || d.y !== -dir.y)) nextDir = d;
+    });
+  });
+
+  // --- Buttons ---
+  document.getElementById('startBtn').addEventListener('click', () => {
+    ensureAudio();
+    startScreen.classList.remove('show');
+    overlay.classList.remove('active');
+    init();
+    requestAnimationFrame(loop);
+  });
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    ensureAudio();
+    gameOverScreen.classList.remove('show');
+    overlay.classList.remove('active');
+    init();
+    requestAnimationFrame(loop);
+  });
+  document.getElementById('apocBtn').addEventListener('click', () => {
+    fartApocalypse.classList.remove('active');
+    document.body.classList.remove('shake');
+    gameOverScreen.classList.add('show');
+    overlay.classList.add('active');
+  });
+
+  // --- Game loop ---
+  function loop(ts) {
+    if (gameState !== 'playing') return;
+    if (!lastTick) lastTick = ts;
+    const dt = ts - lastTick;
+    lastTick = ts;
+
+    // Timer
+    timerAcc += dt;
+    if (timerAcc >= 1000) {
+      timerAcc -= 1000;
+      timeLeft--;
+      timeText.textContent = Math.max(0, timeLeft);
+      timerFill.style.width = (Math.max(0, timeLeft) / 60 * 100) + '%';
+      if (timeLeft <= 10) timerFill.classList.add('danger');
+      if (timeLeft <= 0) {
+        gameState = 'apocalypse';
+        triggerApocalypse();
+        return;
+      }
+    }
+
+    // Tick
+    tickInterval -= dt;
+    if (tickInterval <= 0) {
+      tickInterval = Math.max(60, 130 - score * 1.5);
+      tick();
+    }
+
+    // Update particles
+    particles = particles.filter(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life -= 0.03;
+      return p.life > 0;
+    });
+    fartClouds = fartClouds.filter(c => {
+      c.y -= 0.3;
+      c.life -= 0.012;
+      c.size += 0.2;
+      return c.life > 0;
+    });
+
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function tick() {
+    dir = nextDir;
+    const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+    // Wall collision
+    if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
+      die('Wall hit!');
+      return;
+    }
+    // Self collision
+    if (snake.some(s => s.x === head.x && s.y === head.y)) {
+      die('Ate yourself!');
+      return;
+    }
+
+    snake.unshift(head);
+
+    if (head.x === food.x && head.y === food.y) {
+      score += 10;
+      timeLeft = Math.min(60, timeLeft + 3);
+      scoreText.textContent = score;
+      timeText.textContent = timeLeft;
+      timerFill.style.width = (timeLeft / 60 * 100) + '%';
+      if (timeLeft > 10) timerFill.classList.remove('danger');
+      spawnParticles(food.x, food.y);
+      playFart();
+      placeFood();
+    } else {
+      snake.pop();
+    }
+  }
+
+  function die(msg) {
+    gameState = 'dead';
+    playDeath();
+    if (score > hiScore) {
+      hiScore = score;
+      localStorage.setItem(LS_KEY, hiScore);
+    }
+    hiText.textContent = hiScore;
+    finalScore.textContent = score;
+    finalMsg.textContent = msg;
+    finalHi.textContent = score >= hiScore && score > 0 ? 'NEW HIGH SCORE!' : 'Best: ' + hiScore;
+    gameOverScreen.classList.add('show');
+    overlay.classList.add('active');
+  }
+
+  function triggerApocalypse() {
+    playMegaFart();
+    if (score > hiScore) {
+      hiScore = score;
+      localStorage.setItem(LS_KEY, hiScore);
+    }
+    hiText.textContent = hiScore;
+    apocScore.textContent = 'Score: ' + score;
+    apocHi.textContent = score >= hiScore && score > 0 ? 'NEW HIGH SCORE!' : 'Best: ' + hiScore;
+    finalScore.textContent = score;
+    finalMsg.textContent = 'Time ran out... the gas won.';
+    finalHi.textContent = score >= hiScore && score > 0 ? 'NEW HIGH SCORE!' : 'Best: ' + hiScore;
+
+    fartApocalypse.classList.add('active');
+    document.body.classList.add('shake');
+
+    // Spawn flying emojis
+    let count = 0;
+    const emojiInterval = setInterval(() => {
+      if (count > 50 || !fartApocalypse.classList.contains('active')) {
+        clearInterval(emojiInterval);
+        return;
+      }
+      const el = document.createElement('div');
+      el.className = 'fart-emoji';
+      el.textContent = Math.random() > 0.3 ? '💨' : '🤢';
+      el.style.left = Math.random() * 100 + '%';
+      el.style.top = (40 + Math.random() * 60) + '%';
+      el.style.fontSize = (30 + Math.random() * 50) + 'px';
+      el.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+      fartApocalypse.appendChild(el);
+      setTimeout(() => el.remove(), 4000);
+      count++;
+    }, 80);
+  }
+
+  // --- Drawing ---
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Grid dots
+    ctx.fillStyle = 'rgba(139,186,74,0.04)';
+    for (let x = 0; x < COLS; x++) {
+      for (let y = 0; y < ROWS; y++) {
+        ctx.fillRect(x * CELL, y * CELL, 1, 1);
+      }
+    }
+
+    // Floating fart clouds
+    fartClouds.forEach(c => {
+      ctx.globalAlpha = c.life * 0.25;
+      ctx.fillStyle = '#6a9a30';
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+
+    // Food (fart cloud)
+    const fx = food.x * CELL;
+    const fy = food.y * CELL;
+    // pulsing glow
+    const pulse = 0.6 + Math.sin(Date.now() / 200) * 0.3;
+    ctx.globalAlpha = pulse * 0.3;
+    ctx.fillStyle = '#8bba4a';
+    ctx.beginPath();
+    ctx.arc(fx + CELL / 2, fy + CELL / 2, CELL * 0.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.font = (CELL - 2) + 'px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('💨', fx + CELL / 2, fy + CELL / 2 + 1);
+
+    // Snake
+    snake.forEach((seg, i) => {
+      const x = seg.x * CELL;
+      const y = seg.y * CELL;
+      const t = i / snake.length;
+      if (i === 0) {
+        // Head
+        ctx.fillStyle = '#c5e84b';
+        ctx.shadowColor = 'rgba(197,232,75,0.5)';
+        ctx.shadowBlur = 8;
+        roundRect(ctx, x + 1, y + 1, CELL - 2, CELL - 2, 5);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        // Eyes
+        const ex = dir.x, ey = dir.y;
+        ctx.fillStyle = '#1a2a0a';
+        if (ex !== 0) {
+          ctx.fillRect(x + CELL / 2 + ex * 3 - 1, y + 5, 3, 3);
+          ctx.fillRect(x + CELL / 2 + ex * 3 - 1, y + CELL - 8, 3, 3);
+        } else {
+          ctx.fillRect(x + 5, y + CELL / 2 + ey * 3 - 1, 3, 3);
+          ctx.fillRect(x + CELL - 8, y + CELL / 2 + ey * 3 - 1, 3, 3);
+        }
+      } else {
+        // Body — gradient from green to brown
+        const r = Math.round(90 + t * 60);
+        const g = Math.round(160 - t * 80);
+        const b = Math.round(40 + t * 20);
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        roundRect(ctx, x + 1, y + 1, CELL - 2, CELL - 2, 3);
+        ctx.fill();
+      }
+    });
+
+    // Particles
+    particles.forEach(p => {
+      ctx.globalAlpha = p.life;
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+    });
+    ctx.globalAlpha = 1;
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  // Initial draw
+  draw();
+})();
+</script>
+</body>
+</html>
