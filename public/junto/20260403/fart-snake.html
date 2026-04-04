@@ -300,91 +300,26 @@
 
 <script>
 (function() {
-  // --- Audio ---
-  const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  let actx;
-  function ensureAudio() {
-    if (!actx) actx = new AudioCtx();
-    if (actx.state === 'suspended') actx.resume();
-  }
+  // --- Audio (real fart sounds) ---
+  const shortFart = new Audio('short-fart.mp3');
+  const longFart = new Audio('long-fart.mp3');
+  // preload
+  shortFart.preload = 'auto';
+  longFart.preload = 'auto';
 
   function playFart() {
-    ensureAudio();
-    const dur = 0.12 + Math.random() * 0.1;
-    const osc = actx.createOscillator();
-    const gain = actx.createGain();
-    const now = actx.currentTime;
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(120 + Math.random() * 80, now);
-    osc.frequency.exponentialRampToValueAtTime(60 + Math.random() * 40, now + dur);
-    gain.gain.setValueAtTime(0.25, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
-    osc.connect(gain).connect(actx.destination);
-    osc.start(now);
-    osc.stop(now + dur);
-    // noise burst
-    const bufLen = actx.sampleRate * dur;
-    const buf = actx.createBuffer(1, bufLen, actx.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1) * 0.15;
-    const noise = actx.createBufferSource();
-    const ng = actx.createGain();
-    noise.buffer = buf;
-    ng.gain.setValueAtTime(0.2, now);
-    ng.gain.exponentialRampToValueAtTime(0.001, now + dur);
-    noise.connect(ng).connect(actx.destination);
-    noise.start(now);
+    // clone so overlapping plays work
+    const snd = shortFart.cloneNode();
+    snd.volume = 0.7;
+    // randomize playback rate for variety
+    snd.playbackRate = 0.8 + Math.random() * 0.5;
+    snd.play().catch(function(){});
   }
 
   function playMegaFart() {
-    ensureAudio();
-    const dur = 2.5;
-    const now = actx.currentTime;
-    // deep rumble
-    for (let i = 0; i < 4; i++) {
-      const osc = actx.createOscillator();
-      const g = actx.createGain();
-      osc.type = i % 2 === 0 ? 'sawtooth' : 'square';
-      osc.frequency.setValueAtTime(40 + i * 15, now);
-      osc.frequency.linearRampToValueAtTime(20 + i * 5, now + dur);
-      g.gain.setValueAtTime(0.15, now);
-      g.gain.setValueAtTime(0.2, now + 0.3);
-      g.gain.exponentialRampToValueAtTime(0.001, now + dur);
-      osc.connect(g).connect(actx.destination);
-      osc.start(now + i * 0.1);
-      osc.stop(now + dur);
-    }
-    // long noise
-    const bufLen = actx.sampleRate * dur;
-    const buf = actx.createBuffer(1, bufLen, actx.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < bufLen; i++) d[i] = (Math.random() * 2 - 1);
-    const noise = actx.createBufferSource();
-    const ng = actx.createGain();
-    const filt = actx.createBiquadFilter();
-    filt.type = 'lowpass';
-    filt.frequency.setValueAtTime(300, now);
-    filt.frequency.linearRampToValueAtTime(80, now + dur);
-    noise.buffer = buf;
-    ng.gain.setValueAtTime(0.3, now);
-    ng.gain.setValueAtTime(0.35, now + 0.5);
-    ng.gain.exponentialRampToValueAtTime(0.001, now + dur);
-    noise.connect(filt).connect(ng).connect(actx.destination);
-    noise.start(now);
-    noise.stop(now + dur);
-    // squeaky flutter
-    for (let i = 0; i < 6; i++) {
-      const o = actx.createOscillator();
-      const g2 = actx.createGain();
-      o.type = 'square';
-      o.frequency.setValueAtTime(200 + Math.random() * 200, now + 0.3 + i * 0.15);
-      o.frequency.exponentialRampToValueAtTime(80, now + 0.3 + i * 0.15 + 0.12);
-      g2.gain.setValueAtTime(0.08, now + 0.3 + i * 0.15);
-      g2.gain.exponentialRampToValueAtTime(0.001, now + 0.3 + i * 0.15 + 0.12);
-      o.connect(g2).connect(actx.destination);
-      o.start(now + 0.3 + i * 0.15);
-      o.stop(now + 0.3 + i * 0.15 + 0.15);
-    }
+    const snd = longFart.cloneNode();
+    snd.volume = 1.0;
+    snd.play().catch(function(){});
   }
 
   function playDeath() {
