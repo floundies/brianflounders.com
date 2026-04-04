@@ -194,6 +194,22 @@ function ensureAudio() {
   if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
+// Unlock audio on the very first user interaction (any touch or click)
+var _audioUnlocked = false;
+function unlockAudioOnce() {
+  if (_audioUnlocked) return;
+  _audioUnlocked = true;
+  ensureAudio();
+  // Play a silent buffer to fully unlock on iOS Safari
+  var ctx = audioCtx;
+  var silentBuf = ctx.createBuffer(1, 1, ctx.sampleRate);
+  var src = ctx.createBufferSource();
+  src.buffer = silentBuf;
+  src.connect(ctx.destination);
+  src.start(0);
+}
+document.addEventListener('touchstart', unlockAudioOnce, { once: true });
+document.addEventListener('click', unlockAudioOnce, { once: true });
 
 // === 8-bit NES Background Music ===
 let bgMusicPlaying = false;
