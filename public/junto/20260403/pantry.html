@@ -376,7 +376,7 @@
       var mimeType = imageData.split(';')[0].split(':')[1];
       var text = await callGemini({
         contents: [{ parts: [
-          { text: 'Look at this image of food in a pantry, fridge, or on a counter. List each distinct food PRODUCT or ITEM you can see, one per line. Identify items by their common name (e.g. "Ritz crackers", "eggs", "whole milk", "strawberries"). Do NOT read or list ingredients from nutrition labels or packaging — only identify the product itself. If you cannot identify any food items, respond with "NO_FOOD_FOUND".' },
+          { text: 'Look at this image of food in a pantry, fridge, or on a counter. List each distinct food PRODUCT or ITEM you can see. Respond with ONLY the item names, one per line. No introductions, no explanations, no headers, no numbering. Just the names. Example response:\neggs\nwhole milk\nRitz crackers\nstrawberries\n\nIdentify items by their common name. Do NOT read or list ingredients from nutrition labels or packaging — only identify the product itself. If you cannot identify any food items, respond with just: NO_FOOD_FOUND' },
           { inlineData: { mimeType: mimeType, data: base64 } },
         ] }],
       });
@@ -384,7 +384,21 @@
         showError("Couldn't spot any food items. Try a clearer photo.");
         return;
       }
-      ingredients = text.split('\n').map(function(s) { return s.replace(/^[-•*\d.)\s]+/, '').trim(); }).filter(Boolean).map(function(name) { return { name: name, checked: true }; });
+      ingredients = text.split('\n')
+        .map(function(s) { return s.replace(/^[-•*\d.)\s]+/, '').trim(); })
+        .filter(function(s) {
+          if (!s) return false;
+          // filter out preamble/explanation lines
+          var lower = s.toLowerCase();
+          if (lower.indexOf('here are') === 0) return false;
+          if (lower.indexOf('i can see') === 0) return false;
+          if (lower.indexOf('the following') === 0) return false;
+          if (lower.indexOf('visible in') !== -1) return false;
+          if (lower.indexOf('food products') !== -1 && lower.indexOf('items') !== -1) return false;
+          if (s.indexOf(':') !== -1 && s.length > 40) return false;
+          return true;
+        })
+        .map(function(name) { return { name: name, checked: true }; });
       thumbImg.src = imageData;
       renderChecklist();
       showStep(stepIngredients);
