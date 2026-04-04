@@ -121,6 +121,9 @@
   .step { display: none; }
   .step.active { display: block; }
   .stack { display: flex; flex-direction: column; gap: 14px; }
+  .wrap { padding-bottom: 80px; }
+
+  .quip { font-style: italic; font-size: 13px; color: var(--muted); text-align: center; margin: 8px 0 0; opacity: .8; }
 
   @media (max-width: 600px) {
     .header { padding-top: 48px; }
@@ -137,6 +140,7 @@
   <img src="finns-pantry-logo.png" alt="Finn's Pantry" class="header-logo">
   <h1>Finn's Pantry</h1>
   <p>Snap a photo of your fridge or pantry and get recipe ideas</p>
+  <p class="quip" id="quipHeader"></p>
 </div>
 
 <div class="wrap">
@@ -163,6 +167,7 @@
         <button class="btn" id="retakeBtn">Retake</button>
         <button class="btn btn--primary" id="scanBtn">Find Ingredients</button>
       </div>
+      <p class="quip" id="quipScan"></p>
     </div>
   </div>
 
@@ -181,6 +186,7 @@
         <button class="btn" id="addBtn">Add</button>
       </div>
     </div>
+    <p class="quip" id="quipIngredients"></p>
     <div class="actions">
       <button class="btn" id="startOverBtn">Start Over</button>
       <button class="btn btn--primary" id="getRecipesBtn">Get Recipes</button>
@@ -194,6 +200,7 @@
       <p class="recipes-from" id="recipesFrom"></p>
     </div>
     <div class="recipe-list" id="recipeList"></div>
+    <p class="quip" id="quipRecipes"></p>
     <div class="actions" style="margin-top:20px">
       <button class="btn" id="backIngredientsBtn">Back to Ingredients</button>
       <button class="btn" id="scanAgainBtn">Scan Again</button>
@@ -203,6 +210,53 @@
 
 <script>
 (function() {
+  // --- Finn's quips ---
+  var quips = {
+    header: [
+      "Finn's hungry. What are we working with?",
+      "Let's see what we're dealing with here.",
+      "Finn's coming over in an hour. Get cooking.",
+      "Where's the ice cream? Finn loves ice cream.",
+      "No yogurt? Finn's gonna lose it.",
+      "Finn doesn't do meal planning. That's your job.",
+      "Step 1: open fridge. Step 2: panic.",
+    ],
+    scan: [
+      "Finn's judging your fridge right now.",
+      "Be honest… when did you last go shopping?",
+      "Finn could eat all of this in one sitting.",
+      "This better not just be condiments.",
+      "Finn sees potential. Finn always sees potential.",
+    ],
+    ingredients: [
+      "Finn would add goldfish crackers to this list.",
+      "Missing something? Finn probably ate it.",
+      "Finn's not picky. Finn eats everything.",
+      "Pro tip: Finn thinks butter is a food group.",
+      "If it's not on the list, it doesn't exist.",
+      "Finn recommends adding cheese. Always add cheese.",
+    ],
+    recipes: [
+      "Finn expects leftovers. Don't disappoint him.",
+      "Cook fast — Finn's patience is limited.",
+      "Finn gives these recipes two sticky thumbs up.",
+      "If all else fails, Finn will eat crackers off the floor.",
+      "Bon appétit! (Finn doesn't know what that means.)",
+      "Finn's already in his high chair. Let's go.",
+    ],
+  };
+  function pickQuip(key) {
+    var list = quips[key];
+    return list[Math.floor(Math.random() * list.length)];
+  }
+  function setQuip(id, key) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = pickQuip(key);
+  }
+  // Set initial header quip
+  setQuip('quipHeader', 'header');
+  setQuip('quipScan', 'scan');
+
   // --- State ---
   var imageData = null;
   var ingredients = []; // [{name, checked}]
@@ -231,6 +285,10 @@
     [stepCapture, stepIngredients, stepRecipes].forEach(function(s) { s.classList.remove('active'); });
     step.classList.add('active');
     window.scrollTo(0, 0);
+    // refresh quips for the new step
+    if (step === stepCapture) { setQuip('quipHeader', 'header'); setQuip('quipScan', 'scan'); }
+    if (step === stepIngredients) setQuip('quipIngredients', 'ingredients');
+    if (step === stepRecipes) setQuip('quipRecipes', 'recipes');
   }
 
   function showError(msg) {
