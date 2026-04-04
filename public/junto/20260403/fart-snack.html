@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Fart Snake</title>
+<title>Fart Snack</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fart Snack">
+<meta name="theme-color" content="#0a0e08">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -213,36 +217,9 @@
   #fartApocalypse .apoc-text .btn {
     margin-top: 20px;
   }
-  /* Mobile d-pad */
-  #dpad {
-    display: none;
-    margin-top: 12px;
-    position: relative;
-    width: 150px;
-    height: 150px;
-  }
-  .dpad-btn {
-    position: absolute;
-    width: 48px;
-    height: 48px;
-    background: rgba(139,186,74,0.12);
-    border: 1px solid rgba(139,186,74,0.3);
-    border-radius: 6px;
-    color: #8bba4a;
-    font-size: 22px;
-    display: grid;
-    place-items: center;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-    transition: background 0.1s;
-  }
-  .dpad-btn:active { background: rgba(139,186,74,0.35); }
-  .dpad-up    { top: 0; left: 50%; transform: translateX(-50%); }
-  .dpad-down  { bottom: 0; left: 50%; transform: translateX(-50%); }
-  .dpad-left  { top: 50%; left: 0; transform: translateY(-50%); }
-  .dpad-right { top: 50%; right: 0; transform: translateY(-50%); }
+  /* Swipe hint for mobile */
   @media (pointer: coarse) {
-    #dpad { display: block; }
+    .back-link { font-size: 9px; top: 10px; left: 12px; }
   }
   @media (max-height: 600px) {
     #hud { padding: 6px 4px 4px; font-size: 9px; }
@@ -265,9 +242,9 @@
   <div id="overlay" class="active">
     <div id="startScreen" class="screen show">
       <div class="emoji-title">💨🐍</div>
-      <h1>FART SNAKE</h1>
+      <h1>FART SNACK</h1>
       <p>Collect fart clouds before time runs out.<br>If the clock hits zero... you don't want to know.</p>
-      <p>Arrow keys / swipe to move</p>
+      <p>Swipe or arrow keys to move</p>
       <button class="btn" id="startBtn">LET IT RIP</button>
     </div>
     <div id="gameOverScreen" class="screen">
@@ -277,12 +254,6 @@
       <p class="hi-score" id="finalHi"></p>
       <button class="btn" id="restartBtn">AGAIN</button>
     </div>
-  </div>
-  <div id="dpad">
-    <div class="dpad-btn dpad-up" data-dir="up">▲</div>
-    <div class="dpad-btn dpad-down" data-dir="down">▼</div>
-    <div class="dpad-btn dpad-left" data-dir="left">◀</div>
-    <div class="dpad-btn dpad-right" data-dir="right">▶</div>
   </div>
 </div>
 
@@ -390,9 +361,12 @@
   const ctx = canvas.getContext('2d');
   let COLS, ROWS;
 
+  var isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   function sizeCanvas() {
-    const maxW = Math.min(window.innerWidth - 24, 600);
-    const maxH = Math.min(window.innerHeight - 200, 600);
+    var pad = isMobile ? 8 : 24;
+    var topSpace = isMobile ? 50 : 200;
+    var maxW = Math.min(window.innerWidth - pad, 600);
+    var maxH = Math.min(window.innerHeight - topSpace, isMobile ? window.innerHeight - 50 : 600);
     COLS = Math.floor(maxW / CELL);
     ROWS = Math.floor(maxH / CELL);
     if (COLS < 10) COLS = 10;
@@ -408,7 +382,7 @@
   let particles = [];
   let fartClouds = []; // floating cloud particles on the board
 
-  const LS_KEY = 'fartsnake_hi';
+  const LS_KEY = 'fartsnack_hi';
   hiScore = parseInt(localStorage.getItem(LS_KEY)) || 0;
   document.getElementById('hiText').textContent = hiScore;
 
@@ -503,7 +477,7 @@
     if (gameState !== 'playing') return;
     const dx = e.changedTouches[0].clientX - touchStartX;
     const dy = e.changedTouches[0].clientY - touchStartY;
-    if (Math.abs(dx) < 20 && Math.abs(dy) < 20) return;
+    if (Math.abs(dx) < 12 && Math.abs(dy) < 12) return;
     let nd;
     if (Math.abs(dx) > Math.abs(dy)) {
       nd = dx > 0 ? { x: 1, y: 0 } : { x: -1, y: 0 };
@@ -512,22 +486,6 @@
     }
     if (nd.x !== -dir.x || nd.y !== -dir.y) nextDir = nd;
   }, { passive: true });
-
-  // D-pad
-  document.querySelectorAll('.dpad-btn').forEach(btn => {
-    const dMap = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
-    btn.addEventListener('touchstart', e => {
-      e.preventDefault();
-      ensureAudio();
-      const d = dMap[btn.dataset.dir];
-      if (d && gameState === 'playing' && (d.x !== -dir.x || d.y !== -dir.y)) nextDir = d;
-    });
-    btn.addEventListener('mousedown', e => {
-      ensureAudio();
-      const d = dMap[btn.dataset.dir];
-      if (d && gameState === 'playing' && (d.x !== -dir.x || d.y !== -dir.y)) nextDir = d;
-    });
-  });
 
   // --- Buttons ---
   document.getElementById('startBtn').addEventListener('click', () => {

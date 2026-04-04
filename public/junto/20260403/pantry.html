@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pantry Scanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #02265e;
+    --bg-card: #071e45;
+    --fg: #ede8e0;
+    --muted: #8a8279;
+    --border: #152d56;
+    --gold: #d4a854;
+    --gold-bright: #ecd08a;
+    --gold-soft: rgba(212,168,84,.08);
+    --display: 'Playfair Display', Georgia, serif;
+    --body: 'DM Sans', -apple-system, sans-serif;
+    --radius: 10px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font: 16px/1.6 var(--body);
+    color: var(--fg);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100dvh;
+  }
+  a { color: var(--gold); text-decoration: none; }
+  a:hover { color: var(--gold-bright); }
+  .back { position: fixed; top: 16px; left: 20px; font-size: 13px; font-weight: 500; color: var(--muted); z-index: 50; }
+  .back:hover { color: var(--gold); }
+  .wrap { max-width: 600px; margin: 0 auto; padding: 0 20px; }
+
+  .header { text-align: center; padding: 60px 20px 32px; }
+  .header h1 { font: 900 clamp(28px,5vw,42px)/1.1 var(--display); margin-bottom: 8px; }
+  .header p { color: var(--muted); font-size: 15px; }
+
+  .error { background: rgba(200,60,60,.15); color: #e06060; border: 1px solid rgba(200,60,60,.25); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 16px; font-size: 14px; }
+
+  /* Capture */
+  .dropzone { width: 100%; border: 2px dashed var(--border); border-radius: var(--radius); padding: 48px 24px; text-align: center; cursor: pointer; color: var(--muted); transition: all .2s; }
+  .dropzone:hover { border-color: var(--gold); background: var(--gold-soft); }
+  .dropzone-icon { font-size: 48px; margin-bottom: 10px; }
+  .dropzone p { margin: 4px 0; font-weight: 600; }
+  .dropzone .hint { font-size: 13px; font-weight: 400; opacity: .7; }
+
+  .preview-img { width: 100%; border-radius: var(--radius); max-height: 350px; object-fit: cover; }
+  .thumb { width: 100%; max-height: 180px; object-fit: cover; border-radius: var(--radius); margin-bottom: 12px; }
+
+  .camera-wrap video { width: 100%; border-radius: var(--radius); background: #000; aspect-ratio: 4/3; object-fit: cover; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; font: 600 14px var(--body); border-radius: 99px; border: 1px solid var(--border); color: var(--fg); background: transparent; cursor: pointer; transition: all .2s; }
+  .btn:hover { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); }
+  .btn--primary { background: var(--gold); color: #1a1610; border-color: var(--gold); font-weight: 700; }
+  .btn--primary:hover { background: var(--gold-bright); border-color: var(--gold-bright); color: #1a1610; }
+  .btn--primary:disabled { opacity: .5; cursor: wait; }
+  .btn--full { width: 100%; }
+  .actions { display: flex; gap: 10px; margin-top: 16px; }
+  .actions .btn { flex: 1; }
+
+  /* Checklist */
+  .checklist-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .checklist-header .label { font-weight: 600; font-size: 15px; }
+  .checklist-header .count { font-size: 13px; color: var(--muted); }
+  .checklist { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .check-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; cursor: pointer; transition: background .12s; }
+  .check-item:hover { background: var(--gold-soft); }
+  .check-item.off .check-name { color: var(--muted); text-decoration: line-through; }
+  .check-item input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--gold); cursor: pointer; flex-shrink: 0; }
+  .check-name { flex: 1; font-size: 15px; }
+  .check-remove { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1; opacity: 0; transition: opacity .15s; }
+  .check-item:hover .check-remove { opacity: 1; }
+  .check-remove:hover { color: #e06060; }
+
+  /* Add extra */
+  .add-extra { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-top: 14px; }
+  .add-extra p { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+  .add-row { display: flex; gap: 8px; }
+  .add-input { flex: 1; padding: 8px 12px; font: 14px var(--body); background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 99px; }
+  .add-input:focus { outline: none; border-color: var(--gold); }
+  .add-input::placeholder { color: var(--muted); opacity: .6; }
+
+  /* Recipes */
+  .recipes-header { margin-bottom: 20px; }
+  .recipes-header h2 { font: 900 clamp(22px,4vw,32px)/1.1 var(--display); margin-bottom: 6px; }
+  .recipes-from { color: var(--muted); font-size: 13px; line-height: 1.5; }
+  .recipe-list { display: flex; flex-direction: column; gap: 14px; }
+  .recipe { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .recipe summary { display: flex; flex-direction: column; gap: 4px; padding: 18px 20px; cursor: pointer; list-style: none; transition: background .15s; }
+  .recipe summary::-webkit-details-marker { display: none; }
+  .recipe summary::marker { content: ''; }
+  .recipe summary:hover { background: var(--gold-soft); }
+  .recipe[open] summary { border-bottom: 1px solid var(--border); }
+  .recipe-title-row { display: flex; align-items: center; gap: 8px; }
+  .recipe-name { font: 700 17px var(--display); }
+  .recipe-meta { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); }
+  .badge { padding: 2px 7px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; border-radius: 99px; }
+  .badge--known { background: rgba(76,140,76,.15); color: #7dbf7d; border: 1px solid rgba(76,140,76,.3); }
+  .badge--custom { background: rgba(140,120,200,.12); color: #a99bd4; border: 1px solid rgba(140,120,200,.25); }
+  .stars { color: var(--gold); font-size: 12px; }
+  .star--empty { color: var(--muted); opacity: .4; }
+  .recipe-body { padding: 0 20px 18px; }
+  .recipe-desc { color: var(--muted); font-style: italic; font-size: 14px; margin: 14px 0 6px; }
+  .macros { display: flex; gap: 4px; margin: 14px 0; background: var(--bg); border-radius: var(--radius); padding: 10px 6px; }
+  .macro { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .macro-val { font-weight: 700; font-size: 14px; }
+  .macro-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .recipe h4 { font: 700 14px var(--display); color: var(--gold); margin: 14px 0 6px; }
+  .recipe ul, .recipe ol { padding-left: 18px; }
+  .recipe li { font-size: 14px; margin: 3px 0; line-height: 1.5; }
+
+  .step { display: none; }
+  .step.active { display: block; }
+  .stack { display: flex; flex-direction: column; gap: 14px; }
+
+  @media (max-width: 600px) {
+    .header { padding-top: 48px; }
+    .actions { flex-direction: column; }
+    .check-remove { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back">&larr; Junto III</a>
+
+<div class="header">
+  <h1>Pantry Scanner</h1>
+  <p>Snap a photo of your fridge or pantry and get recipe ideas</p>
+</div>
+
+<div class="wrap">
+  <div id="errorBox" class="error" style="display:none"></div>
+
+  <!-- STEP 1: Capture -->
+  <div id="stepCapture" class="step active">
+    <div id="captureStart" class="stack">
+      <div class="dropzone" id="dropzone">
+        <div class="dropzone-icon">📷</div>
+        <p>Tap to upload a photo</p>
+        <p class="hint">or use the camera below</p>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" style="display:none">
+      <button class="btn btn--primary btn--full" id="cameraBtn">Open Camera</button>
+    </div>
+    <div id="cameraWrap" class="camera-wrap stack" style="display:none">
+      <video id="video" autoplay playsinline muted></video>
+      <button class="btn btn--primary btn--full" id="shutterBtn">Take Photo</button>
+    </div>
+    <div id="previewWrap" class="stack" style="display:none">
+      <img id="previewImg" class="preview-img" alt="Your food">
+      <div class="actions">
+        <button class="btn" id="retakeBtn">Retake</button>
+        <button class="btn btn--primary" id="scanBtn">Find Ingredients</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: Ingredients -->
+  <div id="stepIngredients" class="step">
+    <img id="thumbImg" class="thumb" alt="Your food">
+    <div class="checklist-header">
+      <span class="label" id="foundLabel">We found 0 items</span>
+      <span class="count" id="selectedLabel">0 selected</span>
+    </div>
+    <div class="checklist" id="checklist"></div>
+    <div class="add-extra">
+      <p>Have anything else not in the picture?</p>
+      <div class="add-row">
+        <input type="text" class="add-input" id="extraInput" placeholder="e.g. rice, lemon, soy sauce">
+        <button class="btn" id="addBtn">Add</button>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="startOverBtn">Start Over</button>
+      <button class="btn btn--primary" id="getRecipesBtn">Get Recipes</button>
+    </div>
+  </div>
+
+  <!-- STEP 3: Recipes -->
+  <div id="stepRecipes" class="step">
+    <div class="recipes-header">
+      <h2>Recipes for You</h2>
+      <p class="recipes-from" id="recipesFrom"></p>
+    </div>
+    <div class="recipe-list" id="recipeList"></div>
+    <div class="actions" style="margin-top:20px">
+      <button class="btn" id="backIngredientsBtn">Back to Ingredients</button>
+      <button class="btn" id="scanAgainBtn">Scan Again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  // --- State ---
+  var imageData = null;
+  var ingredients = []; // [{name, checked}]
+  var stream = null;
+
+  // --- DOM ---
+  var errorBox = document.getElementById('errorBox');
+  var stepCapture = document.getElementById('stepCapture');
+  var stepIngredients = document.getElementById('stepIngredients');
+  var stepRecipes = document.getElementById('stepRecipes');
+  var captureStart = document.getElementById('captureStart');
+  var cameraWrap = document.getElementById('cameraWrap');
+  var previewWrap = document.getElementById('previewWrap');
+  var previewImg = document.getElementById('previewImg');
+  var thumbImg = document.getElementById('thumbImg');
+  var video = document.getElementById('video');
+  var fileInput = document.getElementById('fileInput');
+  var checklist = document.getElementById('checklist');
+  var extraInput = document.getElementById('extraInput');
+  var recipeList = document.getElementById('recipeList');
+  var recipesFrom = document.getElementById('recipesFrom');
+  var foundLabel = document.getElementById('foundLabel');
+  var selectedLabel = document.getElementById('selectedLabel');
+
+  function showStep(step) {
+    [stepCapture, stepIngredients, stepRecipes].forEach(function(s) { s.classList.remove('active'); });
+    step.classList.add('active');
+    window.scrollTo(0, 0);
+  }
+
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.style.display = msg ? 'block' : 'none';
+  }
+
+  function showCaptureSub(sub) {
+    captureStart.style.display = 'none';
+    cameraWrap.style.display = 'none';
+    previewWrap.style.display = 'none';
+    sub.style.display = '';
+  }
+
+  // --- Gemini ---
+  async function callGemini(body) {
+    var res = await fetch('/api/gemini?model=gemini-2.5-flash', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error('Gemini error: ' + res.status);
+    var data = await res.json();
+    var text = data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
+    if (!text) throw new Error('No response from Gemini');
+    return text;
+  }
+
+  // --- Camera ---
+  function stopCamera() {
+    if (stream) { stream.getTracks().forEach(function(t) { t.stop(); }); stream = null; }
+  }
+
+  document.getElementById('cameraBtn').addEventListener('click', async function() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 } } });
+      video.srcObject = stream;
+      video.play();
+      showCaptureSub(cameraWrap);
+    } catch(e) {
+      showError('Could not access camera. Try uploading a photo instead.');
+    }
+  });
+
+  document.getElementById('shutterBtn').addEventListener('click', function() {
+    var c = document.createElement('canvas');
+    c.width = video.videoWidth; c.height = video.videoHeight;
+    c.getContext('2d').drawImage(video, 0, 0);
+    imageData = c.toDataURL('image/jpeg', 0.85);
+    previewImg.src = imageData;
+    stopCamera();
+    showCaptureSub(previewWrap);
+  });
+
+  // --- File upload ---
+  document.getElementById('dropzone').addEventListener('click', function() { fileInput.click(); });
+  fileInput.addEventListener('change', function() {
+    if (!fileInput.files || !fileInput.files[0]) return;
+    var reader = new FileReader();
+    reader.onload = function() {
+      imageData = reader.result;
+      previewImg.src = imageData;
+      stopCamera();
+      showCaptureSub(previewWrap);
+    };
+    reader.readAsDataURL(fileInput.files[0]);
+  });
+
+  // --- Retake ---
+  document.getElementById('retakeBtn').addEventListener('click', function() {
+    imageData = null;
+    showError('');
+    showCaptureSub(captureStart);
+  });
+
+  // --- Scan ---
+  document.getElementById('scanBtn').addEventListener('click', async function() {
+    if (!imageData) return;
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Scanning…';
+    showError('');
+    try {
+      var base64 = imageData.split(',')[1];
+      var mimeType = imageData.split(';')[0].split(':')[1];
+      var text = await callGemini({
+        contents: [{ parts: [
+          { text: 'Look at this image of food in a pantry, fridge, or on a counter. List each distinct food PRODUCT or ITEM you can see, one per line. Identify items by their common name (e.g. "Ritz crackers", "eggs", "whole milk", "strawberries"). Do NOT read or list ingredients from nutrition labels or packaging — only identify the product itself. If you cannot identify any food items, respond with "NO_FOOD_FOUND".' },
+          { inlineData: { mimeType: mimeType, data: base64 } },
+        ] }],
+      });
+      if (text.indexOf('NO_FOOD_FOUND') !== -1) {
+        showError("Couldn't spot any food items. Try a clearer photo.");
+        return;
+      }
+      ingredients = text.split('\n').map(function(s) { return s.replace(/^[-•*\d.)\s]+/, '').trim(); }).filter(Boolean).map(function(name) { return { name: name, checked: true }; });
+      thumbImg.src = imageData;
+      renderChecklist();
+      showStep(stepIngredients);
+    } catch(e) {
+      showError(e.message || 'Failed to identify ingredients');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Find Ingredients';
+    }
+  });
+
+  // --- Checklist ---
+  function renderChecklist() {
+    var sel = ingredients.filter(function(i) { return i.checked; }).length;
+    foundLabel.textContent = 'We found ' + ingredients.length + ' items';
+    selectedLabel.textContent = sel + ' selected';
+    document.getElementById('getRecipesBtn').textContent = 'Get Recipes (' + sel + ')';
+    document.getElementById('getRecipesBtn').disabled = sel === 0;
+
+    checklist.innerHTML = '';
+    ingredients.forEach(function(item, idx) {
+      var label = document.createElement('label');
+      label.className = 'check-item' + (item.checked ? '' : ' off');
+      label.innerHTML = '<input type="checkbox"' + (item.checked ? ' checked' : '') + '><span class="check-name">' + escHtml(item.name) + '</span><button class="check-remove" title="Remove">&times;</button>';
+      label.querySelector('input').addEventListener('change', function() {
+        ingredients[idx].checked = !ingredients[idx].checked;
+        renderChecklist();
+      });
+      label.querySelector('.check-remove').addEventListener('click', function(e) {
+        e.preventDefault();
+        ingredients.splice(idx, 1);
+        renderChecklist();
+      });
+      checklist.appendChild(label);
+    });
+  }
+
+  function escHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  // --- Add extra ---
+  document.getElementById('addBtn').addEventListener('click', addExtra);
+  extraInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') addExtra(); });
+  function addExtra() {
+    var val = extraInput.value.trim();
+    if (!val) return;
+    val.split(',').map(function(s) { return s.trim(); }).filter(Boolean).forEach(function(name) {
+      ingredients.push({ name: name, checked: true });
+    });
+    extraInput.value = '';
+    renderChecklist();
+  }
+
+  // --- Get Recipes ---
+  document.getElementById('getRecipesBtn').addEventListener('click', async function() {
+    var selected = ingredients.filter(function(i) { return i.checked; }).map(function(i) { return i.name; });
+    if (selected.length === 0) return;
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Cooking up ideas…';
+    showError('');
+    try {
+      var text = await callGemini({
+        contents: [{ parts: [{ text: 'I have these ingredients:\n' + selected.join('\n') + '\n\nGive me 5 recipes. For the first 3, suggest well-known, highly-rated recipes from popular cooking sites (AllRecipes, Food Network, Bon Appetit, Serious Eats, etc.) that use primarily these ingredients. Include the source site name and rating if known. For the last 2, create your own custom recipes.\n\nIt\'s okay to assume common pantry staples like salt, pepper, oil, butter, garlic.\n\nFor EACH recipe include estimated macronutrients per serving.\n\nRespond in this exact JSON format (no markdown fences, no other text):\n[{"name":"...","time":"...","description":"one sentence","ingredients":["..."],"steps":["..."],"macros":{"calories":000,"protein":"00g","carbs":"00g","fat":"00g","fiber":"00g"},"source":"known or custom","rating":4.7,"origin":"AllRecipes"}]' }] }],
+        generationConfig: { temperature: 0.7 },
+      });
+      var jsonStr = text.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+      var recipes = JSON.parse(jsonStr);
+      recipes.sort(function(a, b) { return (a.source === 'known' ? 0 : 1) - (b.source === 'known' ? 0 : 1); });
+      recipesFrom.textContent = 'Based on: ' + selected.join(', ');
+      renderRecipes(recipes);
+      showStep(stepRecipes);
+    } catch(e) {
+      showError(e.message || 'Failed to generate recipes');
+    } finally {
+      btn.disabled = false;
+      var sel = ingredients.filter(function(i) { return i.checked; }).length;
+      btn.textContent = 'Get Recipes (' + sel + ')';
+    }
+  });
+
+  function renderStars(rating) {
+    var full = Math.floor(rating);
+    var half = (rating - full) >= 0.3;
+    var out = '';
+    for (var i = 0; i < full; i++) out += '★';
+    if (half) out += '★';
+    var empty = 5 - full - (half ? 1 : 0);
+    for (var i = 0; i < empty; i++) out += '<span class="star--empty">☆</span>';
+    return out;
+  }
+
+  function renderRecipes(recipes) {
+    recipeList.innerHTML = '';
+    recipes.forEach(function(r, i) {
+      var badge = r.source === 'known'
+        ? '<span class="badge badge--known">Top Rated</span>'
+        : '<span class="badge badge--custom">AI Recipe</span>';
+      var ratingHtml = r.rating ? '<span class="stars">' + renderStars(r.rating) + '</span> ' + r.rating : '';
+      var originHtml = r.origin ? '<span style="font-style:italic">' + escHtml(r.origin) + '</span>' : '';
+      var ingList = r.ingredients.map(function(x) { return '<li>' + escHtml(x) + '</li>'; }).join('');
+      var stepList = r.steps.map(function(x) { return '<li>' + escHtml(x) + '</li>'; }).join('');
+      var m = r.macros || {};
+
+      var html = '<details class="recipe"' + (i === 0 ? ' open' : '') + '>'
+        + '<summary>'
+        + '<div class="recipe-title-row">' + badge + '<span class="recipe-name">' + escHtml(r.name) + '</span></div>'
+        + '<div class="recipe-meta">' + ratingHtml + originHtml + '<span>' + escHtml(r.time) + '</span></div>'
+        + '</summary>'
+        + '<div class="recipe-body">'
+        + '<p class="recipe-desc">' + escHtml(r.description) + '</p>'
+        + '<div class="macros">'
+        + '<div class="macro"><span class="macro-val">' + (m.calories||'—') + '</span><span class="macro-label">cal</span></div>'
+        + '<div class="macro"><span class="macro-val">' + (m.protein||'—') + '</span><span class="macro-label">protein</span></div>'
+        + '<div class="macro"><span class="macro-val">' + (m.carbs||'—') + '</span><span class="macro-label">carbs</span></div>'
+        + '<div class="macro"><span class="macro-val">' + (m.fat||'—') + '</span><span class="macro-label">fat</span></div>'
+        + '<div class="macro"><span class="macro-val">' + (m.fiber||'—') + '</span><span class="macro-label">fiber</span></div>'
+        + '</div>'
+        + '<h4>Ingredients</h4><ul>' + ingList + '</ul>'
+        + '<h4>Steps</h4><ol>' + stepList + '</ol>'
+        + '</div></details>';
+      recipeList.insertAdjacentHTML('beforeend', html);
+    });
+  }
+
+  // --- Navigation ---
+  document.getElementById('startOverBtn').addEventListener('click', reset);
+  document.getElementById('scanAgainBtn').addEventListener('click', reset);
+  document.getElementById('backIngredientsBtn').addEventListener('click', function() {
+    showStep(stepIngredients);
+  });
+
+  function reset() {
+    imageData = null;
+    ingredients = [];
+    showError('');
+    stopCamera();
+    showCaptureSub(captureStart);
+    showStep(stepCapture);
+    fileInput.value = '';
+  }
+})();
+</script>
+</body>
+</html>
