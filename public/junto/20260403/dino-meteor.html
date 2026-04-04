@@ -194,22 +194,22 @@ function ensureAudio() {
   if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
-// Unlock audio on the very first user interaction (any touch or click)
-var _audioUnlocked = false;
+// Unlock audio on first user interaction — iOS requires this from touchend or click
 function unlockAudioOnce() {
-  if (_audioUnlocked) return;
-  _audioUnlocked = true;
-  ensureAudio();
-  // Play a silent buffer to fully unlock on iOS Safari
-  var ctx = audioCtx;
-  var silentBuf = ctx.createBuffer(1, 1, ctx.sampleRate);
-  var src = ctx.createBufferSource();
-  src.buffer = silentBuf;
-  src.connect(ctx.destination);
-  src.start(0);
+  document.removeEventListener('touchend', unlockAudioOnce);
+  document.removeEventListener('click', unlockAudioOnce);
+  var ctx = ensureAudio();
+  // Play a silent oscillator to fully unlock (more reliable than buffer on Chrome iOS)
+  var osc = ctx.createOscillator();
+  var gain = ctx.createGain();
+  gain.gain.value = 0;
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(0);
+  osc.stop(ctx.currentTime + 0.001);
 }
-document.addEventListener('touchstart', unlockAudioOnce, { once: true });
-document.addEventListener('click', unlockAudioOnce, { once: true });
+document.addEventListener('touchend', unlockAudioOnce);
+document.addEventListener('click', unlockAudioOnce);
 
 // === 8-bit NES Background Music ===
 let bgMusicPlaying = false;
@@ -892,9 +892,9 @@ function update() {
   dino.vx *= friction;
   if (Math.abs(dino.vx) > maxSpeed) dino.vx = Math.sign(dino.vx) * maxSpeed;
 
-  dino.vy += 0.6; // gravity
-  dino.x += dino.vx;
-  dino.y += dino.vy;
+  dino.vy += 0.6 * _timeScale; // gravity
+  dino.x += dino.vx * _timeScale;
+  dino.y += dino.vy * _timeScale;
 
   // Ground collision
   if (dino.y >= GROUND_Y) {
@@ -918,7 +918,7 @@ function update() {
   }
 
   // Spawn meteors
-  spawnTimer++;
+  spawnTimer += _timeScale;
   const spawnRate = Math.max(20, 60 - difficulty * 4);
   if (spawnTimer >= spawnRate) {
     spawnMeteor();
@@ -928,9 +928,9 @@ function update() {
   // Update meteors
   for (let i = meteors.length - 1; i >= 0; i--) {
     const m = meteors[i];
-    m.y += m.speed;
-    m.x += m.wobble;
-    m.rotation += 0.03;
+    m.y += m.speed * _timeScale;
+    m.x += m.wobble * _timeScale;
+    m.rotation += 0.03 * _timeScale;
 
     // Ground impact
     if (m.y > GROUND_Y) {
@@ -954,15 +954,15 @@ function update() {
   // Update particles
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
-    p.x += p.vx;
-    p.y += p.vy;
-    p.vy += 0.1;
-    p.life -= p.decay;
+    p.x += p.vx * _timeScale;
+    p.y += p.vy * _timeScale;
+    p.vy += 0.1 * _timeScale;
+    p.life -= p.decay * _timeScale;
     if (p.life <= 0) particles.splice(i, 1);
   }
 
   // Spawn flyers
-  flyerTimer++;
+  flyerTimer += _timeScale;
   const flyerRate = Math.max(120, 300 - difficulty * 15);
   if (flyerTimer >= flyerRate) {
     spawnFlyer();
@@ -972,8 +972,8 @@ function update() {
   // Update flyers
   for (let i = flyers.length - 1; i >= 0; i--) {
     const f = flyers[i];
-    f.x += f.dir * f.speed;
-    f.wingPhase += 0.15;
+    f.x += f.dir * f.speed * _timeScale;
+    f.wingPhase += 0.15 * _timeScale;
     f.y = f.baseY + Math.sin(f.wingPhase * 0.5) * 20;
 
     if (f.highFived) {
@@ -1160,14 +1160,21 @@ function gameOver() {
   }, 600);
 }
 
-var lastFrameTime = 0;
-function gameLoop(timestamp) {
-  requestAnimationFrame(gameLoop);
-  // Run at consistent 60fps regardless of display refresh rate
-  if (timestamp - lastFrameTime < 15) return;
-  lastFrameTime = timestamp;
+var _lastTime = 0;
+var _timeScale = 1;
+function gameLoop(ts) {
+  if (_lastTime) {
+    var dt = ts - _lastTime;
+    // Target is 16.67ms per frame (60fps). Scale game speed to match.
+    _timeScale = dt / 16.667;
+    // Clamp to avoid huge jumps on tab-switch
+    if (_timeScale > 3) _timeScale = 3;
+    if (_timeScale < 0.5) _timeScale = 0.5;
+  }
+  _lastTime = ts;
   update();
   draw();
+  requestAnimationFrame(gameLoop);
 }
 
 // Input — keyboard
@@ -1236,13 +1243,11 @@ if (isMobile) {
 }
 
 function startGame() {
-  ensureAudio();
-  // On mobile, give AudioContext a moment to fully resume before starting music
-  if (audioCtx && audioCtx.state !== 'running') {
-    audioCtx.resume().then(function() { init(); });
-  } else {
+  var ctx = ensureAudio();
+  // Ensure context is running, then start
+  ctx.resume().then(function() {
     init();
-  }
+  });
 }
 document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('restartBtn').addEventListener('click', startGame);
