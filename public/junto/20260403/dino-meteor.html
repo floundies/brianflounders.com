@@ -104,6 +104,7 @@
     #highScore { font-size: 12px; top: 8px; right: 10px; }
     #dinoFact { max-width: 90%; padding: 10px 12px; font-size: 13px; }
     #factImage { max-height: 150px; }
+    canvas { border: none; border-radius: 0; }
   }
   #factSpinner {
     width: 100%;
@@ -142,7 +143,7 @@
   <div id="ui" class="active">
     <div id="startScreen" class="show">
       <h1>DINO METEOR ESCAPE</h1>
-      <p>Arrow keys / WASD to move &mdash; or tap left/right to run, tap to jump</p>
+      <p id="controlsHint">Arrow keys / WASD to move</p>
       <p>Dodge meteors! High-five pterodactyls for bonus points!</p>
       <button class="btn" id="startBtn">START</button>
     </div>
@@ -167,14 +168,20 @@ const ctx = canvas.getContext('2d');
 
 // Responsive canvas sizing
 var W, H;
+var isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 function sizeCanvas() {
-  var maxW = Math.min(window.innerWidth - 6, 800);
-  var maxH = Math.min(window.innerHeight - 6, 500);
-  // maintain roughly 8:5 ratio but fit the screen
-  if (maxW / maxH > 1.6) maxW = Math.floor(maxH * 1.6);
-  else maxH = Math.floor(maxW / 1.6);
-  W = maxW;
-  H = maxH;
+  if (isMobile) {
+    // fill the full screen on mobile
+    W = window.innerWidth;
+    H = window.innerHeight;
+  } else {
+    var maxW = Math.min(window.innerWidth - 6, 800);
+    var maxH = Math.min(window.innerHeight - 6, 500);
+    if (maxW / maxH > 1.6) maxW = Math.floor(maxH * 1.6);
+    else maxH = Math.floor(maxW / 1.6);
+    W = maxW;
+    H = maxH;
+  }
   canvas.width = W;
   canvas.height = H;
 }
@@ -1166,6 +1173,7 @@ var touchIds = {};
 
 canvas.addEventListener('touchstart', function(e) {
   e.preventDefault();
+  ensureAudio();
   for (var i = 0; i < e.changedTouches.length; i++) {
     var t = e.changedTouches[i];
     var rect = canvas.getBoundingClientRect();
@@ -1207,6 +1215,11 @@ canvas.addEventListener('touchcancel', function(e) {
 }, { passive: false });
 
 // Buttons
+// Show correct controls hint
+if (isMobile) {
+  document.getElementById('controlsHint').textContent = 'Tap left/right to move, any tap jumps';
+}
+
 document.getElementById('startBtn').addEventListener('click', () => { ensureAudio(); init(); });
 document.getElementById('restartBtn').addEventListener('click', () => { ensureAudio(); init(); });
 
