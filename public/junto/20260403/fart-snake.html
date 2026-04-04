@@ -303,7 +303,10 @@
   // --- Audio ---
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   let actx;
-  function ensureAudio() { if (!actx) actx = new AudioCtx(); }
+  function ensureAudio() {
+    if (!actx) actx = new AudioCtx();
+    if (actx.state === 'suspended') actx.resume();
+  }
 
   function playFart() {
     ensureAudio();
