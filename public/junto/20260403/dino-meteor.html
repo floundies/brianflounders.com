@@ -1179,7 +1179,6 @@ var touchIds = {};
 
 canvas.addEventListener('touchstart', function(e) {
   e.preventDefault();
-  ensureAudio();
   for (var i = 0; i < e.changedTouches.length; i++) {
     var t = e.changedTouches[i];
     var rect = canvas.getBoundingClientRect();
