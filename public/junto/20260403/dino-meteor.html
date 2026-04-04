@@ -1160,10 +1160,14 @@ function gameOver() {
   }, 600);
 }
 
-function gameLoop() {
+var lastFrameTime = 0;
+function gameLoop(timestamp) {
+  requestAnimationFrame(gameLoop);
+  // Run at consistent 60fps regardless of display refresh rate
+  if (timestamp - lastFrameTime < 15) return;
+  lastFrameTime = timestamp;
   update();
   draw();
-  requestAnimationFrame(gameLoop);
 }
 
 // Input — keyboard
@@ -1231,8 +1235,17 @@ if (isMobile) {
   document.getElementById('controlsHint').textContent = 'Tap left/right to move, any tap jumps';
 }
 
-document.getElementById('startBtn').addEventListener('click', () => { ensureAudio(); init(); });
-document.getElementById('restartBtn').addEventListener('click', () => { ensureAudio(); init(); });
+function startGame() {
+  ensureAudio();
+  // On mobile, give AudioContext a moment to fully resume before starting music
+  if (audioCtx && audioCtx.state !== 'running') {
+    audioCtx.resume().then(function() { init(); });
+  } else {
+    init();
+  }
+}
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('restartBtn').addEventListener('click', startGame);
 
 // Init display
 updateGround();
