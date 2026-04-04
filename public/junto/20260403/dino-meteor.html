@@ -187,265 +187,193 @@ function sizeCanvas() {
 }
 sizeCanvas();
 
-// === Sound system (Web Audio API) ===
-let audioCtx;
-function ensureAudio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  return audioCtx;
+// === Sound system — pre-rendered WAV via OfflineAudioContext ===
+// Renders sounds at page load into WAV data URLs, plays them via Audio elements.
+// This bypasses live Web Audio playback which is broken on iOS.
+
+function renderSound(duration, setupFn) {
+  var sr = 22050;
+  var offCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, Math.ceil(sr * duration), sr);
+  setupFn(offCtx, sr);
+  return offCtx.startRendering().then(function(buffer) {
+    // Convert AudioBuffer to WAV data URL
+    var length = buffer.length;
+    var wavBuf = new ArrayBuffer(44 + length * 2);
+    var view = new DataView(wavBuf);
+    function writeStr(offset, str) { for (var i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); }
+    writeStr(0, 'RIFF');
+    view.setUint32(4, 36 + length * 2, true);
+    writeStr(8, 'WAVE');
+    writeStr(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sr, true);
+    view.setUint32(28, sr * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeStr(36, 'data');
+    view.setUint32(40, length * 2, true);
+    var ch = buffer.getChannelData(0);
+    var offset = 44;
+    for (var i = 0; i < length; i++, offset += 2) {
+      var s = Math.max(-1, Math.min(1, ch[i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+    var blob = new Blob([wavBuf], { type: 'audio/wav' });
+    return URL.createObjectURL(blob);
+  });
 }
 
-// === 8-bit NES Background Music ===
-let bgMusicPlaying = false;
-let bgMusicNodes = [];
-let bgMusicTimer = null;
+// Sound pool for an Audio URL (same pattern as fart-snack)
+function makePool(url, size) {
+  var pool = [];
+  for (var i = 0; i < (size || 3); i++) {
+    var a = new Audio(url);
+    a.preload = 'auto';
+    pool.push(a);
+  }
+  pool._idx = 0;
+  return pool;
+}
+function poolPlay(pool, vol, rate) {
+  if (!pool || !pool.length) return;
+  var snd = pool[pool._idx % pool.length];
+  pool._idx++;
+  snd.currentTime = 0;
+  snd.volume = vol !== undefined ? vol : 1;
+  snd.playbackRate = rate || 1;
+  snd.play().catch(function(){});
+}
 
+// Pre-rendered sound pools
+var sndJump, sndDoubleJump, sndHighFive, sndMeteor, sndGameOver, sndBgMusic;
+var bgMusicAudio = null;
+var soundsReady = false;
+
+// Render all sounds at page load
+Promise.all([
+  // Jump
+  renderSound(0.15, function(ctx) {
+    var o = ctx.createOscillator(); var g = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(300, 0); o.frequency.linearRampToValueAtTime(600, 0.12);
+    g.gain.setValueAtTime(0.3, 0); g.gain.linearRampToValueAtTime(0, 0.15);
+    o.connect(g); g.connect(ctx.destination); o.start(0); o.stop(0.15);
+  }),
+  // Double jump
+  renderSound(0.18, function(ctx) {
+    var o = ctx.createOscillator(); var g = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(500, 0); o.frequency.linearRampToValueAtTime(900, 0.08); o.frequency.linearRampToValueAtTime(1200, 0.15);
+    g.gain.setValueAtTime(0.3, 0); g.gain.linearRampToValueAtTime(0, 0.18);
+    o.connect(g); g.connect(ctx.destination); o.start(0); o.stop(0.18);
+  }),
+  // High five (arpeggio)
+  renderSound(0.4, function(ctx) {
+    [523, 659, 784, 1047].forEach(function(freq, i) {
+      var o = ctx.createOscillator(); var g = ctx.createGain();
+      o.type = 'square'; o.frequency.setValueAtTime(freq, i * 0.06);
+      g.gain.setValueAtTime(0.2, i * 0.06); g.gain.linearRampToValueAtTime(0, i * 0.06 + 0.15);
+      o.connect(g); g.connect(ctx.destination); o.start(i * 0.06); o.stop(i * 0.06 + 0.15);
+    });
+  }),
+  // Meteor impact
+  renderSound(0.25, function(ctx, sr) {
+    var o = ctx.createOscillator(); var g = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(120, 0); o.frequency.linearRampToValueAtTime(40, 0.2);
+    g.gain.setValueAtTime(0.4, 0); g.gain.linearRampToValueAtTime(0, 0.25);
+    o.connect(g); g.connect(ctx.destination); o.start(0); o.stop(0.25);
+    // noise
+    var bufSize = Math.floor(sr * 0.1);
+    var buf = ctx.createBuffer(1, bufSize, sr);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < bufSize; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / bufSize) * 0.6;
+    var n = ctx.createBufferSource(); var ng = ctx.createGain();
+    n.buffer = buf; ng.gain.setValueAtTime(0.25, 0); ng.gain.linearRampToValueAtTime(0, 0.1);
+    n.connect(ng); ng.connect(ctx.destination); n.start(0);
+  }),
+  // Game over
+  renderSound(0.7, function(ctx, sr) {
+    var o = ctx.createOscillator(); var g = ctx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(80, 0); o.frequency.linearRampToValueAtTime(60, 0.15); o.frequency.linearRampToValueAtTime(90, 0.3); o.frequency.linearRampToValueAtTime(30, 0.7);
+    g.gain.setValueAtTime(0.3, 0); g.gain.linearRampToValueAtTime(0, 0.7);
+    // LFO
+    var lfo = ctx.createOscillator(); var lg = ctx.createGain();
+    lfo.frequency.setValueAtTime(25, 0); lg.gain.setValueAtTime(30, 0);
+    lfo.connect(lg); lg.connect(o.frequency); lfo.start(0); lfo.stop(0.7);
+    o.connect(g); g.connect(ctx.destination); o.start(0); o.stop(0.7);
+  }),
+  // Background music loop
+  renderSound(7.2, function(ctx) {
+    var NOTE = {
+      C3:130.81,D3:146.83,E3:164.81,F3:174.61,G3:196,A3:220,B3:246.94,
+      C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392,A4:440,B4:493.88,REST:0
+    };
+    var melody = [
+      {n:NOTE.E4,d:0.15},{n:NOTE.E4,d:0.15},{n:NOTE.REST,d:0.15},{n:NOTE.E4,d:0.15},
+      {n:NOTE.REST,d:0.15},{n:NOTE.C4,d:0.15},{n:NOTE.E4,d:0.3},
+      {n:NOTE.G4,d:0.3},{n:NOTE.REST,d:0.3},{n:NOTE.G3,d:0.3},{n:NOTE.REST,d:0.3},
+      {n:NOTE.C4,d:0.3},{n:NOTE.REST,d:0.15},{n:NOTE.G3,d:0.3},{n:NOTE.REST,d:0.15},
+      {n:NOTE.E3,d:0.3},{n:NOTE.REST,d:0.15},{n:NOTE.A3,d:0.2},{n:NOTE.B3,d:0.2},
+      {n:NOTE.REST,d:0.1},{n:NOTE.A3,d:0.3},
+      {n:NOTE.G3,d:0.2},{n:NOTE.E4,d:0.2},{n:NOTE.G4,d:0.2},{n:NOTE.A4,d:0.3},
+      {n:NOTE.F4,d:0.15},{n:NOTE.G4,d:0.15},{n:NOTE.REST,d:0.15},{n:NOTE.E4,d:0.3},
+      {n:NOTE.C4,d:0.15},{n:NOTE.D4,d:0.15},{n:NOTE.B3,d:0.3},{n:NOTE.REST,d:0.3},
+    ];
+    var bass = [
+      {n:NOTE.C3,d:0.3},{n:NOTE.C3,d:0.3},{n:NOTE.G3,d:0.3},{n:NOTE.G3,d:0.3},
+      {n:NOTE.E3,d:0.3},{n:NOTE.E3,d:0.3},{n:NOTE.G3,d:0.3},{n:NOTE.G3,d:0.3},
+      {n:NOTE.A3,d:0.3},{n:NOTE.A3,d:0.3},{n:NOTE.E3,d:0.3},{n:NOTE.E3,d:0.3},
+      {n:NOTE.F3,d:0.3},{n:NOTE.F3,d:0.3},{n:NOTE.G3,d:0.3},{n:NOTE.G3,d:0.3},
+      {n:NOTE.C3,d:0.3},{n:NOTE.E3,d:0.3},{n:NOTE.G3,d:0.3},{n:NOTE.C3,d:0.3},
+      {n:NOTE.A3,d:0.3},{n:NOTE.E3,d:0.3},{n:NOTE.G3,d:0.6},
+    ];
+    function sched(notes, type, vol) {
+      var t = 0;
+      notes.forEach(function(note) {
+        if (note.n !== NOTE.REST) {
+          var o = ctx.createOscillator(); var g = ctx.createGain();
+          o.type = type; o.frequency.setValueAtTime(note.n, t);
+          g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t+0.01);
+          g.gain.setValueAtTime(vol, t+note.d*0.8); g.gain.linearRampToValueAtTime(0, t+note.d*0.95);
+          o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t+note.d);
+        }
+        t += note.d;
+      });
+    }
+    sched(melody, 'square', 0.12);
+    sched(bass, 'triangle', 0.16);
+  }),
+]).then(function(urls) {
+  sndJump = makePool(urls[0]);
+  sndDoubleJump = makePool(urls[1]);
+  sndHighFive = makePool(urls[2]);
+  sndMeteor = makePool(urls[3], 5);
+  sndGameOver = makePool(urls[4]);
+  sndBgMusic = urls[5];
+  soundsReady = true;
+});
+
+var bgMusicPlaying = false;
 function stopBgMusic() {
   bgMusicPlaying = false;
-  bgMusicNodes.forEach(n => { try { n.stop(); } catch(e) {} });
-  bgMusicNodes = [];
-  if (bgMusicTimer) { clearTimeout(bgMusicTimer); bgMusicTimer = null; }
+  if (bgMusicAudio) { bgMusicAudio.pause(); bgMusicAudio.currentTime = 0; }
 }
-
 function startBgMusic() {
   stopBgMusic();
+  if (!sndBgMusic) return;
   bgMusicPlaying = true;
-  const ctx = ensureAudio();
-
-  // NES-style melody in a minor key — energetic and loopable
-  // Notes as frequencies (A minor / C major pentatonic with some passing tones)
-  const NOTE = {
-    C3: 130.81, D3: 146.83, E3: 164.81, F3: 174.61, G3: 196.00, A3: 220.00, B3: 246.94,
-    C4: 261.63, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392.00, A4: 440.00, B4: 493.88,
-    C5: 523.25, D5: 587.33, E5: 659.25, REST: 0
-  };
-
-  // Main melody (pulse wave) — catchy 8-bit adventure theme
-  const melody = [
-    // Phrase 1 - ascending energy
-    { n: NOTE.E4, d: 0.15 }, { n: NOTE.E4, d: 0.15 }, { n: NOTE.REST, d: 0.15 }, { n: NOTE.E4, d: 0.15 },
-    { n: NOTE.REST, d: 0.15 }, { n: NOTE.C4, d: 0.15 }, { n: NOTE.E4, d: 0.3 },
-    { n: NOTE.G4, d: 0.3 }, { n: NOTE.REST, d: 0.3 }, { n: NOTE.G3, d: 0.3 }, { n: NOTE.REST, d: 0.3 },
-    // Phrase 2 - playful descent
-    { n: NOTE.C4, d: 0.3 }, { n: NOTE.REST, d: 0.15 }, { n: NOTE.G3, d: 0.3 }, { n: NOTE.REST, d: 0.15 },
-    { n: NOTE.E3, d: 0.3 }, { n: NOTE.REST, d: 0.15 }, { n: NOTE.A3, d: 0.2 }, { n: NOTE.B3, d: 0.2 },
-    { n: NOTE.REST, d: 0.1 }, { n: NOTE.A3, d: 0.3 },
-    // Phrase 3 - rising action
-    { n: NOTE.G3, d: 0.2 }, { n: NOTE.E4, d: 0.2 }, { n: NOTE.G4, d: 0.2 }, { n: NOTE.A4, d: 0.3 },
-    { n: NOTE.F4, d: 0.15 }, { n: NOTE.G4, d: 0.15 }, { n: NOTE.REST, d: 0.15 }, { n: NOTE.E4, d: 0.3 },
-    { n: NOTE.C4, d: 0.15 }, { n: NOTE.D4, d: 0.15 }, { n: NOTE.B3, d: 0.3 }, { n: NOTE.REST, d: 0.3 },
-  ];
-
-  // Bass line (triangle wave feel)
-  const bass = [
-    { n: NOTE.C3, d: 0.3 }, { n: NOTE.C3, d: 0.3 }, { n: NOTE.G3, d: 0.3 }, { n: NOTE.G3, d: 0.3 },
-    { n: NOTE.E3, d: 0.3 }, { n: NOTE.E3, d: 0.3 }, { n: NOTE.G3, d: 0.3 }, { n: NOTE.G3, d: 0.3 },
-    { n: NOTE.A3, d: 0.3 }, { n: NOTE.A3, d: 0.3 }, { n: NOTE.E3, d: 0.3 }, { n: NOTE.E3, d: 0.3 },
-    { n: NOTE.F3, d: 0.3 }, { n: NOTE.F3, d: 0.3 }, { n: NOTE.G3, d: 0.3 }, { n: NOTE.G3, d: 0.3 },
-    { n: NOTE.C3, d: 0.3 }, { n: NOTE.E3, d: 0.3 }, { n: NOTE.G3, d: 0.3 }, { n: NOTE.C3, d: 0.3 },
-    { n: NOTE.A3, d: 0.3 }, { n: NOTE.E3, d: 0.3 }, { n: NOTE.G3, d: 0.6 },
-  ];
-
-  function scheduleTrack(notes, waveType, volume, detune) {
-    if (!bgMusicPlaying) return;
-    const startTime = ctx.currentTime + 0.05;
-    let time = startTime;
-
-    notes.forEach(note => {
-      if (note.n !== NOTE.REST) {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = waveType;
-        osc.frequency.setValueAtTime(note.n, time);
-        if (detune) osc.detune.setValueAtTime(detune, time);
-        gain.gain.setValueAtTime(0, time);
-        gain.gain.linearRampToValueAtTime(volume, time + 0.01);
-        gain.gain.setValueAtTime(volume, time + note.d * 0.8);
-        gain.gain.linearRampToValueAtTime(0, time + note.d * 0.95);
-        osc.start(time);
-        osc.stop(time + note.d);
-        bgMusicNodes.push(osc);
-      }
-      time += note.d;
-    });
-
-    return time - startTime; // total duration
-  }
-
-  function playLoop() {
-    if (!bgMusicPlaying) return;
-    bgMusicNodes = [];
-    const melodyDur = scheduleTrack(melody, 'square', 0.06, 0);
-    scheduleTrack(bass, 'triangle', 0.08, 0);
-    // Schedule next loop
-    const loopDuration = Math.max(melodyDur, 0) * 1000;
-    bgMusicTimer = setTimeout(playLoop, loopDuration - 50);
-  }
-
-  playLoop();
+  bgMusicAudio = new Audio(sndBgMusic);
+  bgMusicAudio.loop = true;
+  bgMusicAudio.volume = 0.5;
+  bgMusicAudio.play().catch(function(){});
 }
 
-function playJump(isDouble) {
-  const ctx = ensureAudio();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.type = 'sine';
-  const t = ctx.currentTime;
-  if (isDouble) {
-    // Double jump: quick two-note chirp
-    osc.frequency.setValueAtTime(500, t);
-    osc.frequency.linearRampToValueAtTime(900, t + 0.08);
-    osc.frequency.linearRampToValueAtTime(1200, t + 0.15);
-    gain.gain.setValueAtTime(0.15, t);
-    gain.gain.linearRampToValueAtTime(0, t + 0.18);
-    osc.start(t);
-    osc.stop(t + 0.18);
-  } else {
-    // Normal jump: simple rising tone
-    osc.frequency.setValueAtTime(300, t);
-    osc.frequency.linearRampToValueAtTime(600, t + 0.12);
-    gain.gain.setValueAtTime(0.15, t);
-    gain.gain.linearRampToValueAtTime(0, t + 0.15);
-    osc.start(t);
-    osc.stop(t + 0.15);
-  }
-}
+function playJump(isDouble) { poolPlay(isDouble ? sndDoubleJump : sndJump, 0.6); }
+function playHighFive() { poolPlay(sndHighFive, 0.7); }
+function playMeteorImpact() { poolPlay(sndMeteor, 0.5); }
+function playGameOver() { poolPlay(sndGameOver, 0.8); }
 
-function playHighFive() {
-  const ctx = ensureAudio();
-  const t = ctx.currentTime;
-  // Bright celebratory arpeggio
-  [523, 659, 784, 1047].forEach((freq, i) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(freq, t + i * 0.06);
-    gain.gain.setValueAtTime(0.1, t + i * 0.06);
-    gain.gain.linearRampToValueAtTime(0, t + i * 0.06 + 0.15);
-    osc.start(t + i * 0.06);
-    osc.stop(t + i * 0.06 + 0.15);
-  });
-  // Slap sound (noise burst)
-  const bufSize = ctx.sampleRate * 0.05;
-  const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-  const data = buf.getChannelData(0);
-  for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufSize);
-  const noise = ctx.createBufferSource();
-  const nGain = ctx.createGain();
-  noise.buffer = buf;
-  noise.connect(nGain);
-  nGain.connect(ctx.destination);
-  nGain.gain.setValueAtTime(0.15, t);
-  nGain.gain.linearRampToValueAtTime(0, t + 0.05);
-  noise.start(t);
-}
-
-function playMeteorImpact() {
-  const ctx = ensureAudio();
-  const t = ctx.currentTime;
-  // Low thud
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(120, t);
-  osc.frequency.linearRampToValueAtTime(40, t + 0.2);
-  gain.gain.setValueAtTime(0.2, t);
-  gain.gain.linearRampToValueAtTime(0, t + 0.25);
-  osc.start(t);
-  osc.stop(t + 0.25);
-  // Crunch noise
-  const bufSize = ctx.sampleRate * 0.1;
-  const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-  const data = buf.getChannelData(0);
-  for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufSize) * 0.6;
-  const noise = ctx.createBufferSource();
-  const nGain = ctx.createGain();
-  noise.buffer = buf;
-  noise.connect(nGain);
-  nGain.connect(ctx.destination);
-  nGain.gain.setValueAtTime(0.12, t);
-  nGain.gain.linearRampToValueAtTime(0, t + 0.1);
-  noise.start(t);
-}
-
-function playGameOver() {
-  const ctx = ensureAudio();
-  const t = ctx.currentTime;
-  const duration = 0.7;
-
-  // Low rumbling oscillator - the core "flap"
-  const osc = ctx.createOscillator();
-  const oscGain = ctx.createGain();
-  osc.connect(oscGain);
-  oscGain.connect(ctx.destination);
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(80, t);
-  osc.frequency.linearRampToValueAtTime(60, t + 0.15);
-  osc.frequency.linearRampToValueAtTime(90, t + 0.3);
-  osc.frequency.linearRampToValueAtTime(50, t + 0.5);
-  osc.frequency.linearRampToValueAtTime(30, t + duration);
-  oscGain.gain.setValueAtTime(0.18, t);
-  oscGain.gain.setValueAtTime(0.2, t + 0.1);
-  oscGain.gain.linearRampToValueAtTime(0.12, t + 0.4);
-  oscGain.gain.linearRampToValueAtTime(0, t + duration);
-  osc.start(t);
-  osc.stop(t + duration);
-
-  // Sub-bass wobble for that fluttery vibration
-  const sub = ctx.createOscillator();
-  const subGain = ctx.createGain();
-  sub.connect(subGain);
-  subGain.connect(ctx.destination);
-  sub.type = 'sine';
-  sub.frequency.setValueAtTime(45, t);
-  sub.frequency.linearRampToValueAtTime(25, t + duration);
-  subGain.gain.setValueAtTime(0.2, t);
-  subGain.gain.linearRampToValueAtTime(0, t + duration);
-  sub.start(t);
-  sub.stop(t + duration);
-
-  // LFO to modulate the main osc for the "flapping" texture
-  const lfo = ctx.createOscillator();
-  const lfoGain = ctx.createGain();
-  lfo.connect(lfoGain);
-  lfoGain.connect(osc.frequency);
-  lfo.type = 'sine';
-  lfo.frequency.setValueAtTime(25, t);
-  lfo.frequency.linearRampToValueAtTime(15, t + duration);
-  lfoGain.gain.setValueAtTime(30, t);
-  lfoGain.gain.linearRampToValueAtTime(10, t + duration);
-  lfo.start(t);
-  lfo.stop(t + duration);
-
-  // Filtered noise for the airy/hissy part
-  const bufSize = Math.floor(ctx.sampleRate * duration);
-  const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-  const data = buf.getChannelData(0);
-  for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
-  const noise = ctx.createBufferSource();
-  const bandpass = ctx.createBiquadFilter();
-  const nGain = ctx.createGain();
-  noise.buffer = buf;
-  noise.connect(bandpass);
-  bandpass.connect(nGain);
-  nGain.connect(ctx.destination);
-  bandpass.type = 'bandpass';
-  bandpass.frequency.setValueAtTime(200, t);
-  bandpass.frequency.linearRampToValueAtTime(80, t + duration);
-  bandpass.Q.setValueAtTime(2, t);
-  nGain.gain.setValueAtTime(0.12, t);
-  nGain.gain.setValueAtTime(0.15, t + 0.1);
-  nGain.gain.linearRampToValueAtTime(0, t + duration);
-  noise.start(t);
-}
 var GROUND_Y;
 function updateGround() { GROUND_Y = H - Math.max(40, H * 0.12); }
 
@@ -1225,18 +1153,28 @@ if (isMobile) {
   document.getElementById('controlsHint').textContent = 'Tap left/right to move, any tap jumps';
 }
 
+// Unlock all Audio elements on first tap (iOS requires user gesture to play)
+var _unlocked = false;
+function unlockAllAudio() {
+  if (_unlocked || !soundsReady) return;
+  _unlocked = true;
+  var allPools = [sndJump, sndDoubleJump, sndHighFive, sndMeteor, sndGameOver];
+  allPools.forEach(function(pool) {
+    if (!pool) return;
+    pool.forEach(function(a) {
+      a.volume = 0;
+      a.play().then(function() { a.pause(); a.currentTime = 0; a.volume = 1; }).catch(function(){ a.volume = 1; });
+    });
+  });
+  // Also unlock bg music
+  if (bgMusicAudio) {
+    bgMusicAudio.volume = 0;
+    bgMusicAudio.play().then(function() { bgMusicAudio.pause(); bgMusicAudio.currentTime = 0; bgMusicAudio.volume = 0.5; }).catch(function(){ bgMusicAudio.volume = 0.5; });
+  }
+}
+
 function startGame() {
-  // MUST be synchronous — iOS kills audio permission in async callbacks
-  ensureAudio();
-  // Play a real (silent) oscillator RIGHT NOW in the gesture to unlock
-  var osc = audioCtx.createOscillator();
-  var g = audioCtx.createGain();
-  g.gain.value = 0.001;
-  osc.connect(g);
-  g.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.01);
-  // Now init synchronously — startBgMusic will schedule in the same call stack
+  unlockAllAudio();
   init();
 }
 document.getElementById('startBtn').addEventListener('click', startGame);
