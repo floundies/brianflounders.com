@@ -302,18 +302,19 @@
   }
 
   // Unlock all audio on first user tap (mobile Safari requirement)
+  // Sets volume to 0, plays briefly, then resets — completely silent
   var audioUnlocked = false;
   function unlockAudio() {
     if (audioUnlocked) return;
     audioUnlocked = true;
-    fartPools.forEach(function(pool) {
+    var allPools = fartPools.concat(megaPools);
+    allPools.forEach(function(pool) {
       pool.forEach(function(a) {
-        a.play().then(function() { a.pause(); a.currentTime = 0; }).catch(function(){});
-      });
-    });
-    megaPools.forEach(function(pool) {
-      pool.forEach(function(a) {
-        a.play().then(function() { a.pause(); a.currentTime = 0; }).catch(function(){});
+        var origVol = a.volume;
+        a.volume = 0;
+        a.play().then(function() {
+          setTimeout(function() { a.pause(); a.currentTime = 0; a.volume = origVol; }, 1);
+        }).catch(function(){ a.volume = origVol; });
       });
     });
   }
