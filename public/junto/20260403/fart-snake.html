@@ -308,25 +308,65 @@
     if (actx.state === 'suspended') actx.resume();
   }
 
-  // Real fart sounds
-  const shortFart = new Audio('short-fart.mp3');
-  const longFart = new Audio('long-fart.mp3');
-  shortFart.preload = 'auto';
-  longFart.preload = 'auto';
+  // Real fart sound library — variety is the spice of life
+  const fartSounds = [
+    'short-fart.mp3',
+    'fart-bean.mp3',
+    'fart-squeak.mp3',
+    'fart-rumble.mp3',
+    'fart-rapid.mp3',
+  ].map(function(src) {
+    const a = new Audio(src);
+    a.preload = 'auto';
+    return a;
+  });
+  // big farts for the apocalypse
+  const megaFarts = [
+    'long-fart.mp3',
+    'fart-long.mp3',
+    'fart-bean.mp3',
+  ].map(function(src) {
+    const a = new Audio(src);
+    a.preload = 'auto';
+    return a;
+  });
 
+  let lastFartIdx = -1;
   function playFart() {
-    // clone so overlapping plays work
-    const snd = shortFart.cloneNode();
-    snd.volume = 0.7;
-    // randomize playback rate for variety
-    snd.playbackRate = 0.8 + Math.random() * 0.5;
+    // pick a random sound, avoid repeating the same one twice
+    var idx;
+    do { idx = Math.floor(Math.random() * fartSounds.length); } while (idx === lastFartIdx && fartSounds.length > 1);
+    lastFartIdx = idx;
+    var snd = fartSounds[idx].cloneNode();
+    snd.volume = 1.0;
+    // vary the pitch for even more variety
+    snd.playbackRate = 0.7 + Math.random() * 0.6;
     snd.play().catch(function(){});
   }
 
   function playMegaFart() {
-    const snd = longFart.cloneNode();
-    snd.volume = 1.0;
-    snd.play().catch(function(){});
+    // play ALL the big farts layered on top of each other for maximum devastation
+    megaFarts.forEach(function(src, i) {
+      setTimeout(function() {
+        var snd = src.cloneNode();
+        snd.volume = 1.0;
+        snd.playbackRate = 0.6 + Math.random() * 0.3;
+        snd.play().catch(function(){});
+      }, i * 400);
+    });
+    // bonus: play a couple short ones rapid-fire after a delay for the sputtering finale
+    setTimeout(function() {
+      for (var i = 0; i < 4; i++) {
+        (function(j) {
+          setTimeout(function() {
+            var snd = fartSounds[Math.floor(Math.random() * fartSounds.length)].cloneNode();
+            snd.volume = 0.8;
+            snd.playbackRate = 1.2 + Math.random() * 0.8;
+            snd.play().catch(function(){});
+          }, j * 200);
+        })(i);
+      }
+    }, 1500);
   }
 
   function playDeath() {
