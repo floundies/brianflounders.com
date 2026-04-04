@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pantry Scanner</title>
+<title>Finn's Pantry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -35,8 +35,9 @@
   .back:hover { color: var(--gold); }
   .wrap { max-width: 600px; margin: 0 auto; padding: 0 20px; }
 
-  .header { text-align: center; padding: 60px 20px 32px; }
-  .header h1 { font: 900 clamp(28px,5vw,42px)/1.1 var(--display); margin-bottom: 8px; }
+  .header { text-align: center; padding: 48px 20px 24px; }
+  .header-logo { width: clamp(100px, 25vw, 150px); height: auto; mix-blend-mode: screen; margin-bottom: 8px; border-radius: 0; }
+  .header h1 { font: 900 clamp(28px,5vw,42px)/1.1 var(--display); margin-bottom: 8px; display: none; }
   .header p { color: var(--muted); font-size: 15px; }
 
   .error { background: rgba(200,60,60,.15); color: #e06060; border: 1px solid rgba(200,60,60,.25); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 16px; font-size: 14px; }
@@ -130,7 +131,8 @@
 <a href="index.html" class="back">&larr; Junto III</a>
 
 <div class="header">
-  <h1>Pantry Scanner</h1>
+  <img src="finns-pantry-logo.png" alt="Finn's Pantry" class="header-logo">
+  <h1>Finn's Pantry</h1>
   <p>Snap a photo of your fridge or pantry and get recipe ideas</p>
 </div>
 
