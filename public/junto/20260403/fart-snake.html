@@ -300,10 +300,17 @@
 
 <script>
 (function() {
-  // --- Audio (real fart sounds) ---
+  // --- Audio ---
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  let actx;
+  function ensureAudio() {
+    if (!actx) actx = new AudioCtx();
+    if (actx.state === 'suspended') actx.resume();
+  }
+
+  // Real fart sounds
   const shortFart = new Audio('short-fart.mp3');
   const longFart = new Audio('long-fart.mp3');
-  // preload
   shortFart.preload = 'auto';
   longFart.preload = 'auto';
 
@@ -729,8 +736,8 @@
     ctx.closePath();
   }
 
-  // Initial draw
-  draw();
+  // Initial draw — only if game state is ready
+  // (food/snake aren't set until init() is called)
 })();
 </script>
 </body>
