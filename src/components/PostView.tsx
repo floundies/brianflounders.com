@@ -168,12 +168,13 @@ export default function PostView({ id }: { id: string }) {
     const isLongForm = ev.kind === 30023
 
     // 1) explicit image tag — for long-form posts, banner image always wins
+    //    No allowed-hosts check here — author intentionally set this tag
     const ti = firstTagVal(tagKeysImage)
-    if (ti && isHttpUrl(ti) && isAllowedImageUrl(ti)) return { type: 'image', url: ti, cameFromBody: false }
+    if (ti && isHttpUrl(ti)) return { type: 'image', url: ti, cameFromBody: false }
 
     // 2) explicit video tag — hero only if no image tag exists
     const tv = firstTagVal(tagKeysVideo)
-    if (tv && isHttpUrl(tv) && isAllowedVideoUrl(tv)) return { type: 'video', url: tv, cameFromBody: false }
+    if (tv && isHttpUrl(tv)) return { type: 'video', url: tv, cameFromBody: false }
 
     // 3) imeta variants (video or image)
     const imetas = (ev.tags || []).filter((tt: string[]) => tt[0] === 'imeta')
@@ -244,11 +245,30 @@ const title = useMemo(() => {
     sendGA?.(pagePath, pageTitle)
   }, [title, ev])
 
+  // Collect video URLs from imeta tags (these may not have file extensions)
+  function getImetaVideoUrls(ev: any): Set<string> {
+    const urls = new Set<string>()
+    if (!ev?.tags) return urls
+    for (const tag of ev.tags) {
+      if (tag[0] !== 'imeta') continue
+      let url = '', isVideo = false
+      for (const part of tag.slice(1)) {
+        const mUrl = /^url\s+(.+)$/i.exec(part) || /^url=(.+)$/i.exec(part) || /^url:(.+)$/i.exec(part)
+        if (mUrl) url = mUrl[1].trim()
+        if (/^m\s+video\//i.test(part) || /^m=video\//i.test(part) || /^m:video\//i.test(part)) isVideo = true
+      }
+      if (url && isVideo) urls.add(url)
+    }
+    return urls
+  }
+
   function embedInlineVideos(md: string): string {
+    const imetaVideos = getImetaVideoUrls(ev)
     return md.replace(
-      /(https?:\/\/[^\s<>'"()]+\.(?:mp4|webm|mov|m4v)(?:\?[^\s<>'"]*)?)/ig,
+      /(https?:\/\/[^\s<>'"()]+)/ig,
       (u) => {
-        if (!isAllowedVideoUrl(u)) return u
+        // Match by extension OR by imeta video mime type
+        if (!isAllowedVideoUrl(u) && !imetaVideos.has(u)) return u
         return `<video src="${u}#t=0.1" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>`
       }
     )
