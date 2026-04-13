@@ -264,14 +264,24 @@ const title = useMemo(() => {
 
   function embedInlineVideos(md: string): string {
     const imetaVideos = getImetaVideoUrls(ev)
-    return md.replace(
-      /(https?:\/\/[^\s<>'"()]+)/ig,
-      (u) => {
-        // Match by extension OR by imeta video mime type
-        if (!isAllowedVideoUrl(u) && !imetaVideos.has(u)) return u
-        return `<video src="${u}#t=0.1" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>`
-      }
-    )
+    const videoTag = (u: string) => `<video src="${u}#t=0.1" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>`
+    const isVideo = (u: string) => isAllowedVideoUrl(u) || imetaVideos.has(u)
+
+    // Process line by line to handle angle-bracket URLs and raw URLs
+    return md.split('\n').map(line => {
+      const trimmed = line.trim()
+      // Case: <https://...mov> on its own line
+      const angle = /^<\s*(https?:\/\/[^\s<>]+)\s*>$/.exec(trimmed)
+      if (angle && isVideo(angle[1])) return videoTag(angle[1])
+      // Case: [url](url) on its own line
+      const mdLink = /^\[([^\]]*)\]\((https?:\/\/[^)]+)\)$/.exec(trimmed)
+      if (mdLink && isVideo(mdLink[2])) return videoTag(mdLink[2])
+      // Case: raw URL anywhere in the line
+      return line.replace(/(https?:\/\/[^\s<>'"()]+)/ig, (u) => {
+        if (!isVideo(u)) return u
+        return videoTag(u)
+      })
+    }).join('\n')
   }
 
   const html = useMemo(() => {
