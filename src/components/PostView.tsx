@@ -268,7 +268,7 @@ const title = useMemo(() => {
       t = t.replace(new RegExp(String.raw`\[\s*${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\s*\]\(\s*${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\s*\)`, 'i'), '')
       return t
     }
-    const body = (cameFromBody && heroUrl) ? stripHeroOnce(raw, heroUrl).replace(/\s{2,}/g, ' ').trim() : raw
+    const body = (cameFromBody && heroUrl) ? stripHeroOnce(raw, heroUrl).replace(/\n{3,}/g, '\n\n').trim() : raw
     const parsed = marked.parse(embedInlineVideos(embedInlineAudio(body)))
 
     // FINAL FALLBACK: if anything slipped through pre-markdown processing,
