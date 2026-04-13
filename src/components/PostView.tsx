@@ -264,7 +264,11 @@ const title = useMemo(() => {
 
   function embedInlineVideos(md: string): string {
     const imetaVideos = getImetaVideoUrls(ev)
-    const videoTag = (u: string) => `<video src="${u}#t=0.1" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>`
+    const videoTag = (u: string) => {
+      const isMov = /\.mov(\?|$)/i.test(u)
+      const fallback = isMov ? `<p style="font-size:13px;color:#9a9082;margin-top:6px"><a href="${u}" download style="color:#d4a854">Download video</a> if it doesn't play in your browser (.mov)</p>` : ''
+      return `<video src="${u}#t=0.1" controls preload="metadata" playsinline style="max-width:100%;width:100%;border-radius:12px"></video>${fallback}`
+    }
     const isVideo = (u: string) => isAllowedVideoUrl(u) || imetaVideos.has(u)
 
     // Process line by line to handle angle-bracket URLs and raw URLs
