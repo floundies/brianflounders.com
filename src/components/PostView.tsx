@@ -165,14 +165,15 @@ export default function PostView({ id }: { id: string }) {
     const tagKeysImage = new Set(['image','thumb','cover','banner'])
     const tagKeysVideo = new Set(['video','movie'])
     const firstTagVal = (keys: Set<string>) => (ev.tags || []).find((tt: string[]) => keys.has(tt[0]))?.[1]
+    const isLongForm = ev.kind === 30023
 
-    // 1) explicit video tag
-    const tv = firstTagVal(tagKeysVideo)
-    if (tv && isHttpUrl(tv) && isAllowedVideoUrl(tv)) return { type: 'video', url: tv, cameFromBody: false }
-
-    // 2) explicit image tag
+    // 1) explicit image tag — for long-form posts, banner image always wins
     const ti = firstTagVal(tagKeysImage)
     if (ti && isHttpUrl(ti) && isAllowedImageUrl(ti)) return { type: 'image', url: ti, cameFromBody: false }
+
+    // 2) explicit video tag — hero only if no image tag exists
+    const tv = firstTagVal(tagKeysVideo)
+    if (tv && isHttpUrl(tv) && isAllowedVideoUrl(tv)) return { type: 'video', url: tv, cameFromBody: false }
 
     // 3) imeta variants (video or image)
     const imetas = (ev.tags || []).filter((tt: string[]) => tt[0] === 'imeta')
@@ -195,9 +196,13 @@ export default function PostView({ id }: { id: string }) {
       }
     }
 
-    // 4) first allow-listed media in content (prefer video)
-    const videoFromBody = extractAllowedVideosFrom(ev.content || '')[0]
-    if (videoFromBody) return { type: 'video', url: videoFromBody, cameFromBody: true }
+    // 4) first allow-listed media in content
+    // For long-form posts, prefer image from body (video should stay inline)
+    // For short notes, prefer video from body
+    if (!isLongForm) {
+      const videoFromBody = extractAllowedVideosFrom(ev.content || '')[0]
+      if (videoFromBody) return { type: 'video', url: videoFromBody, cameFromBody: true }
+    }
     const imageFromBody = extractAllowedFrom(ev.content || '')[0]
     if (imageFromBody) return { type: 'image', url: imageFromBody, cameFromBody: true }
     return {}
