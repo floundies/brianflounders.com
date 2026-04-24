@@ -3,45 +3,45 @@
    A 1927 Spanish Revival movie palace, reborn.
    ================================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,700&family=Libre+Franklin:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Darkness — the theater before the lights come up */
-  --t-black:          #0d0b08;
-  --t-dark:           #141110;
-  --t-dark-card:      #1c1814;
-  --t-dark-border:    #2a2520;
+  /* Burgundy-black — velvet curtains, theater lobby at night */
+  --t-black:          #1a0c10;
+  --t-dark:           #221419;
+  --t-dark-card:      #2a1820;
+  --t-dark-border:    #3d2830;
 
   /* Light — plaster walls, parchment programs */
-  --t-cream:          #f5efe6;
-  --t-cream-deep:     #ebe3d6;
-  --t-cream-border:   #d5cfc4;
+  --t-cream:          #faf5ee;
+  --t-cream-deep:     #f0e9de;
+  --t-cream-border:   #ddd5c8;
 
   /* Gold — brass fixtures, stage lighting, the chandelier */
-  --t-gold:           #c9a84c;
-  --t-gold-bright:    #dbb960;
+  --t-gold:           #b8963e;
+  --t-gold-bright:    #d4ad4a;
   --t-gold-dim:       #8a7433;
-  --t-gold-soft:      rgba(201, 168, 76, 0.10);
-  --t-gold-border:    rgba(201, 168, 76, 0.25);
+  --t-gold-soft:      rgba(184, 150, 62, 0.08);
+  --t-gold-border:    rgba(184, 150, 62, 0.22);
 
-  /* Burgundy — velvet curtains (used sparingly) */
+  /* Burgundy — velvet curtains, accent */
   --t-burg:           #7a2e2e;
-  --t-burg-soft:      rgba(122, 46, 46, 0.08);
+  --t-burg-soft:      rgba(122, 46, 46, 0.06);
 
   /* Text */
   --t-fg-light:       #f0ebe3;
   --t-fg-dark:        #1a1610;
-  --t-fg-muted-l:     #9a9289;
+  --t-fg-muted-l:     #a09590;
   --t-fg-muted-d:     #6b6358;
 
-  /* Typography */
-  --t-display:        'Playfair Display', Georgia, 'Times New Roman', serif;
-  --t-body:           'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Typography — Cormorant for engraved, institutional gravitas */
+  --t-display:        'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --t-body:           'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   /* Spacing */
   --t-section-pad:    clamp(72px, 12vw, 140px);
   --t-container:      820px;
-  --t-radius:         8px;
+  --t-radius:         4px;
 }
 
 /* ================================================================
@@ -83,7 +83,7 @@ img { max-width: 100%; height: auto; }
   left: 0;
   right: 0;
   z-index: 1000;
-  background: rgba(13, 11, 8, 0.92);
+  background: rgba(26, 12, 16, 0.94);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--t-dark-border);
@@ -174,7 +174,7 @@ img { max-width: 100%; height: auto; }
     top: 56px;
     left: 0;
     right: 0;
-    background: rgba(13, 11, 8, 0.97);
+    background: rgba(26, 12, 16, 0.97);
     border-bottom: 1px solid var(--t-dark-border);
     padding: 16px 24px;
     gap: 4px;
@@ -199,10 +199,8 @@ img { max-width: 100%; height: auto; }
   padding: 80px 28px;
   overflow: hidden;
   background:
-    radial-gradient(ellipse 60% 50% at 50% 40%, rgba(201, 168, 76, 0.08) 0%, transparent 70%),
-    radial-gradient(ellipse 80% 60% at 30% 70%, rgba(122, 46, 46, 0.05) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 30% at 70% 30%, rgba(201, 168, 76, 0.04) 0%, transparent 60%),
-    linear-gradient(180deg, #0a0806 0%, #0d0b08 30%, #141110 70%, #0d0b08 100%);
+    linear-gradient(180deg, rgba(26, 12, 16, 0.7) 0%, rgba(26, 12, 16, 0.5) 40%, rgba(26, 12, 16, 0.8) 100%),
+    url('assets/theater-interior.jpg') center/cover no-repeat;
 }
 
 /* Atmospheric grain overlay */
@@ -225,8 +223,8 @@ img { max-width: 100%; height: auto; }
   width: clamp(300px, 60vw, 700px);
   height: clamp(200px, 40vw, 500px);
   background:
-    radial-gradient(ellipse 100% 100% at 50% 100%, rgba(201, 168, 76, 0.03) 0%, transparent 70%);
-  border-top: 1px solid rgba(201, 168, 76, 0.06);
+    radial-gradient(ellipse 100% 100% at 50% 100%, rgba(184, 150, 62, 0.03) 0%, transparent 70%);
+  border-top: 1px solid rgba(184, 150, 62, 0.05);
   border-radius: 50% 50% 0 0;
   pointer-events: none;
 }
@@ -687,7 +685,7 @@ img { max-width: 100%; height: auto; }
 
 .feature-card {
   padding: 28px 24px;
-  background: #fff;
+  background: var(--t-cream);
   border: 1px solid var(--t-cream-border);
   border-radius: var(--t-radius);
   transition: all 0.25s ease;
@@ -698,9 +696,12 @@ img { max-width: 100%; height: auto; }
   box-shadow: 0 8px 24px rgba(0,0,0,0.06);
 }
 
-.feature-card__icon {
-  font-size: 28px;
-  margin-bottom: 12px;
+.feature-card__marker {
+  font: 600 14px var(--t-display);
+  color: var(--t-gold-dim);
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+  opacity: 0.6;
 }
 
 .feature-card__title {
@@ -740,20 +741,20 @@ img { max-width: 100%; height: auto; }
 
 .visit-card {
   padding: 28px 24px;
-  background: var(--t-dark-card);
-  border: 1px solid var(--t-dark-border);
+  background: #fff;
+  border: 1px solid var(--t-cream-border);
   border-radius: var(--t-radius);
 }
 
 .visit-card__title {
   font: 700 17px var(--t-display);
-  color: var(--t-fg-light);
+  color: var(--t-fg-dark);
   margin-bottom: 8px;
 }
 
 .visit-card__desc {
   font-size: 14px;
-  color: var(--t-fg-muted-l);
+  color: var(--t-fg-muted-d);
   line-height: 1.7;
   margin-bottom: 12px;
 }
@@ -765,7 +766,7 @@ img { max-width: 100%; height: auto; }
 
 .shows-banner {
   padding: 32px 28px;
-  background: var(--t-dark-card);
+  background: var(--t-dark);
   border: 1px solid var(--t-dark-border);
   border-radius: var(--t-radius);
   display: flex;
@@ -810,9 +811,11 @@ img { max-width: 100%; height: auto; }
   text-align: center;
 }
 
-.involve-card__icon {
-  font-size: 32px;
-  margin-bottom: 12px;
+.involve-card__marker {
+  font: 400 24px var(--t-display);
+  color: var(--t-gold);
+  margin-bottom: 8px;
+  opacity: 0.4;
 }
 
 .involve-card__title {
@@ -975,20 +978,20 @@ img { max-width: 100%; height: auto; }
 .press-card {
   display: block;
   padding: 18px 20px;
-  background: var(--t-dark-card);
-  border: 1px solid var(--t-dark-border);
+  background: var(--t-cream);
+  border: 1px solid var(--t-cream-border);
   border-radius: var(--t-radius);
   transition: all 0.2s;
   text-decoration: none;
 }
 .press-card:hover {
   border-color: var(--t-gold-border);
-  background: rgba(201, 168, 76, 0.04);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
 }
 
 .press-card__pub {
   font: 700 12px var(--t-body);
-  color: var(--t-gold);
+  color: var(--t-gold-dim);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   margin-bottom: 4px;
@@ -996,22 +999,22 @@ img { max-width: 100%; height: auto; }
 
 .press-card__headline {
   font: 400 14px var(--t-display);
-  color: var(--t-fg-light);
+  color: var(--t-fg-dark);
   font-style: italic;
   line-height: 1.4;
 }
 
 .strategy-box {
   padding: 32px 28px;
-  background: var(--t-dark-card);
-  border: 1px solid var(--t-dark-border);
+  background: var(--t-cream);
+  border: 1px solid var(--t-cream-border);
   border-radius: var(--t-radius);
   margin-top: 16px;
 }
 
 .strategy-box h3 {
   font: 700 16px var(--t-display);
-  color: var(--t-fg-light);
+  color: var(--t-fg-dark);
   margin-bottom: 16px;
 }
 
@@ -1025,7 +1028,7 @@ img { max-width: 100%; height: auto; }
   padding: 10px 0 10px 36px;
   position: relative;
   font-size: 14px;
-  color: var(--t-fg-muted-l);
+  color: var(--t-fg-muted-d);
   line-height: 1.6;
 }
 
@@ -1045,7 +1048,7 @@ img { max-width: 100%; height: auto; }
 }
 
 .strategy-box li strong {
-  color: var(--t-fg-light);
+  color: var(--t-fg-dark);
 }
 
 /* ================================================================
