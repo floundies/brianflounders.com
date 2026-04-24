@@ -119,10 +119,10 @@
         </div>
 
         <!-- RSVP Form -->
-        <form id="rsvp-form" class="rsvp-form">
-          <input type="text" placeholder="Your name" required />
-          <input type="email" placeholder="Your email" required />
-          <textarea placeholder="What are you building? What tool are you using? Or what do you want to learn?" rows="3"></textarea>
+        <form id="rsvp-form" class="rsvp-form" action="https://formspree.io/f/xbdznrlj" method="POST">
+          <input type="text" name="name" placeholder="Your name" required />
+          <input type="email" name="email" placeholder="Your email" required />
+          <textarea name="message" placeholder="What are you building? What tool are you using? Or what do you want to learn?" rows="3"></textarea>
           <button type="submit" class="btn-gold">Reserve Your Seat</button>
         </form>
 
