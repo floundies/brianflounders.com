@@ -936,9 +936,9 @@ img { max-width: 100%; height: auto; }
   flex-shrink: 0;
 }
 
-.seat-map__swatch--prime { background: #b8963e; }
-.seat-map__swatch--gold { background: #6b8c3e; }
-.seat-map__swatch--blue { background: #3e6b8c; }
+.seat-map__swatch--prime { background: #4a8c3a; }
+.seat-map__swatch--gold { background: #c9a44a; }
+.seat-map__swatch--blue { background: #3a6a8a; }
 .seat-map__swatch--sold { background: #4a4045; }
 
 .seat-map__stage {
@@ -1006,12 +1006,12 @@ img { max-width: 100%; height: auto; }
 }
 
 .seat-map__cell--prime {
-  background: #c9a44a;
+  background: #4a8c3a;
   cursor: pointer;
 }
 
 .seat-map__cell--gold {
-  background: #5a8a3a;
+  background: #c9a44a;
   cursor: pointer;
 }
 
