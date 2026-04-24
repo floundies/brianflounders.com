@@ -850,8 +850,12 @@ img { max-width: 100%; height: auto; }
   margin-bottom: 48px;
 }
 
+.seat-grid--3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
 @media (max-width: 640px) {
-  .seat-grid { grid-template-columns: 1fr; }
+  .seat-grid, .seat-grid--3 { grid-template-columns: 1fr; }
 }
 
 .seat-card {
@@ -865,8 +869,13 @@ img { max-width: 100%; height: auto; }
 .seat-card:hover { border-color: var(--t-gold-border); }
 
 .seat-card--prime {
-  border-color: var(--t-gold-border);
-  background: linear-gradient(180deg, rgba(201, 168, 76, 0.06) 0%, var(--t-dark-card) 50%);
+  border-color: rgba(74, 140, 58, 0.3);
+  background: linear-gradient(180deg, rgba(74, 140, 58, 0.06) 0%, var(--t-dark-card) 50%);
+}
+
+.seat-card--blue {
+  border-color: rgba(58, 106, 138, 0.3);
+  background: linear-gradient(180deg, rgba(58, 106, 138, 0.06) 0%, var(--t-dark-card) 50%);
 }
 
 .seat-card__tier {
