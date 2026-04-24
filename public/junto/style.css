@@ -339,6 +339,23 @@ a:hover { color: var(--j-gold-strong); }
   box-shadow: 0 2px 8px rgba(155, 28, 28, 0.35);
 }
 
+.broadside__limited {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 8px 28px;
+  font-family: var(--j-font-body);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #1a1610;
+  background: var(--j-gold);
+  border: none;
+  border-radius: 4px;
+  transform: rotate(-2deg);
+  box-shadow: 0 2px 8px rgba(212, 168, 84, 0.35);
+}
+
 .rsvp-form--disabled {
   opacity: 0.45;
   pointer-events: none;
