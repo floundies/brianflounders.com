@@ -11,14 +11,14 @@ export default defineConfig({
         server.middlewares.use((req, res, next) => {
           const url = req.url?.split('?')[0] || ''
 
-          // Redirect /junto to /junto/ so relative paths resolve correctly
-          if (url === '/junto') {
-            res.writeHead(302, { Location: '/junto/' })
+          // Redirect /junto and /theater to trailing slash
+          if (url === '/junto' || url === '/theater') {
+            res.writeHead(302, { Location: url + '/' })
             res.end()
             return
           }
 
-          if (url.startsWith('/junto/')) {
+          if (url.startsWith('/junto/') || url.startsWith('/theater/')) {
             let filePath = url
             if (filePath.endsWith('/')) filePath += 'index.html'
 
