@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function isSoundBoothZone(seatId, rowLabel) {
-    if (rowLabel !== 'GG') return false;
+    if (rowLabel !== 'GG' && rowLabel !== 'HH' && rowLabel !== 'JJ') return false;
     var num = parseInt(seatId.replace(/[A-Z]+/gi, ''));
     return num >= 103 && num <= 113;
   }
@@ -264,6 +264,7 @@ document.addEventListener('DOMContentLoaded', function () {
       cell.className += ' seat-map__cell--sold';
       cell.title = 'Sold';
       cell.disabled = true;
+      cell.setAttribute('aria-label', 'Sold');
     } else if (val === 'SOUND BOOTH') {
       cell.className += ' seat-map__cell--soundbooth';
       cell.title = 'Sound Booth';
