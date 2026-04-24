@@ -147,60 +147,64 @@ document.addEventListener('DOMContentLoaded', function () {
     return rows;
   }
 
-  // Seat tier zones based on the actual theater seating chart
-  // Prime (orange/tan) = closest to stage + center aisles (concentric oval)
-  // Gold (green) = middle ring
-  // Blue = outermost wings
+  // Seat tier zones mapped from the actual theater seating chart image
+  // Orange cells = Prime ($1,000)
+  // Green cells = Gold ($750)
+  // Blue cells = Blue ($600)
+  // Red cells (discounted) = treated as Blue for now
   var ROW_ORDER = ['A','B','C','D','E','F','G','H','J','K','L','M','N','P','Q','R','S','T','U','V','W','X','Y','Z','AA','BB','CC','DD','EE','FF','GG','HH','JJ'];
+  var FRONT_ROWS = {A:1,B:1,C:1,D:1,E:1,F:1,G:1,H:1,J:1,K:1};
+  var MID_ROWS = {L:1,M:1,N:1,P:1,Q:1};
+  var REAR_ROWS = {T:1,U:1,V:1,W:1,X:1,Y:1,Z:1,AA:1,BB:1,CC:1,DD:1,EE:1};
+  var DEEP_REAR = {FF:1,GG:1,HH:1,JJ:1};
 
   function getSeatTier(seatId, rowLabel) {
     if (!seatId || seatId === 'SOLD' || seatId === 'SOUND BOOTH') return null;
     var num = parseInt(seatId.replace(/[A-Z]+/gi, ''));
     if (isNaN(num)) return 'gold';
 
-    var rowIdx = ROW_ORDER.indexOf(rowLabel);
-    var isFront = rowIdx >= 0 && rowIdx <= 9;    // A-K
-    var isMid = rowIdx >= 10 && rowIdx <= 16;     // L-S
-    var isDeepRear = rowIdx >= 25;                // FF-JJ
+    // Deep rear (FF-JJ): everything is Blue
+    if (DEEP_REAR[rowLabel]) return 'blue';
+
+    // R and S rows: all Gold (transition rows)
+    if (rowLabel === 'R' || rowLabel === 'S') return 'gold';
 
     // CENTER section (100-series)
     if (num >= 101 && num <= 115) {
-      if (isDeepRear) return 'gold';
-      // Prime band: seats 105-110 in front/mid/rear
       if (num >= 105 && num <= 110) return 'prime';
       return 'gold';
     }
 
-    // LEFT section (odd numbers — 1 closest to center aisle)
+    // LEFT section (odd numbers — 1 is closest to center aisle)
     if (num % 2 === 1 && num < 100) {
-      if (isFront) {
-        if (num <= 9) return 'prime';
+      if (FRONT_ROWS[rowLabel]) {
+        if (num <= 7) return 'prime';
         if (num <= 21) return 'gold';
         return 'blue';
       }
-      if (isMid) {
+      if (MID_ROWS[rowLabel]) {
         if (num <= 3) return 'prime';
-        if (num <= 23) return 'gold';
+        if (num <= 21) return 'gold';
         return 'blue';
       }
-      // rear rows T+
+      // Rear rows T-EE
       if (num <= 21) return 'gold';
       return 'blue';
     }
 
-    // RIGHT section (even numbers — 2 closest to center aisle)
+    // RIGHT section (even numbers — 2 is closest to center aisle)
     if (num % 2 === 0 && num < 100) {
-      if (isFront) {
-        if (num <= 10) return 'prime';
+      if (FRONT_ROWS[rowLabel]) {
+        if (num <= 8) return 'prime';
         if (num <= 22) return 'gold';
         return 'blue';
       }
-      if (isMid) {
+      if (MID_ROWS[rowLabel]) {
         if (num <= 4) return 'prime';
         if (num <= 22) return 'gold';
         return 'blue';
       }
-      // rear rows T+
+      // Rear rows T-EE
       if (num <= 22) return 'gold';
       return 'blue';
     }
