@@ -258,7 +258,18 @@ document.addEventListener('DOMContentLoaded', function () {
     var cell = document.createElement('button');
     cell.className = 'seat-map__cell';
 
-    if (!val) {
+    // Check sound booth zone first — cells may be empty in the spreadsheet
+    // Center section columns are 18-32; sound booth covers ~cols 20-30
+    var isCenterCol = colIndex >= 18 && colIndex <= 32;
+    if (isCenterCol && (rowLabel === 'GG' || rowLabel === 'HH' || rowLabel === 'JJ') && !val) {
+      cell.className += ' seat-map__cell--soundbooth';
+      cell.title = 'Sound Booth';
+      cell.disabled = true;
+    } else if (isCenterCol && rowLabel === 'FF' && !val) {
+      cell.className += ' seat-map__cell--unavailable';
+      cell.title = 'Not available';
+      cell.disabled = true;
+    } else if (!val) {
       cell.className += ' seat-map__cell--empty';
     } else if (val === 'SOLD') {
       cell.className += ' seat-map__cell--sold';
