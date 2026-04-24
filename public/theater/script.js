@@ -147,36 +147,64 @@ document.addEventListener('DOMContentLoaded', function () {
     return rows;
   }
 
-  // Determine seat tier based on position
-  // Column index 17 (0-based) is the center aisle marker "15" = PRIME
-  // Seats in the center section (columns around index 10-16 and 18-32) near the middle are PRIME
-  // The header row tells us: odd seats on left, 100-series center, even seats on right
-  function getSeatTier(seatId, colIndex, totalCols) {
+  // Seat tier zones based on the actual theater seating chart
+  // Prime (orange/tan) = closest to stage + center aisles (concentric oval)
+  // Gold (green) = middle ring
+  // Blue = outermost wings
+  var ROW_ORDER = ['A','B','C','D','E','F','G','H','J','K','L','M','N','P','Q','R','S','T','U','V','W','X','Y','Z','AA','BB','CC','DD','EE','FF','GG','HH','JJ'];
+
+  function getSeatTier(seatId, rowLabel) {
     if (!seatId || seatId === 'SOLD' || seatId === 'SOUND BOOTH') return null;
-    // Prime seats are in the center section (around aisle column 17)
-    // Based on the data: columns ~10-16 (left-center) and ~18-31 (right-center) are near prime
-    // The "15" column is the aisle divider
-    // Gold seats are further out, Blue seats are the wings
     var num = parseInt(seatId.replace(/[A-Z]+/gi, ''));
     if (isNaN(num)) return 'gold';
-    // Center seats (100-series or low odd numbers close to aisle)
+
+    var rowIdx = ROW_ORDER.indexOf(rowLabel);
+    var isFront = rowIdx >= 0 && rowIdx <= 9;    // A-K
+    var isMid = rowIdx >= 10 && rowIdx <= 16;     // L-S
+    var isDeepRear = rowIdx >= 25;                // FF-JJ
+
+    // CENTER section (100-series)
     if (num >= 101 && num <= 115) {
-      // Prime: 105-112 (center of center section)
-      if (num >= 106 && num <= 112) return 'prime';
+      if (isDeepRear) return 'gold';
+      // Prime band: seats 105-110 in front/mid/rear
+      if (num >= 105 && num <= 110) return 'prime';
       return 'gold';
     }
-    // Left section odd numbers
+
+    // LEFT section (odd numbers — 1 closest to center aisle)
     if (num % 2 === 1 && num < 100) {
-      if (num <= 7) return 'prime';
-      if (num <= 15) return 'gold';
+      if (isFront) {
+        if (num <= 9) return 'prime';
+        if (num <= 21) return 'gold';
+        return 'blue';
+      }
+      if (isMid) {
+        if (num <= 3) return 'prime';
+        if (num <= 23) return 'gold';
+        return 'blue';
+      }
+      // rear rows T+
+      if (num <= 21) return 'gold';
       return 'blue';
     }
-    // Right section even numbers
+
+    // RIGHT section (even numbers — 2 closest to center aisle)
     if (num % 2 === 0 && num < 100) {
-      if (num <= 8) return 'prime';
-      if (num <= 16) return 'gold';
+      if (isFront) {
+        if (num <= 10) return 'prime';
+        if (num <= 22) return 'gold';
+        return 'blue';
+      }
+      if (isMid) {
+        if (num <= 4) return 'prime';
+        if (num <= 22) return 'gold';
+        return 'blue';
+      }
+      // rear rows T+
+      if (num <= 22) return 'gold';
       return 'blue';
     }
+
     return 'gold';
   }
 
@@ -197,6 +225,13 @@ document.addEventListener('DOMContentLoaded', function () {
       if (!rowLabel || rowLabel === 'Legend' || rowLabel === 'Available PRIME seat' || rowLabel === 'SOLD PRIME seat' || rowLabel === 'Available GOLD seat' || rowLabel === 'SOLD GOLD seat' || rowLabel === 'Available BLUE seat' || rowLabel === 'SOLD BLUE seat' || rowLabel === 'TOTAL SEATS') continue;
       // Skip non-row-label entries
       if (rowLabel.length > 3 && !/^[A-Z]{1,2}$/i.test(rowLabel)) continue;
+
+      // Add walkway gap between S and T rows
+      if (rowLabel === 'T') {
+        var walkway = document.createElement('div');
+        walkway.className = 'seat-map__walkway';
+        grid.appendChild(walkway);
+      }
 
       var rowEl = document.createElement('div');
       rowEl.className = 'seat-map__row';
@@ -270,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function () {
       cell.title = 'Sound Booth';
       cell.disabled = true;
     } else {
-      var tier = getSeatTier(val, colIndex);
+      var tier = getSeatTier(val, rowLabel);
       cell.className += ' seat-map__cell--' + tier;
       var tierLabel = tier === 'prime' ? 'Prime ($1,000)' : tier === 'gold' ? 'Gold ($750)' : 'Blue ($600)';
       cell.title = val + ' — ' + tierLabel;

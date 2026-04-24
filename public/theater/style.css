@@ -1006,42 +1006,39 @@ img { max-width: 100%; height: auto; }
 }
 
 .seat-map__cell--prime {
-  background: #b8963e;
+  background: #c9a44a;
   cursor: pointer;
-}
-.seat-map__cell--prime:hover {
-  transform: scale(1.4);
-  box-shadow: 0 0 8px rgba(184, 150, 62, 0.6);
-  z-index: 2;
 }
 
 .seat-map__cell--gold {
-  background: #6b8c3e;
+  background: #5a8a3a;
   cursor: pointer;
-}
-.seat-map__cell--gold:hover {
-  transform: scale(1.4);
-  box-shadow: 0 0 8px rgba(107, 140, 62, 0.6);
-  z-index: 2;
 }
 
 .seat-map__cell--blue {
-  background: #3e6b8c;
+  background: #3a6a8a;
   cursor: pointer;
 }
+
+.seat-map__cell--prime:hover,
+.seat-map__cell--gold:hover,
 .seat-map__cell--blue:hover {
-  transform: scale(1.4);
-  box-shadow: 0 0 8px rgba(62, 107, 140, 0.6);
+  transform: scale(1.5);
+  box-shadow: 0 0 0 2px #fff, 0 0 12px rgba(255, 255, 255, 0.4);
   z-index: 2;
 }
 
 .seat-map__cell--sold {
-  background: #4a4045;
-  opacity: 0.5;
+  background: #3d3538;
+  opacity: 0.45;
 }
 
 .seat-map__cell--soundbooth {
   background: #2a2025;
+}
+
+.seat-map__walkway {
+  height: 12px;
 }
 
 /* Tooltip */
