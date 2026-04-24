@@ -201,6 +201,32 @@ document.addEventListener('DOMContentLoaded', function () {
     return 'gold';
   }
 
+  // Custom tooltip
+  var tooltip = document.createElement('div');
+  tooltip.className = 'seat-tooltip';
+  document.body.appendChild(tooltip);
+
+  function showTooltip(e, html) {
+    tooltip.innerHTML = html;
+    tooltip.classList.add('is-visible');
+    positionTooltip(e);
+  }
+  function hideTooltip() {
+    tooltip.classList.remove('is-visible');
+  }
+  function positionTooltip(e) {
+    var x = e.clientX + 12;
+    var y = e.clientY - 10;
+    // Keep on screen
+    var w = tooltip.offsetWidth;
+    var h = tooltip.offsetHeight;
+    if (x + w > window.innerWidth - 8) x = e.clientX - w - 12;
+    if (y + h > window.innerHeight - 8) y = e.clientY - h - 10;
+    if (y < 4) y = 4;
+    tooltip.style.left = x + 'px';
+    tooltip.style.top = y + 'px';
+  }
+
   function renderSeatMap(csv) {
     var rows = parseCSV(csv);
     if (rows.length < 4) { seatMapEl.innerHTML = '<p style="text-align:center;color:#a09590;">No seat data found.</p>'; return; }
@@ -321,14 +347,16 @@ document.addEventListener('DOMContentLoaded', function () {
     } else if (val === 'SOLD') {
       cell.className += ' seat-map__cell--sold';
       cell.disabled = true;
-      // Show sponsor name if available
       var sponsor = reconstructedId ? sponsorMap[reconstructedId] : '';
+      var tooltipHtml;
       if (sponsor) {
-        cell.title = reconstructedId + ' — ' + sponsor.replace(/\n/g, ' · ');
+        tooltipHtml = '<span class="seat-tooltip__seat">' + reconstructedId + '</span>Sponsored<span class="seat-tooltip__sponsor">' + sponsor.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
       } else {
-        cell.title = reconstructedId ? reconstructedId + ' — Sold' : 'Sold';
+        tooltipHtml = '<span class="seat-tooltip__seat">' + (reconstructedId || '?') + '</span>Sold';
       }
-      cell.setAttribute('aria-label', cell.title);
+      cell.addEventListener('mouseenter', function(h) { return function(e) { showTooltip(e, h); }; }(tooltipHtml));
+      cell.addEventListener('mousemove', positionTooltip);
+      cell.addEventListener('mouseleave', hideTooltip);
     } else if (val === 'SOUND BOOTH') {
       cell.className += ' seat-map__cell--soundbooth';
       cell.title = 'Sound Booth';
@@ -345,7 +373,10 @@ document.addEventListener('DOMContentLoaded', function () {
       var tier = getSeatTier(val, rowLabel);
       cell.className += ' seat-map__cell--' + tier;
       var tierLabel = tier === 'prime' ? 'Prime ($1,000)' : tier === 'gold' ? 'Gold ($750)' : 'Blue ($600)';
-      cell.title = val + ' — ' + tierLabel;
+      var availHtml = '<span class="seat-tooltip__seat">' + val + '</span>' + tierLabel;
+      cell.addEventListener('mouseenter', function(h) { return function(e) { showTooltip(e, h); }; }(availHtml));
+      cell.addEventListener('mousemove', positionTooltip);
+      cell.addEventListener('mouseleave', hideTooltip);
       cell.setAttribute('aria-label', val + ', ' + tierLabel + ', available');
       cell.addEventListener('click', function (seatId, tl) {
         return function () {
