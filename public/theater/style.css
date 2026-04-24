@@ -959,7 +959,8 @@ img { max-width: 100%; height: auto; }
   background: linear-gradient(180deg, #5a3a20, #3d2515);
   padding: 10px 0;
   border-radius: var(--t-radius) var(--t-radius) 0 0;
-  max-width: 100%;
+  /* Width matches roughly columns 15-16 (center 3 sections + aisles) */
+  max-width: 700px;
   margin: 0 auto;
 }
 
