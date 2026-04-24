@@ -115,15 +115,56 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // --- Seat Map: fetch from Google Sheets CSV ---
   var SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTckSBfwDYNA7iL8XNXta1oXJjvAOiN4v2l9fG2SAkiL2oIXX7AAbjPaXd5T7zdA3n1Aniqa3PMMDXM/pub?gid=0&single=true&output=csv';
+  var SPONSORS_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTckSBfwDYNA7iL8XNXta1oXJjvAOiN4v2l9fG2SAkiL2oIXX7AAbjPaXd5T7zdA3n1Aniqa3PMMDXM/pub?gid=499326123&single=true&output=csv';
   var seatMapEl = document.getElementById('seatMap');
+  var sponsorMap = {};
 
   if (seatMapEl) {
-    fetch(SHEET_CSV)
-      .then(function (res) { return res.text(); })
-      .then(function (csv) { renderSeatMap(csv); })
-      .catch(function () {
-        seatMapEl.innerHTML = '<p style="text-align:center;color:#a09590;padding:24px 0;">Could not load seat map. Please try again later.</p>';
-      });
+    // Fetch both sheets in parallel
+    Promise.all([
+      fetch(SHEET_CSV).then(function (r) { return r.text(); }),
+      fetch(SPONSORS_CSV).then(function (r) { return r.text(); }).catch(function () { return ''; })
+    ])
+    .then(function (results) {
+      // Parse sponsors into a lookup: seatId -> inscription
+      if (results[1]) {
+        var sponsorLines = parseSponsorCSV(results[1]);
+        sponsorLines.forEach(function (row) {
+          if (row[0] && row[1]) {
+            sponsorMap[row[0].trim().toUpperCase()] = row[1].trim();
+          }
+        });
+      }
+      renderSeatMap(results[0]);
+    })
+    .catch(function () {
+      seatMapEl.innerHTML = '<p style="text-align:center;color:#a09590;padding:24px 0;">Could not load seat map. Please try again later.</p>';
+    });
+  }
+
+  function parseSponsorCSV(text) {
+    var rows = [];
+    var lines = text.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var cells = [];
+      var cell = '';
+      var inQuotes = false;
+      for (var j = 0; j < line.length; j++) {
+        var ch = line[j];
+        if (ch === '"') { inQuotes = !inQuotes; }
+        else if (ch === ',' && !inQuotes) { cells.push(cell); cell = ''; }
+        else { cell += ch; }
+      }
+      cells.push(cell);
+      // Handle multi-line quoted fields — if we're still in quotes, merge with next line
+      if (inQuotes && i + 1 < lines.length) {
+        lines[i + 1] = line + '\n' + lines[i + 1];
+        continue;
+      }
+      if (cells.length >= 2 && cells[0].trim()) rows.push(cells);
+    }
+    return rows.slice(1); // skip header
   }
 
   function parseCSV(text) {
@@ -163,6 +204,9 @@ document.addEventListener('DOMContentLoaded', function () {
   function renderSeatMap(csv) {
     var rows = parseCSV(csv);
     if (rows.length < 4) { seatMapEl.innerHTML = '<p style="text-align:center;color:#a09590;">No seat data found.</p>'; return; }
+
+    // Header row has seat numbers per column — use to reconstruct sold seat IDs
+    var headerRow = rows[0];
 
     var grid = document.createElement('div');
     grid.className = 'seat-map__grid';
@@ -204,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Left section
       for (var c = 2; c <= 16; c++) {
         var val = (cells[c] || '').trim();
-        addSeatCell(rowEl, val, c, rowLabel);
+        addSeatCell(rowEl, val, c, rowLabel, headerRow);
       }
 
       // Left aisle
@@ -215,7 +259,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Center section
       for (var c = 18; c <= 32; c++) {
         var val = (cells[c] || '').trim();
-        addSeatCell(rowEl, val, c, rowLabel);
+        addSeatCell(rowEl, val, c, rowLabel, headerRow);
       }
 
       // Right aisle
@@ -226,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Right section
       for (var c = 34; c <= 48; c++) {
         var val = (cells[c] || '').trim();
-        addSeatCell(rowEl, val, c, rowLabel);
+        addSeatCell(rowEl, val, c, rowLabel, headerRow);
       }
 
       // Row label (right)
@@ -254,12 +298,15 @@ document.addEventListener('DOMContentLoaded', function () {
     return num >= 103 && num <= 113;
   }
 
-  function addSeatCell(rowEl, val, colIndex, rowLabel) {
+  function addSeatCell(rowEl, val, colIndex, rowLabel, headerRow) {
     var cell = document.createElement('button');
     cell.className = 'seat-map__cell';
 
+    // Reconstruct seat ID from row label + header column number
+    var colNum = (headerRow && headerRow[colIndex]) ? headerRow[colIndex].trim() : '';
+    var reconstructedId = colNum ? (rowLabel + colNum).toUpperCase() : '';
+
     // Check sound booth zone first — cells may be empty in the spreadsheet
-    // Center section columns are 18-32; sound booth covers ~cols 20-30
     var isCenterCol = colIndex >= 18 && colIndex <= 32;
     if (isCenterCol && (rowLabel === 'GG' || rowLabel === 'HH' || rowLabel === 'JJ') && !val) {
       cell.className += ' seat-map__cell--soundbooth';
@@ -273,9 +320,15 @@ document.addEventListener('DOMContentLoaded', function () {
       cell.className += ' seat-map__cell--empty';
     } else if (val === 'SOLD') {
       cell.className += ' seat-map__cell--sold';
-      cell.title = 'Sold';
       cell.disabled = true;
-      cell.setAttribute('aria-label', 'Sold');
+      // Show sponsor name if available
+      var sponsor = reconstructedId ? sponsorMap[reconstructedId] : '';
+      if (sponsor) {
+        cell.title = reconstructedId + ' — ' + sponsor.replace(/\n/g, ' · ');
+      } else {
+        cell.title = reconstructedId ? reconstructedId + ' — Sold' : 'Sold';
+      }
+      cell.setAttribute('aria-label', cell.title);
     } else if (val === 'SOUND BOOTH') {
       cell.className += ' seat-map__cell--soundbooth';
       cell.title = 'Sound Booth';
