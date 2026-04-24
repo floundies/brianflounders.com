@@ -242,6 +242,18 @@ document.addEventListener('DOMContentLoaded', function () {
     seatMapEl.appendChild(grid);
   }
 
+  function isSoundBoothZone(seatId, rowLabel) {
+    if (rowLabel !== 'GG') return false;
+    var num = parseInt(seatId.replace(/[A-Z]+/gi, ''));
+    return num >= 103 && num <= 113;
+  }
+
+  function isUnavailable(seatId, rowLabel) {
+    if (rowLabel !== 'FF') return false;
+    var num = parseInt(seatId.replace(/[A-Z]+/gi, ''));
+    return num >= 103 && num <= 113;
+  }
+
   function addSeatCell(rowEl, val, colIndex, rowLabel) {
     var cell = document.createElement('button');
     cell.className = 'seat-map__cell';
@@ -255,6 +267,14 @@ document.addEventListener('DOMContentLoaded', function () {
     } else if (val === 'SOUND BOOTH') {
       cell.className += ' seat-map__cell--soundbooth';
       cell.title = 'Sound Booth';
+      cell.disabled = true;
+    } else if (isSoundBoothZone(val, rowLabel)) {
+      cell.className += ' seat-map__cell--soundbooth';
+      cell.title = 'Sound Booth';
+      cell.disabled = true;
+    } else if (isUnavailable(val, rowLabel)) {
+      cell.className += ' seat-map__cell--unavailable';
+      cell.title = val + ' — Not available';
       cell.disabled = true;
     } else {
       var tier = getSeatTier(val, rowLabel);

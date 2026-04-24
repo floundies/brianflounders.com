@@ -1040,8 +1040,11 @@ img { max-width: 100%; height: auto; }
 }
 
 .seat-map__cell--sold {
-  background: #3d3538;
-  opacity: 0.45;
+  background: #5a3040;
+}
+
+.seat-map__cell--unavailable {
+  background: #3a3035;
 }
 
 .seat-map__cell--soundbooth {
