@@ -201,31 +201,63 @@ document.addEventListener('DOMContentLoaded', function () {
     return 'gold';
   }
 
-  // Custom tooltip
+  // Seat info panel — works as both hover preview (transient) and tap-activated panel (latched)
   var tooltip = document.createElement('div');
   tooltip.className = 'seat-tooltip';
   document.body.appendChild(tooltip);
 
-  function showTooltip(e, html) {
+  var isLatched = false;
+  var latchedCell = null;
+
+  function showPanel(seatEl, html, latched) {
     tooltip.innerHTML = html;
+    tooltip.classList.toggle('is-latched', !!latched);
     tooltip.classList.add('is-visible');
-    positionTooltip(e);
+    isLatched = !!latched;
+    latchedCell = latched ? seatEl : null;
+    positionPanelNearSeat(seatEl);
   }
-  function hideTooltip() {
-    tooltip.classList.remove('is-visible');
+  function hidePanel() {
+    tooltip.classList.remove('is-visible', 'is-latched');
+    isLatched = false;
+    latchedCell = null;
   }
-  function positionTooltip(e) {
-    var x = e.clientX + 12;
-    var y = e.clientY - 10;
-    // Keep on screen
+  function positionPanelNearSeat(seatEl) {
+    if (!seatEl) return;
+    var rect = seatEl.getBoundingClientRect();
     var w = tooltip.offsetWidth;
     var h = tooltip.offsetHeight;
-    if (x + w > window.innerWidth - 8) x = e.clientX - w - 12;
-    if (y + h > window.innerHeight - 8) y = e.clientY - h - 10;
-    if (y < 4) y = 4;
+    var x = rect.left + rect.width / 2 - w / 2;
+    var y = rect.top - h - 8;
+    if (y < 8) y = rect.bottom + 8;
+    if (x < 8) x = 8;
+    if (x + w > window.innerWidth - 8) x = window.innerWidth - w - 8;
     tooltip.style.left = x + 'px';
     tooltip.style.top = y + 'px';
   }
+
+  // Tap outside latched panel closes it
+  document.addEventListener('click', function (e) {
+    if (!isLatched) return;
+    if (tooltip.contains(e.target)) return;
+    if (latchedCell && latchedCell.contains(e.target)) return;
+    hidePanel();
+  });
+
+  // CTA button inside the panel opens the donation page
+  tooltip.addEventListener('click', function (e) {
+    var btn = e.target.closest('[data-action="sponsor"]');
+    if (btn) {
+      window.open('https://givebutter.com/HLTC', '_blank', 'noopener');
+    }
+  });
+
+  // Reposition panel as the page or seat-map scrolls / window resizes
+  var repositionLatched = function () {
+    if (isLatched && latchedCell) positionPanelNearSeat(latchedCell);
+  };
+  window.addEventListener('scroll', repositionLatched, { passive: true });
+  window.addEventListener('resize', repositionLatched);
 
   function renderSeatMap(csv) {
     var rows = parseCSV(csv);
@@ -309,7 +341,28 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     seatMapEl.innerHTML = '';
+    var stage = document.createElement('div');
+    stage.className = 'seat-map__stage';
+    stage.textContent = 'STAGE';
+    seatMapEl.appendChild(stage);
     seatMapEl.appendChild(grid);
+
+    // Reposition latched panel as the chart pans
+    seatMapEl.addEventListener('scroll', repositionLatched, { passive: true });
+
+    // Fade the swipe hint once the user has interacted with the chart
+    var hintEl = document.getElementById('seatMapHint');
+    if (hintEl) {
+      var hideHint = function () {
+        hintEl.classList.add('is-hidden');
+        seatMapEl.removeEventListener('scroll', hideHint);
+        seatMapEl.removeEventListener('touchstart', hideHint);
+        seatMapEl.removeEventListener('click', hideHint);
+      };
+      seatMapEl.addEventListener('scroll', hideHint, { passive: true });
+      seatMapEl.addEventListener('touchstart', hideHint, { passive: true });
+      seatMapEl.addEventListener('click', hideHint);
+    }
   }
 
   function isSoundBoothZone(seatId, rowLabel) {
@@ -324,9 +377,33 @@ document.addEventListener('DOMContentLoaded', function () {
     return num >= 103 && num <= 113;
   }
 
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function bindSeatPanel(cell, previewHtml, latchedHtml) {
+    cell.addEventListener('mouseenter', function () {
+      if (isLatched) return;
+      showPanel(cell, previewHtml, false);
+    });
+    cell.addEventListener('mouseleave', function () {
+      if (isLatched) return;
+      hidePanel();
+    });
+    cell.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (latchedCell === cell) {
+        hidePanel();
+      } else {
+        showPanel(cell, latchedHtml, true);
+      }
+    });
+  }
+
   function addSeatCell(rowEl, val, colIndex, rowLabel, headerRow) {
     var cell = document.createElement('button');
     cell.className = 'seat-map__cell';
+    cell.type = 'button';
 
     // Reconstruct seat ID from row label + header column number
     var colNum = (headerRow && headerRow[colIndex]) ? headerRow[colIndex].trim() : '';
@@ -346,17 +423,23 @@ document.addEventListener('DOMContentLoaded', function () {
       cell.className += ' seat-map__cell--empty';
     } else if (val === 'SOLD') {
       cell.className += ' seat-map__cell--sold';
-      cell.disabled = true;
+      cell.setAttribute('aria-label', (reconstructedId || 'Seat') + ', sponsored');
       var sponsor = reconstructedId ? sponsorMap[reconstructedId] : '';
-      var tooltipHtml;
+      var seatLabel = reconstructedId || '?';
+      var previewHtml, latchedHtml;
       if (sponsor) {
-        tooltipHtml = '<span class="seat-tooltip__seat">' + reconstructedId + '</span>Sponsored<span class="seat-tooltip__sponsor">' + sponsor.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
+        previewHtml =
+          '<span class="seat-tooltip__seat">' + escapeHtml(seatLabel) + '</span>Sponsored' +
+          '<span class="seat-tooltip__sponsor">' + escapeHtml(sponsor) + '</span>';
+        latchedHtml =
+          '<div class="seat-tooltip__head">Seat <strong>' + escapeHtml(seatLabel) + '</strong> &middot; Sponsored</div>' +
+          '<div class="seat-tooltip__sponsor">' + escapeHtml(sponsor) + '</div>';
       } else {
-        tooltipHtml = '<span class="seat-tooltip__seat">' + (reconstructedId || '?') + '</span>Sold';
+        previewHtml = '<span class="seat-tooltip__seat">' + escapeHtml(seatLabel) + '</span>Sponsored';
+        latchedHtml =
+          '<div class="seat-tooltip__head">Seat <strong>' + escapeHtml(seatLabel) + '</strong> &middot; Sponsored</div>';
       }
-      cell.addEventListener('mouseenter', function(h) { return function(e) { showTooltip(e, h); }; }(tooltipHtml));
-      cell.addEventListener('mousemove', positionTooltip);
-      cell.addEventListener('mouseleave', hideTooltip);
+      bindSeatPanel(cell, previewHtml, latchedHtml);
     } else if (val === 'SOUND BOOTH') {
       cell.className += ' seat-map__cell--soundbooth';
       cell.title = 'Sound Booth';
@@ -372,19 +455,16 @@ document.addEventListener('DOMContentLoaded', function () {
     } else {
       var tier = getSeatTier(val, rowLabel);
       cell.className += ' seat-map__cell--' + tier;
-      var tierLabel = tier === 'prime' ? 'Prime ($1,000)' : tier === 'gold' ? 'Gold ($750)' : 'Blue ($600)';
-      var availHtml = '<span class="seat-tooltip__seat">' + val + '</span>' + tierLabel;
-      cell.addEventListener('mouseenter', function(h) { return function(e) { showTooltip(e, h); }; }(availHtml));
-      cell.addEventListener('mousemove', positionTooltip);
-      cell.addEventListener('mouseleave', hideTooltip);
-      cell.setAttribute('aria-label', val + ', ' + tierLabel + ', available');
-      cell.addEventListener('click', function (seatId, tl) {
-        return function () {
-          if (confirm('Sponsor seat ' + seatId + '?\n' + tl + '\n\nYou will be redirected to our donation page.')) {
-            window.open('https://givebutter.com/HLTC', '_blank');
-          }
-        };
-      }(val, tierLabel));
+      var tierName = tier === 'prime' ? 'Prime' : tier === 'gold' ? 'Gold' : 'Blue';
+      var price = tier === 'prime' ? '$1,000' : tier === 'gold' ? '$750' : '$600';
+      var seatId = escapeHtml(val);
+      var previewHtml =
+        '<span class="seat-tooltip__seat">' + seatId + '</span>' + tierName + ' (' + price + ')';
+      var latchedHtml =
+        '<div class="seat-tooltip__head">Seat <strong>' + seatId + '</strong> &middot; ' + tierName + ' tier &middot; ' + price + '</div>' +
+        '<button class="seat-tooltip__cta" data-action="sponsor" type="button">Sponsor this seat &rarr;</button>';
+      cell.setAttribute('aria-label', val + ', ' + tierName + ' tier, ' + price + ', available');
+      bindSeatPanel(cell, previewHtml, latchedHtml);
     }
 
     rowEl.appendChild(cell);
