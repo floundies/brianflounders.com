@@ -6,7 +6,7 @@ const SHORE_CALENDAR_EMBED_URL = import.meta.env.VITE_SHORE_CALENDAR_EMBED_URL |
 const SHORE_PAGE_TITLE = 'Flounders Shore House Request Form'
 const SHORE_PAGE_DESCRIPTION = 'Request dates for the Flounders family shore house in Wildwood Crest.'
 const SHORE_PAGE_URL = 'https://www.brianflounders.com/shore'
-const SHORE_PAGE_IMAGE = 'https://www.brianflounders.com/shore/images/wildwood-crest-hero.png'
+const SHORE_PAGE_IMAGE = 'https://www.brianflounders.com/shore/images/share-card.jpg'
 const SHORE_FAVICON = '/shore/sun-favicon.svg'
 
 const units = [
@@ -161,6 +161,10 @@ export default function ShoreRequest() {
       upsertMeta('meta[property="og:title"]', { property: 'og:title', content: SHORE_PAGE_TITLE }),
       upsertMeta('meta[property="og:description"]', { property: 'og:description', content: SHORE_PAGE_DESCRIPTION }),
       upsertMeta('meta[property="og:image"]', { property: 'og:image', content: SHORE_PAGE_IMAGE }),
+      upsertMeta('meta[property="og:image:secure_url"]', { property: 'og:image:secure_url', content: SHORE_PAGE_IMAGE }),
+      upsertMeta('meta[property="og:image:type"]', { property: 'og:image:type', content: 'image/jpeg' }),
+      upsertMeta('meta[property="og:image:width"]', { property: 'og:image:width', content: '1200' }),
+      upsertMeta('meta[property="og:image:height"]', { property: 'og:image:height', content: '630' }),
       upsertMeta('meta[property="og:url"]', { property: 'og:url', content: SHORE_PAGE_URL }),
       upsertMeta('meta[property="og:type"]', { property: 'og:type', content: 'website' }),
       upsertMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' }),
