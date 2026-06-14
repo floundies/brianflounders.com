@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Shore sun</title>
+  <rect width="64" height="64" rx="14" fill="#fff7d7"/>
+  <path fill="#ff7b8d" d="m32 4 4.2 12.3L48 9.7l-6.6 11.8L56 24l-14.6 2.5L48 38.3l-11.8-6.6L32 44l-4.2-12.3L16 38.3l6.6-11.8L8 24l14.6-2.5L16 9.7l11.8 6.6L32 4Z"/>
+  <circle cx="32" cy="24" r="12" fill="#ffe36e" stroke="#113e50" stroke-width="3"/>
+  <path fill="none" stroke="#00a6bd" stroke-linecap="round" stroke-width="4" d="M14 47c4.5-4 9-4 13.5 0s9 4 13.5 0 9-4 13.5 0"/>
+  <path fill="none" stroke="#113e50" stroke-linecap="round" stroke-width="3" d="M18 55c4-3 8-3 12 0s8 3 12 0 8-3 12 0"/>
+</svg>

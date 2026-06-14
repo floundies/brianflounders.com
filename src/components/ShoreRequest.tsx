@@ -3,6 +3,11 @@ import * as React from 'react'
 const ACCESS_WORD = 'wildwood'
 const SHORE_ENDPOINT = import.meta.env.VITE_SHORE_ENDPOINT || ''
 const SHORE_CALENDAR_EMBED_URL = import.meta.env.VITE_SHORE_CALENDAR_EMBED_URL || ''
+const SHORE_PAGE_TITLE = 'Flounders Shore House Request Form'
+const SHORE_PAGE_DESCRIPTION = 'Request dates for the Flounders family shore house in Wildwood Crest.'
+const SHORE_PAGE_URL = 'https://www.brianflounders.com/shore'
+const SHORE_PAGE_IMAGE = 'https://www.brianflounders.com/shore/images/wildwood-crest-hero.png'
+const SHORE_FAVICON = '/shore/sun-favicon.svg'
 
 const units = [
   {
@@ -92,6 +97,46 @@ function withCalendarRefresh(url: string, refreshKey: number): string {
   }
 }
 
+function upsertMeta(selector: string, attributes: Record<string, string>): () => void {
+  const existing = document.head.querySelector<HTMLMetaElement>(selector)
+  const previous = existing
+    ? Object.fromEntries(Array.from(existing.attributes).map((attribute) => [attribute.name, attribute.value]))
+    : null
+  const element = existing ?? document.createElement('meta')
+
+  Object.entries(attributes).forEach(([name, value]) => element.setAttribute(name, value))
+  if (!existing) document.head.appendChild(element)
+
+  return () => {
+    if (previous) {
+      Array.from(element.attributes).forEach((attribute) => element.removeAttribute(attribute.name))
+      Object.entries(previous).forEach(([name, value]) => element.setAttribute(name, value))
+    } else {
+      element.remove()
+    }
+  }
+}
+
+function upsertLink(selector: string, attributes: Record<string, string>): () => void {
+  const existing = document.head.querySelector<HTMLLinkElement>(selector)
+  const previous = existing
+    ? Object.fromEntries(Array.from(existing.attributes).map((attribute) => [attribute.name, attribute.value]))
+    : null
+  const element = existing ?? document.createElement('link')
+
+  Object.entries(attributes).forEach(([name, value]) => element.setAttribute(name, value))
+  if (!existing) document.head.appendChild(element)
+
+  return () => {
+    if (previous) {
+      Array.from(element.attributes).forEach((attribute) => element.removeAttribute(attribute.name))
+      Object.entries(previous).forEach(([name, value]) => element.setAttribute(name, value))
+    } else {
+      element.remove()
+    }
+  }
+}
+
 export default function ShoreRequest() {
   const [unlocked, setUnlocked] = React.useState(getStoredAccess)
   const [word, setWord] = React.useState('')
@@ -107,21 +152,27 @@ export default function ShoreRequest() {
   )
 
   React.useEffect(() => {
-    document.title = 'Shore House Request'
+    const previousTitle = document.title
+    document.title = SHORE_PAGE_TITLE
 
-    const existing = document.querySelector('meta[name="robots"]')
-    const previous = existing?.getAttribute('content')
-    const robots = existing ?? document.createElement('meta')
-    robots.setAttribute('name', 'robots')
-    robots.setAttribute('content', 'noindex,nofollow,noarchive')
-    if (!existing) document.head.appendChild(robots)
+    const restore = [
+      upsertMeta('meta[name="description"]', { name: 'description', content: SHORE_PAGE_DESCRIPTION }),
+      upsertMeta('meta[name="robots"]', { name: 'robots', content: 'noindex,nofollow,noarchive' }),
+      upsertMeta('meta[property="og:title"]', { property: 'og:title', content: SHORE_PAGE_TITLE }),
+      upsertMeta('meta[property="og:description"]', { property: 'og:description', content: SHORE_PAGE_DESCRIPTION }),
+      upsertMeta('meta[property="og:image"]', { property: 'og:image', content: SHORE_PAGE_IMAGE }),
+      upsertMeta('meta[property="og:url"]', { property: 'og:url', content: SHORE_PAGE_URL }),
+      upsertMeta('meta[property="og:type"]', { property: 'og:type', content: 'website' }),
+      upsertMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' }),
+      upsertMeta('meta[name="twitter:title"]', { name: 'twitter:title', content: SHORE_PAGE_TITLE }),
+      upsertMeta('meta[name="twitter:description"]', { name: 'twitter:description', content: SHORE_PAGE_DESCRIPTION }),
+      upsertMeta('meta[name="twitter:image"]', { name: 'twitter:image', content: SHORE_PAGE_IMAGE }),
+      upsertLink('link[rel="icon"]', { rel: 'icon', href: SHORE_FAVICON, type: 'image/svg+xml' }),
+    ]
 
     return () => {
-      if (previous && existing) {
-        existing.setAttribute('content', previous)
-      } else if (!existing) {
-        robots.remove()
-      }
+      document.title = previousTitle
+      restore.forEach((restoreMetadata) => restoreMetadata())
     }
   }, [])
 
