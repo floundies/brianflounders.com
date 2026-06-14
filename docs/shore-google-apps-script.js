@@ -23,6 +23,12 @@ const CONFIG = {
     'two-bedroom': "Papa's Upper Deck",
     cottage: 'Cottage',
   },
+  eventColors: {
+    pending: CalendarApp.EventColor.GRAY,
+    'one-bedroom': CalendarApp.EventColor.CYAN,
+    'two-bedroom': CalendarApp.EventColor.PALE_RED,
+    cottage: CalendarApp.EventColor.YELLOW,
+  },
 };
 
 const REQUEST_HEADERS = [
@@ -236,7 +242,7 @@ function createPendingCalendarEvent_(request) {
     guests: request.email,
     sendInvites: false,
   });
-  event.setColor(CalendarApp.EventColor.YELLOW);
+  event.setColor(getCalendarColor_(request, CONFIG.status.pending));
   return event.getId();
 }
 
@@ -245,7 +251,7 @@ function approveCalendarEvent_(request) {
   if (!event) return;
   event.setTitle(buildCalendarTitle_(request, CONFIG.status.approved));
   event.setDescription(buildCalendarDescription_(Object.assign({}, request, { status: CONFIG.status.approved })));
-  event.setColor(CalendarApp.EventColor.PALE_BLUE);
+  event.setColor(getCalendarColor_(request, CONFIG.status.approved));
 }
 
 function denyCalendarEvent_(request) {
@@ -274,6 +280,11 @@ function buildCalendarTitle_(request, status) {
   const unitName = request.unit_name || CONFIG.units[request.unit] || request.unit || 'Unit';
   const label = status === CONFIG.status.pending ? 'PENDING' : request.exclusive || 'non-exclusive';
   return '[' + unitName + ', ' + label + '] ' + request.name + ' (' + buildGuestSummary_(request) + ')';
+}
+
+function getCalendarColor_(request, status) {
+  if (status === CONFIG.status.pending) return CONFIG.eventColors.pending;
+  return CONFIG.eventColors[request.unit] || CalendarApp.EventColor.PALE_BLUE;
 }
 
 function countPeople_(request) {

@@ -122,7 +122,8 @@ When Brian approves:
 
 1. The Sheet status changes to `approved`.
 2. The calendar event title changes from `[Unit, PENDING] Name (# people, # dogs)` to `[Unit, exclusive/non-exclusive] Name (# people, # dogs)`.
-3. The requester receives an approval email.
+3. The calendar event color changes by unit: Grammy's Flop House is teal/cyan, Papa's Upper Deck is pink/red, and Cottage is yellow. Pending requests are gray.
+4. The requester receives an approval email.
 
 When Brian denies:
 
