@@ -3,6 +3,7 @@ import PostList from './components/PostList'
 import PostView from './components/PostView'
 import NewPost from './components/NewPost'
 import EditPost from './components/EditPost'
+import ShoreRequest from './components/ShoreRequest'
 
 // import './styles/subnav.css'
 
@@ -28,8 +29,11 @@ type Route =
   | { name: 'new' }
   | { name: 'edit'; id: string }
   | { name: 'tag'; slug: string }
+  | { name: 'shore' }
 
 function parseHash(): Route {
+  if (location.pathname.replace(/\/+$/, '') === '/shore') return { name: 'shore' }
+
   const h = (location.hash || '').replace(/^#/, '')
   // "" | "/" -> home
   if (!h || h === '/' || h === '/home') return { name: 'home' }
@@ -101,6 +105,11 @@ export default function App() {
       sendGA?.('/', SITE_TITLE)
       return
     }
+    if (route.name === 'shore') {
+      document.title = `Shore House Request — ${SITE_TITLE}`
+      sendGA?.('/shore', document.title)
+      return
+    }
     if (route.name === 'tag') {
       const t = `${formatTagLabel(route.slug)} — ${SITE_TITLE}`
       document.title = t
@@ -118,6 +127,10 @@ export default function App() {
       return
     }
   }, [route])
+
+  if (route.name === 'shore') {
+    return <ShoreRequest />
+  }
 
   return (
     <>
