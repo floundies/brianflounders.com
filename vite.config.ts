@@ -4,6 +4,14 @@ import fs from 'fs'
 import path from 'path'
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        shore: path.resolve(__dirname, 'shore/index.html'),
+      },
+    },
+  },
   plugins: [
     {
       name: 'static-subdirs',

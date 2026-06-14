@@ -1,2 +1,3 @@
+/shore /shore/ 301
 /junto/*  /junto/:splat  200
 /*    /index.html    200
