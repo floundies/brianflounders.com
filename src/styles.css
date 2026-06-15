@@ -2237,12 +2237,125 @@ main.page > .wrap {
   padding: 8px 0;
 }
 
-.shore-rules ul {
+.shore-house-info {
+  width: min(1180px, calc(100% - 40px));
+  margin: 22px auto 0;
+  border: 3px solid var(--shore-ink);
+  border-radius: 4px 26px 4px 26px;
+  background:
+    linear-gradient(135deg, rgba(255, 247, 215, .96), rgba(158, 231, 212, .74)),
+    repeating-linear-gradient(0deg, transparent 0 34px, rgba(0, 106, 133, .07) 34px 36px);
+  box-shadow: 8px 8px 0 rgba(0, 106, 133, .18), 0 18px 44px rgba(32, 91, 105, .12);
+  padding: clamp(18px, 4vw, 28px);
+}
+
+.shore-house-info__intro {
   display: grid;
   gap: 8px;
-  margin: 14px 0 0;
+  max-width: 760px;
+}
+
+.shore-house-info h2,
+.shore-house-card h3 {
+  margin: 0;
+  color: var(--shore-ink);
+  font-family: var(--font-heading);
+  line-height: 1.05;
+  text-shadow: 2px 2px 0 rgba(255, 227, 110, .75);
+}
+
+.shore-house-info h2 {
+  font-size: clamp(32px, 5vw, 54px);
+}
+
+.shore-house-info__intro p,
+.shore-house-card li,
+.shore-house-card dd,
+.shore-house-info__granny {
+  color: rgba(22, 66, 75, .78);
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.shore-house-info__intro a {
+  width: fit-content;
+  color: var(--shore-deep);
+  font-weight: 900;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.shore-house-info__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(260px, .85fr);
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.shore-house-card {
+  border: 2px solid rgba(17, 62, 80, .2);
+  border-radius: 4px 18px 4px 18px;
+  background: rgba(255, 255, 255, .55);
+  padding: 16px;
+}
+
+.shore-house-card h3 {
+  font-size: 24px;
+}
+
+.shore-house-card ol,
+.shore-house-card ul {
+  display: grid;
+  gap: 7px;
+  margin: 12px 0 0;
   padding-left: 20px;
-  color: rgba(22, 66, 75, .76);
+}
+
+.shore-house-card details {
+  margin-top: 12px;
+}
+
+.shore-house-card summary {
+  width: fit-content;
+  border: 2px solid var(--shore-ink);
+  border-radius: 999px;
+  background: var(--shore-mint);
+  color: var(--shore-ink);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 900;
+  padding: 6px 12px;
+  box-shadow: 2px 2px 0 rgba(17, 62, 80, .15);
+}
+
+.shore-house-card dl {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.shore-house-card dt {
+  color: var(--shore-deep);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.shore-house-card dd {
+  margin: -4px 0 4px;
+  overflow-wrap: anywhere;
+}
+
+.shore-house-info__granny {
+  margin: 18px 0 0;
+  border-left: 8px solid var(--shore-coral);
+  background: rgba(255, 255, 255, .52);
+  padding: 12px 14px;
+  font-family: var(--font-heading);
+  font-size: 24px;
+  line-height: 1.15;
+  color: var(--shore-ink);
 }
 
 .shore-photo-band {
@@ -2313,6 +2426,7 @@ main.page > .wrap {
   .shore-units,
   .shore-layout,
   .shore-occupancy,
+  .shore-house-info__grid,
   .shore-photo-band {
     grid-template-columns: 1fr;
   }
@@ -2407,6 +2521,19 @@ main.page > .wrap {
 
   .shore-photo-band {
     width: calc(100% - 24px);
+  }
+
+  .shore-house-info {
+    width: calc(100% - 24px);
+    padding: 18px 14px;
+  }
+
+  .shore-house-card {
+    padding: 14px;
+  }
+
+  .shore-house-info__granny {
+    font-size: 20px;
   }
 
   .shore-gate__row,

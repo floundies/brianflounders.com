@@ -53,6 +53,51 @@ const unitShortNames: Record<string, string> = {
   cottage: 'Ctg',
 }
 
+const houseRules = [
+  'If you brought it with you, take it home.',
+  'If you leave it here, it may be thrown out, eaten, drank, or donated.',
+  'No sleeping on the couches unless the beds are all occupied.',
+  'If you do sleep on a couch, lay a sheet from the middle room closet under you.',
+  'Shower to remove sunscreen before sleeping on any bed or napping on any couch.',
+  'Keep all food in the kitchen only.',
+  'Obey low ice cream level warnings. Duffers delivers now.',
+]
+
+const leavingChecklist = [
+  'Towels are washed, dried, and folded in the proper pile in the middle room closet?',
+  'Washer and dryer are empty?',
+  'Our house detergent is put back into the middle room closet?',
+  'Beds are made? Sheets are washed if things happened that require it, or after longer stays?',
+  'All floors are vacuumed?',
+  'Windows are shut and locked?',
+  'Trash can and recycling bin are emptied with a new bag inserted?',
+  'Dishes are washed and put away? Drying rack is acceptable.',
+  'Kitchen table and counter-surfaces have been wiped down?',
+  'Perishables are removed from the refrigerator and kitchen?',
+  'Kitchen floor is swept, and mopped if needed?',
+  'Toothbrushes and personal care items are taken with you?',
+  'Bathroom trash cans are emptied with a new clean bag inserted?',
+  'Toilets have cleanser sprayed into them?',
+  'Lights and fans are off in every room?',
+  'Air conditioning and heating units are off in every room?',
+  'Remote controls are placed on the ottoman?',
+  'Porch furniture cushions are moved inside?',
+  'Front and back doors are locked?',
+  'Front yard is clear of all items?',
+  'Grill is covered and secured?',
+  'Trash cans are at the curb, if appropriate?',
+]
+
+const houseInfo = [
+  ['Wi-Fi', 'SomethingsFishy / 116Lavender!'],
+  ['Trash and recycling', 'Monday morning. Do not use a bag for recycling.'],
+  ['Trash only', 'Thursday morning.'],
+  ['Lavender beach box', '#140, lock code: 0116!'],
+  ['Address', '116 1/2 West Lavender Road, Wildwood Crest, NJ 08260'],
+]
+
+const houseRulesDocUrl = 'https://docs.google.com/document/d/e/2PACX-1vTaBXEeDtEFBSxwYNqFpzNvOybqHnptW7qjNBa7PHhuU9rmt9cj6oawbK0WrfC3YOyKg7myUfMqtBt8/pub'
+
 type FormState = {
   name: string
   email: string
@@ -837,6 +882,56 @@ export default function ShoreRequest() {
             </div>
           </section>
         </aside>
+      </section>
+
+      <section className="shore-house-info" aria-labelledby="shore-house-info-title">
+        <div className="shore-house-info__intro">
+          <p className="shore-kicker">House notes</p>
+          <h2 id="shore-house-info-title">Welcome to The Fish Tank</h2>
+          <p>
+            Quick family rules and leaving reminders. This can stay flexible as the official house notes evolve.
+          </p>
+          <a href={houseRulesDocUrl} target="_blank" rel="noreferrer">Open the live Google Doc</a>
+        </div>
+
+        <div className="shore-house-info__grid">
+          <article className="shore-house-card">
+            <h3>House rules</h3>
+            <ol>
+              {houseRules.map((rule) => (
+                <li key={rule}>{rule}</li>
+              ))}
+            </ol>
+          </article>
+
+          <article className="shore-house-card">
+            <h3>Leaving checklist</h3>
+            <details>
+              <summary>Show checklist</summary>
+              <ul>
+                {leavingChecklist.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </details>
+          </article>
+
+          <article className="shore-house-card shore-house-card--info">
+            <h3>Useful details</h3>
+            <dl>
+              {houseInfo.map(([label, value]) => (
+                <React.Fragment key={label}>
+                  <dt>{label}</dt>
+                  <dd>{value}</dd>
+                </React.Fragment>
+              ))}
+            </dl>
+          </article>
+        </div>
+
+        <p className="shore-house-info__granny">
+          Would Granny (aka JoMama) be happy with the cleanliness if she came here an hour after you leave? If no, turn around and fix it.
+        </p>
       </section>
 
       <section className="shore-photo-band" aria-label="Shore house mood">
