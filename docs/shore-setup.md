@@ -118,6 +118,14 @@ When someone submits a request:
 5. Brian receives an email with Approve and Deny links.
 6. The requester receives a confirmation email.
 
+The public page also reads this free JSON endpoint to render the custom occupancy board:
+
+```text
+<web-app-url>?action=events&start=2026-06-01&end=2026-08-31
+```
+
+The board uses the structured Sheet rows, not the Google Calendar embed. By default it displays the requester's name. If someone wants a family label on the board, put a line like `Family: Marcics` in Notes.
+
 When Brian approves:
 
 1. The Sheet status changes to `approved`.

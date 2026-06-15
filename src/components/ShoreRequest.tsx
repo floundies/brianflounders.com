@@ -62,6 +62,21 @@ type FormState = {
   notes: string
 }
 
+type ShoreEvent = {
+  requestId?: string
+  status: 'pending' | 'approved'
+  unit: string
+  unitName: string
+  arrival: string
+  departure: string
+  exclusive: string
+  name: string
+  displayName?: string
+  people: number
+  dogs: number
+  notes?: string
+}
+
 const emptyForm: FormState = {
   name: '',
   email: '',
@@ -95,6 +110,53 @@ function withCalendarRefresh(url: string, refreshKey: number): string {
     const joiner = url.includes('?') ? '&' : '?'
     return `${url}${joiner}shoreRefresh=${refreshKey}`
   }
+}
+
+function toDateKey(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date)
+  next.setDate(next.getDate() + days)
+  return next
+}
+
+function getMonthGrid(monthDate: Date): Date[] {
+  const first = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
+  const gridStart = addDays(first, -first.getDay())
+  return Array.from({ length: 42 }, (_, index) => addDays(gridStart, index))
+}
+
+function getGuestIcon(count: number): string {
+  return count >= 8 ? '👥' : '👤'
+}
+
+function getStayLabel(event: ShoreEvent): string {
+  const mode = event.exclusive === 'exclusive' ? 'E' : 'NE'
+  const guestCount = Number(event.people || 0)
+  const dogCount = Number(event.dogs || 0)
+  return [
+    event.displayName || event.name,
+    mode,
+    `${getGuestIcon(guestCount)} ${guestCount}`,
+    dogCount > 0 ? `🐾 ${dogCount}` : '',
+  ].filter(Boolean).join(' · ')
+}
+
+function eventTouchesDay(event: ShoreEvent, dayKey: string): boolean {
+  return event.arrival <= dayKey && dayKey <= event.departure
+}
+
+function eventStaysOvernight(event: ShoreEvent, dayKey: string): boolean {
+  return event.arrival <= dayKey && dayKey < event.departure
+}
+
+function formatMonth(date: Date): string {
+  return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(date)
 }
 
 function upsertMeta(selector: string, attributes: Record<string, string>): () => void {
@@ -145,11 +207,17 @@ export default function ShoreRequest() {
   const [status, setStatus] = React.useState('')
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [calendarRefreshKey, setCalendarRefreshKey] = React.useState(0)
+  const [boardMonth, setBoardMonth] = React.useState(() => new Date())
+  const [shoreEvents, setShoreEvents] = React.useState<ShoreEvent[]>([])
+  const [boardStatus, setBoardStatus] = React.useState('')
 
   const calendarEmbedUrl = React.useMemo(
     () => withCalendarRefresh(SHORE_CALENDAR_EMBED_URL, calendarRefreshKey),
     [calendarRefreshKey]
   )
+  const boardDays = React.useMemo(() => getMonthGrid(boardMonth), [boardMonth])
+  const boardStart = toDateKey(boardDays[0])
+  const boardEnd = toDateKey(boardDays[boardDays.length - 1])
 
   React.useEffect(() => {
     const previousTitle = document.title
@@ -180,6 +248,32 @@ export default function ShoreRequest() {
     }
   }, [])
 
+  React.useEffect(() => {
+    if (!unlocked || !SHORE_ENDPOINT) return
+
+    const controller = new AbortController()
+    const url = new URL(SHORE_ENDPOINT)
+    url.searchParams.set('action', 'events')
+    url.searchParams.set('start', boardStart)
+    url.searchParams.set('end', boardEnd)
+    url.searchParams.set('refresh', String(calendarRefreshKey))
+
+    setBoardStatus('Loading the occupancy board...')
+    fetch(url.toString(), { signal: controller.signal })
+      .then((response) => response.json())
+      .then((payload) => {
+        if (!payload?.ok) throw new Error(payload?.error || 'Could not load shore events.')
+        setShoreEvents(Array.isArray(payload.events) ? payload.events : [])
+        setBoardStatus('')
+      })
+      .catch((error) => {
+        if (error.name === 'AbortError') return
+        setBoardStatus('Could not load the occupancy board. The Google Calendar backup is still below.')
+      })
+
+    return () => controller.abort()
+  }, [unlocked, boardStart, boardEnd, calendarRefreshKey])
+
   function unlock(event: React.FormEvent) {
     event.preventDefault()
     if (word.trim().toLowerCase() !== ACCESS_WORD) {
@@ -196,6 +290,10 @@ export default function ShoreRequest() {
 
   function updateField(field: keyof FormState, value: string) {
     setForm((current) => ({ ...current, [field]: value }))
+  }
+
+  function shiftBoardMonth(months: number) {
+    setBoardMonth((current) => new Date(current.getFullYear(), current.getMonth() + months, 1))
   }
 
   async function submitRequest(event: React.FormEvent) {
@@ -294,6 +392,81 @@ export default function ShoreRequest() {
             </div>
           </article>
           ))}
+      </section>
+
+      <section className="shore-occupancy" aria-labelledby="shore-occupancy-title">
+        <div className="shore-occupancy__top">
+          <div>
+            <p className="shore-kicker">Availability board</p>
+            <h2 id="shore-occupancy-title">Who’s down the shore</h2>
+          </div>
+          <div className="shore-occupancy__controls" aria-label="Occupancy board month controls">
+            <button type="button" onClick={() => shiftBoardMonth(-1)} aria-label="Previous month">‹</button>
+            <strong>{formatMonth(boardMonth)}</strong>
+            <button type="button" onClick={() => shiftBoardMonth(1)} aria-label="Next month">›</button>
+          </div>
+        </div>
+        <div className="shore-occupancy__legend" aria-label="Board legend">
+          <span><b>E</b> Exclusive</span>
+          <span><b>NE</b> Non-exclusive</span>
+          <span><b>👤</b> Guests</span>
+          <span><b>🐾</b> Dogs</span>
+          <span><b>→</b> Same-day turnover</span>
+        </div>
+        {boardStatus && <p className="shore-status">{boardStatus}</p>}
+        <div className="shore-board" role="table" aria-label={`${formatMonth(boardMonth)} shore house occupancy`}>
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((weekday) => (
+            <div className="shore-board__weekday" role="columnheader" key={weekday}>{weekday}</div>
+          ))}
+          {boardDays.map((day) => {
+            const dayKey = toDateKey(day)
+            const isCurrentMonth = day.getMonth() === boardMonth.getMonth()
+            const isToday = dayKey === toDateKey(new Date())
+
+            return (
+              <article
+                className={`shore-day${isCurrentMonth ? '' : ' shore-day--muted'}${isToday ? ' shore-day--today' : ''}`}
+                role="cell"
+                key={dayKey}
+              >
+                <div className="shore-day__number">{day.getDate()}</div>
+                <div className="shore-day__lanes">
+                  {units.map((unit) => {
+                    const unitEvents = shoreEvents.filter((event) => event.unit === unit.id && eventTouchesDay(event, dayKey))
+                    const arrivals = unitEvents.filter((event) => event.arrival === dayKey)
+                    const departures = unitEvents.filter((event) => event.departure === dayKey)
+                    const staying = unitEvents.filter((event) => eventStaysOvernight(event, dayKey))
+                    const turnover = arrivals.length > 0 && departures.length > 0
+                    const visibleEvents = staying.length ? staying : unitEvents
+
+                    return (
+                      <div className={`shore-lane shore-lane--${unit.id}`} key={unit.id}>
+                        <span className="shore-lane__unit">{unit.name.replace("Grammy's Flop House", "Grammy's").replace("Papa's Upper Deck", "Papa's")}</span>
+                        {visibleEvents.length === 0 ? (
+                          <span className="shore-lane__open">open</span>
+                        ) : turnover ? (
+                          <span className="shore-turnover">
+                            <span>{departures.map((event) => event.displayName || event.name).join(' & ')}</span>
+                            <b>→</b>
+                            <span>{arrivals.map((event) => event.displayName || event.name).join(' & ')}</span>
+                          </span>
+                        ) : (
+                          <span className="shore-stay-list">
+                            {visibleEvents.map((event) => (
+                              <span className={`shore-stay shore-stay--${event.status}`} key={event.requestId || `${event.unit}-${event.name}-${event.arrival}`}>
+                                {getStayLabel(event)}
+                              </span>
+                            ))}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </article>
+            )
+          })}
+        </div>
       </section>
 
       <section className="shore-layout">

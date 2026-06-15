@@ -131,6 +131,7 @@ function doGet(event) {
     const action = String(event.parameter.action || '').toLowerCase();
     if (action === 'approve') return handleDecision_(event.parameter, CONFIG.status.approved);
     if (action === 'deny') return handleDecision_(event.parameter, CONFIG.status.denied);
+    if (action === 'events') return listEvents_(event.parameter);
     if (action === 'health') return json_({ ok: true, service: 'shore-request' });
     return html_('Shore request backend is running.');
   } catch (error) {
@@ -176,6 +177,34 @@ function handleDecision_(params, decision) {
   updateRow_(sheet, rowNumber, updates);
   emailRequester_(Object.assign({}, request, updates), 'denied');
   return html_('Denied: ' + escapeHtml_(request.unit_name) + ' for ' + escapeHtml_(request.name) + '.');
+}
+
+function listEvents_(params) {
+  const start = isDateString_(params.start) ? params.start : formatDate_(new Date());
+  const endFallback = new Date();
+  endFallback.setMonth(endFallback.getMonth() + 3);
+  const end = isDateString_(params.end) ? params.end : formatDate_(endFallback);
+  const rows = getRows_(getRequestsSheet_());
+  const events = rows
+    .filter((row) => [CONFIG.status.pending, CONFIG.status.approved].includes(row.status))
+    .filter((row) => isDateString_(row.arrival) && isDateString_(row.departure))
+    .filter((row) => rangesOverlap_(row.arrival, row.departure, start, end))
+    .map((row) => ({
+      requestId: row.request_id,
+      status: row.status,
+      unit: row.unit,
+      unitName: row.unit_name || CONFIG.units[row.unit] || row.unit,
+      arrival: row.arrival,
+      departure: row.departure,
+      exclusive: row.exclusive || 'non-exclusive',
+      name: row.name,
+      displayName: getDisplayName_(row),
+      people: countPeople_(row),
+      dogs: Number(row.dogs || 0),
+      notes: row.notes || '',
+    }));
+
+  return json_({ ok: true, start, end, events });
 }
 
 function normalizeRequest_(payload) {
@@ -451,6 +480,10 @@ function addDays_(date, days) {
   return result;
 }
 
+function formatDate_(date) {
+  return Utilities.formatDate(date, CONFIG.timezone, 'yyyy-MM-dd');
+}
+
 function isDateString_(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''));
 }
@@ -466,6 +499,13 @@ function rangesOverlap_(arrivalA, departureA, arrivalB, departureB) {
 function numberString_(value) {
   const number = Number(value || 0);
   return String(Number.isFinite(number) && number >= 0 ? number : 0);
+}
+
+function getDisplayName_(request) {
+  const notes = String(request.notes || '').trim();
+  const match = notes.match(/(?:display|family|last name|calendar)\s*[:=-]\s*([^\n,;]+)/i);
+  if (match && match[1]) return match[1].trim();
+  return String(request.name || '').trim();
 }
 
 function makeRequestId_() {
