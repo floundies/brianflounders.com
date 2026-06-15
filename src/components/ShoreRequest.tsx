@@ -1,6 +1,5 @@
 import * as React from 'react'
 
-const ACCESS_WORD = 'wildwood'
 const SHORE_ENDPOINT = import.meta.env.VITE_SHORE_ENDPOINT || ''
 const SHORE_PAGE_TITLE = 'Flounders Shore House Request Form'
 const SHORE_PAGE_DESCRIPTION = 'Request dates for the Flounders family shore house in Wildwood Crest.'
@@ -120,6 +119,8 @@ type ShoreEvent = {
   dogs: number
   notes?: string
 }
+
+type HouseDetail = [string, string]
 
 const emptyForm: FormState = {
   name: '',
@@ -301,6 +302,8 @@ export default function ShoreRequest() {
   const [unlocked, setUnlocked] = React.useState(getStoredAccess)
   const [word, setWord] = React.useState('')
   const [gateError, setGateError] = React.useState('')
+  const [houseDetails, setHouseDetails] = React.useState<HouseDetail[]>([])
+  const [isUnlocking, setIsUnlocking] = React.useState(false)
   const [form, setForm] = React.useState<FormState>(emptyForm)
   const [status, setStatus] = React.useState('')
   const [isSubmitting, setIsSubmitting] = React.useState(false)
@@ -351,6 +354,37 @@ export default function ShoreRequest() {
   }, [])
 
   React.useEffect(() => {
+    if (!unlocked) return
+
+    let cancelled = false
+
+    fetch('/api/shore-access', { credentials: 'include' })
+      .then((response) => {
+        if (!response.ok) throw new Error('Not unlocked.')
+        return response.json()
+      })
+      .then((payload: { ok?: boolean; houseDetails?: HouseDetail[] }) => {
+        if (!cancelled && payload.ok) {
+          setHouseDetails(Array.isArray(payload.houseDetails) ? payload.houseDetails : [])
+        }
+      })
+      .catch(() => {
+        if (cancelled) return
+        setHouseDetails([])
+        try {
+          window.localStorage.removeItem('shore-access')
+        } catch {
+          // Local storage is just a convenience; the server cookie is the real gate.
+        }
+        setUnlocked(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [unlocked])
+
+  React.useEffect(() => {
     if (!unlocked || !SHORE_ENDPOINT) return
 
     const controller = new AbortController()
@@ -374,18 +408,39 @@ export default function ShoreRequest() {
     return () => controller.abort()
   }, [unlocked, boardStart, boardEnd, calendarRefreshKey])
 
-  function unlock(event: React.FormEvent) {
+  async function unlock(event: React.FormEvent) {
     event.preventDefault()
-    if (word.trim().toLowerCase() !== ACCESS_WORD) {
-      setGateError('Try the shore word.')
-      return
-    }
+    if (isUnlocking) return
+
+    setGateError('')
+    setIsUnlocking(true)
+
     try {
-      window.localStorage.setItem('shore-access', 'ok')
+      const response = await fetch('/api/shore-access', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ word }),
+      })
+      const result = await response.json().catch(() => null)
+
+      if (!response.ok || !result?.ok) {
+        setGateError(result?.error || 'Try the shore word.')
+        return
+      }
+
+      setHouseDetails(Array.isArray(result.houseDetails) ? result.houseDetails : [])
+      try {
+        window.localStorage.setItem('shore-access', 'ok')
+      } catch {
+        // Local storage is just a convenience; the server cookie is the real gate.
+      }
+      setUnlocked(true)
     } catch {
-      // Local storage is just a convenience; the gate still works without it.
+      setGateError('Could not check the shore word. Try again in a minute.')
+    } finally {
+      setIsUnlocking(false)
     }
-    setUnlocked(true)
   }
 
   function updateField(field: keyof FormState, value: string) {
@@ -455,7 +510,9 @@ export default function ShoreRequest() {
                 autoComplete="off"
                 autoFocus
               />
-              <button type="submit">Enter</button>
+              <button type="submit" disabled={isUnlocking}>
+                {isUnlocking ? 'Checking' : 'Enter'}
+              </button>
             </div>
             {gateError && <p className="shore-error">{gateError}</p>}
           </form>
@@ -649,6 +706,7 @@ export default function ShoreRequest() {
           <div className="shore-grid shore-grid--2">
             <label>
               Name
+              <span className="shore-field-hint">Example: Ed and Sara. This is what the calendar will display.</span>
               <input required value={form.name} onChange={(event) => updateField('name', event.target.value)} />
             </label>
             <label>
@@ -911,7 +969,18 @@ export default function ShoreRequest() {
 
           <article className="shore-house-card shore-house-card--info">
             <h3>Details</h3>
-            <p>Sensitive house details are shared directly with confirmed guests.</p>
+            {houseDetails.length > 0 ? (
+              <dl>
+                {houseDetails.map(([label, value]) => (
+                  <React.Fragment key={label}>
+                    <dt>{label}</dt>
+                    <dd>{value}</dd>
+                  </React.Fragment>
+                ))}
+              </dl>
+            ) : (
+              <p>Loading house details...</p>
+            )}
           </article>
         </div>
 

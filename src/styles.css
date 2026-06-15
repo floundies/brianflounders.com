@@ -1175,6 +1175,15 @@ main.page > .wrap {
   font-weight: 800;
 }
 
+.shore-field-hint {
+  display: block;
+  margin-top: 3px;
+  color: rgba(22, 66, 75, .62);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
 .shore-gate__row {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -1229,6 +1238,13 @@ main.page > .wrap {
 .shore-gate button:hover,
 .shore-submit:hover {
   background: #d95e4c;
+}
+
+.shore-gate button:disabled,
+.shore-submit:disabled {
+  cursor: not-allowed;
+  opacity: .72;
+  box-shadow: 3px 3px 0 var(--shore-ink);
 }
 
 .shore-error,
@@ -2271,6 +2287,7 @@ main.page > .wrap {
 .shore-house-info__intro p,
 .shore-house-card li,
 .shore-house-card p,
+.shore-house-card dd,
 .shore-house-info__granny p {
   color: rgba(22, 66, 75, .78);
   font-weight: 800;
@@ -2322,6 +2339,25 @@ main.page > .wrap {
 
 .shore-house-card p {
   margin: 12px 0 0;
+}
+
+.shore-house-card dl {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.shore-house-card dt {
+  color: var(--shore-deep);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.shore-house-card dd {
+  margin: -3px 0 6px;
+  overflow-wrap: anywhere;
 }
 
 .shore-house-info__granny {
