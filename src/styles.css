@@ -1175,15 +1175,6 @@ main.page > .wrap {
   font-weight: 800;
 }
 
-.shore-field-hint {
-  display: block;
-  margin-top: 3px;
-  color: rgba(22, 66, 75, .62);
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1.25;
-}
-
 .shore-gate__row {
   display: grid;
   grid-template-columns: 1fr auto;

@@ -705,9 +705,13 @@ export default function ShoreRequest() {
 
           <div className="shore-grid shore-grid--2">
             <label>
-              Name
-              <span className="shore-field-hint">Example: Ed and Sara. This is what the calendar will display.</span>
-              <input required value={form.name} onChange={(event) => updateField('name', event.target.value)} />
+              Calendar name
+              <input
+                required
+                placeholder="Ed and Sara"
+                value={form.name}
+                onChange={(event) => updateField('name', event.target.value)}
+              />
             </label>
             <label>
               Email
