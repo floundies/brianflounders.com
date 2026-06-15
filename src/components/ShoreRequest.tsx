@@ -175,6 +175,14 @@ function formatShortDate(dateKey: string): string {
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(year, month - 1, day))
 }
 
+function formatDayName(date: Date): string {
+  return new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(date)
+}
+
+function formatWeekRange(week: Date[]): string {
+  return `${formatShortDate(toDateKey(week[0]))}-${formatShortDate(toDateKey(week[6]))}`
+}
+
 function loadShoreEvents(url: string, signal: AbortSignal): Promise<ShoreEvent[]> {
   return new Promise((resolve, reject) => {
     const callbackName = `shoreEvents_${Date.now()}_${Math.random().toString(36).slice(2)}`
@@ -472,7 +480,7 @@ export default function ShoreRequest() {
           <span><b>→</b> Same-day turnover</span>
         </div>
         {boardStatus && <p className="shore-status">{boardStatus}</p>}
-        <div className="shore-board" aria-label={`${formatMonth(boardMonth)} shore house occupancy`}>
+        <div className="shore-board shore-board--desktop" aria-label={`${formatMonth(boardMonth)} shore house occupancy`}>
           <div className="shore-board__weekdays">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((weekday) => (
               <div className="shore-board__weekday" key={weekday}>{weekday}</div>
@@ -516,6 +524,66 @@ export default function ShoreRequest() {
                         )
                       })}
                     </div>
+                  )
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
+        <div className="shore-mobile-board" aria-label={`${formatMonth(boardMonth)} shore house occupancy by week`}>
+          {boardWeeks.map((week) => (
+            <section className="shore-mobile-week" key={toDateKey(week[0])}>
+              <div className="shore-mobile-week__header">
+                <strong>{formatWeekRange(week)}</strong>
+                <span>{week.some((day) => toDateKey(day) === toDateKey(new Date())) ? 'This week' : formatMonth(week[0])}</span>
+              </div>
+              <div className="shore-mobile-days" aria-hidden="true">
+                {week.map((day) => {
+                  const dayKey = toDateKey(day)
+                  const isCurrentMonth = day.getMonth() === boardMonth.getMonth()
+                  const isToday = dayKey === toDateKey(new Date())
+                  return (
+                    <span className={`${isCurrentMonth ? '' : 'shore-mobile-day--muted'}${isToday ? ' shore-mobile-day--today' : ''}`} key={dayKey}>
+                      <b>{formatDayName(day)}</b>
+                      {day.getDate()}
+                    </span>
+                  )
+                })}
+              </div>
+              <div className="shore-mobile-lanes">
+                {units.map((unit) => {
+                  const unitEvents = shoreEvents
+                    .filter((event) => event.unit === unit.id && eventOverlapsWeek(event, week))
+                    .sort((a, b) => a.arrival.localeCompare(b.arrival) || a.name.localeCompare(b.name))
+
+                  return (
+                    <article className={`shore-mobile-lane shore-mobile-lane--${unit.id}`} key={unit.id}>
+                      <div className="shore-mobile-lane__label">
+                        <b>{unitShortNames[unit.id]}</b>
+                        <span>{unit.name.replace("Grammy's Flop House", "Grammy's").replace("Papa's Upper Deck", "Papa's")}</span>
+                      </div>
+                      <div className="shore-mobile-lane__stays">
+                        {unitEvents.length ? unitEvents.map((event) => (
+                          <span
+                            className={`shore-mobile-stay shore-mobile-stay--${event.unit} shore-mobile-stay--${event.status}`}
+                            key={event.requestId || `${event.unit}-${event.name}-${event.arrival}`}
+                          >
+                            <b>{event.displayName || event.name}</b>
+                            <small>
+                              {formatShortDate(event.arrival)}-{formatShortDate(event.departure)}
+                              {' · '}
+                              {event.exclusive === 'exclusive' ? 'E' : 'NE'}
+                              {' · '}
+                              {getGuestIcon(Number(event.people || 0))} {event.people || 0}
+                              {event.dogs > 0 ? ` · 🐾 ${event.dogs}` : ''}
+                              {event.status === 'pending' ? ' · pending' : ''}
+                            </small>
+                          </span>
+                        )) : (
+                          <span className="shore-mobile-open">open</span>
+                        )}
+                      </div>
+                    </article>
                   )
                 })}
               </div>
