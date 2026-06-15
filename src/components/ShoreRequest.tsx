@@ -445,7 +445,10 @@ export default function ShoreRequest() {
       <section className="shore-units" aria-label="Units">
         {units.map((unit) => (
           <article className="shore-unit" key={unit.id}>
-            <h2>{unit.name}</h2>
+            <h2>
+              <span className={`shore-unit-code shore-unit-code--${unit.id}`}>{unitShortNames[unit.id]}</span>
+              {unit.name}
+            </h2>
             <p>{unit.details}</p>
             <div className="shore-unit__meta">
               <span>{unit.sleeps}</span>

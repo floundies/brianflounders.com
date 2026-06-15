@@ -1372,6 +1372,42 @@ main.page > .wrap {
   text-shadow: 2px 2px 0 rgba(255, 227, 110, .75);
 }
 
+.shore-unit h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.shore-unit-code {
+  display: inline-grid;
+  min-width: 42px;
+  height: 32px;
+  place-items: center;
+  border: 2px solid var(--shore-ink);
+  border-radius: 999px;
+  box-shadow: 2px 2px 0 rgba(17, 62, 80, .15);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: none;
+}
+
+.shore-unit-code--one-bedroom {
+  background: var(--shore-blue);
+  color: white;
+}
+
+.shore-unit-code--two-bedroom {
+  background: var(--shore-pink);
+  color: var(--shore-ink);
+}
+
+.shore-unit-code--cottage {
+  background: var(--shore-yellow);
+  color: var(--shore-ink);
+}
+
 .shore-unit p {
   min-height: 52px;
   margin: 10px 0 14px;
