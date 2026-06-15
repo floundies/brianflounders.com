@@ -1580,6 +1580,16 @@ main.page > .wrap {
   z-index: 2;
 }
 
+.shore-occupancy--wide {
+  display: none;
+}
+
+.shore-occupancy--side {
+  width: auto;
+  margin: 0;
+  padding: 16px;
+}
+
 .shore-occupancy::before {
   content: "";
   position: absolute;
@@ -1605,11 +1615,36 @@ main.page > .wrap {
   text-shadow: 2px 2px 0 rgba(255, 227, 110, .75);
 }
 
+.shore-occupancy--side h2 {
+  font-size: 34px;
+}
+
 .shore-occupancy__controls {
   display: inline-grid;
   grid-template-columns: 42px minmax(160px, auto) 42px;
   align-items: center;
   gap: 8px;
+}
+
+.shore-occupancy--side .shore-occupancy__top {
+  align-items: start;
+  display: grid;
+  gap: 12px;
+}
+
+.shore-occupancy--side .shore-occupancy__controls {
+  width: 100%;
+  grid-template-columns: 34px 1fr 34px;
+}
+
+.shore-occupancy--side .shore-occupancy__controls button {
+  width: 34px;
+  height: 34px;
+  font-size: 24px;
+}
+
+.shore-occupancy--side .shore-occupancy__controls strong {
+  font-size: 13px;
 }
 
 .shore-occupancy__controls button {
@@ -1684,6 +1719,14 @@ main.page > .wrap {
   background: rgba(255, 255, 255, .66);
 }
 
+.shore-board--side {
+  min-width: 0;
+}
+
+.shore-occupancy--side .shore-mobile-board {
+  display: none;
+}
+
 .shore-mobile-board {
   display: none;
 }
@@ -1711,6 +1754,11 @@ main.page > .wrap {
   text-transform: uppercase;
 }
 
+.shore-board--side .shore-board__weekday {
+  padding: 6px 2px;
+  font-size: 10px;
+}
+
 .shore-week {
   position: relative;
   min-height: 118px;
@@ -1720,6 +1768,13 @@ main.page > .wrap {
   row-gap: 6px;
   padding: 6px 0 8px;
   background: rgba(255, 255, 255, .5);
+}
+
+.shore-board--side .shore-week {
+  min-height: 86px;
+  grid-template-rows: 26px repeat(3, 18px);
+  row-gap: 4px;
+  padding: 4px 0 6px;
 }
 
 .shore-week__days {
@@ -1733,6 +1788,11 @@ main.page > .wrap {
   color: var(--shore-ink);
   font-weight: 900;
   padding: 8px 8px 0;
+}
+
+.shore-board--side .shore-week__day {
+  padding: 5px 5px 0;
+  font-size: 13px;
 }
 
 .shore-week__day--muted {
@@ -1759,6 +1819,10 @@ main.page > .wrap {
   padding: 0 10px 0 38px;
   column-gap: 0;
   position: relative;
+}
+
+.shore-board--side .shore-unit-row {
+  padding: 0 5px 0 23px;
 }
 
 .shore-unit-row--one-bedroom {
@@ -1810,6 +1874,13 @@ main.page > .wrap {
   box-shadow: 0 1px 2px rgba(17, 62, 80, .16);
 }
 
+.shore-board--side .shore-unit-row__label {
+  left: 5px;
+  min-width: 18px;
+  height: 16px;
+  font-size: 8px;
+}
+
 .shore-unit-row--one-bedroom .shore-unit-row__label {
   background: var(--shore-blue);
   color: white;
@@ -1839,6 +1910,12 @@ main.page > .wrap {
   text-overflow: ellipsis;
   white-space: nowrap;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .42), 0 1px 2px rgba(17, 62, 80, .16);
+}
+
+.shore-board--side .shore-reservation {
+  border-radius: 5px;
+  padding: 3px 5px;
+  font-size: 9px;
 }
 
 .shore-reservation--one-bedroom {
@@ -1910,7 +1987,7 @@ main.page > .wrap {
 
 .shore-mobile-days {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: 58px repeat(7, minmax(0, 1fr));
   border-bottom: 1px solid rgba(17, 62, 80, .14);
 }
 
@@ -1922,8 +1999,13 @@ main.page > .wrap {
   border-right: 1px solid rgba(17, 62, 80, .12);
   color: var(--shore-ink);
   padding: 7px 0 6px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 900;
+}
+
+.shore-mobile-days::before {
+  content: "";
+  border-right: 1px solid rgba(17, 62, 80, .12);
 }
 
 .shore-mobile-days span:last-child {
@@ -1959,10 +2041,12 @@ main.page > .wrap {
 
 .shore-mobile-lane {
   display: grid;
-  grid-template-columns: 70px minmax(0, 1fr);
-  gap: 8px;
+  grid-template-columns: 58px repeat(7, minmax(0, 1fr));
+  column-gap: 0;
+  align-items: center;
   border-bottom: 1px solid rgba(17, 62, 80, .12);
-  padding: 9px;
+  min-height: 68px;
+  padding: 7px 0;
 }
 
 .shore-mobile-lane:last-child {
@@ -1970,19 +2054,22 @@ main.page > .wrap {
 }
 
 .shore-mobile-lane__label {
+  grid-column: 1;
   align-self: start;
   display: grid;
   gap: 4px;
+  justify-items: center;
+  padding-top: 2px;
 }
 
 .shore-mobile-lane__label b {
   display: inline-grid;
-  width: 38px;
-  height: 30px;
+  width: 34px;
+  height: 28px;
   place-items: center;
   border-radius: 999px;
   color: var(--shore-ink);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
   box-shadow: 0 2px 3px rgba(17, 62, 80, .16);
 }
@@ -2002,24 +2089,25 @@ main.page > .wrap {
 
 .shore-mobile-lane__label span {
   color: rgba(22, 66, 75, .72);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 900;
   line-height: 1.05;
+  text-align: center;
 }
 
 .shore-mobile-lane__stays {
-  display: grid;
-  gap: 6px;
-  min-width: 0;
+  display: contents;
 }
 
 .shore-mobile-stay {
   display: grid;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
-  border-radius: 5px 14px 14px 5px;
+  align-self: center;
+  border-radius: 6px;
   color: var(--shore-ink);
-  padding: 7px 9px;
+  margin: 0 2px;
+  padding: 6px 8px;
   font-weight: 900;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .38), 0 1px 3px rgba(17, 62, 80, .14);
 }
@@ -2045,9 +2133,21 @@ main.page > .wrap {
   text-shadow: none;
 }
 
+.shore-mobile-stay:not(.shore-mobile-stay--starts) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin-left: 0;
+}
+
+.shore-mobile-stay:not(.shore-mobile-stay--ends) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  margin-right: 0;
+}
+
 .shore-mobile-stay b {
   overflow: hidden;
-  font-size: 13px;
+  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -2055,7 +2155,7 @@ main.page > .wrap {
 .shore-mobile-stay small {
   overflow: hidden;
   color: currentColor;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.2;
   opacity: .82;
   text-overflow: ellipsis;
@@ -2063,11 +2163,12 @@ main.page > .wrap {
 }
 
 .shore-mobile-open {
+  grid-column: 2 / -1;
   color: rgba(22, 66, 75, .48);
-  font-size: 13px;
+  font-size: 12px;
   font-style: italic;
   font-weight: 900;
-  padding: 8px 2px;
+  padding: 8px 0;
 }
 
 .shore-rules ul {
@@ -2185,6 +2286,11 @@ main.page > .wrap {
   .shore-occupancy {
     width: calc(100% - 24px);
     padding: 16px 12px;
+  }
+
+  .shore-occupancy--side {
+    width: auto;
+    padding: 12px 10px;
   }
 
   .shore-occupancy__top {

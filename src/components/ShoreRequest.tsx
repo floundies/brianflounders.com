@@ -161,6 +161,7 @@ function getWeekSegment(event: ShoreEvent, week: Date[]) {
 
   return {
     gridColumn: `${Math.max(startIndex, 0) + 1} / ${Math.max(endIndex, startIndex, 0) + 2}`,
+    mobileGridColumn: `${Math.max(startIndex, 0) + 2} / ${Math.max(endIndex, startIndex, 0) + 3}`,
     startsInWeek: event.arrival >= weekStart,
     endsInWeek: event.departure <= weekEnd,
   }
@@ -454,7 +455,7 @@ export default function ShoreRequest() {
           ))}
       </section>
 
-      <section className="shore-occupancy" aria-labelledby="shore-occupancy-title">
+      <section className="shore-occupancy shore-occupancy--wide" aria-labelledby="shore-occupancy-title">
         <div className="shore-occupancy__top">
           <div>
             <p className="shore-kicker">Availability board</p>
@@ -563,23 +564,27 @@ export default function ShoreRequest() {
                         <span>{unit.name.replace("Grammy's Flop House", "Grammy's").replace("Papa's Upper Deck", "Papa's")}</span>
                       </div>
                       <div className="shore-mobile-lane__stays">
-                        {unitEvents.length ? unitEvents.map((event) => (
-                          <span
-                            className={`shore-mobile-stay shore-mobile-stay--${event.unit} shore-mobile-stay--${event.status}`}
-                            key={event.requestId || `${event.unit}-${event.name}-${event.arrival}`}
-                          >
-                            <b>{event.displayName || event.name}</b>
-                            <small>
-                              {formatShortDate(event.arrival)}-{formatShortDate(event.departure)}
-                              {' · '}
-                              {event.exclusive === 'exclusive' ? 'E' : 'NE'}
-                              {' · '}
-                              {getGuestIcon(Number(event.people || 0))} {event.people || 0}
-                              {event.dogs > 0 ? ` · 🐾 ${event.dogs}` : ''}
-                              {event.status === 'pending' ? ' · pending' : ''}
-                            </small>
-                          </span>
-                        )) : (
+                        {unitEvents.length ? unitEvents.map((event) => {
+                          const segment = getWeekSegment(event, week)
+                          return (
+                            <span
+                              className={`shore-mobile-stay shore-mobile-stay--${event.unit} shore-mobile-stay--${event.status}${segment.startsInWeek ? ' shore-mobile-stay--starts' : ''}${segment.endsInWeek ? ' shore-mobile-stay--ends' : ''}`}
+                              style={{ gridColumn: segment.mobileGridColumn }}
+                              key={event.requestId || `${event.unit}-${event.name}-${event.arrival}`}
+                            >
+                              <b>{event.displayName || event.name}</b>
+                              <small>
+                                {formatShortDate(event.arrival)}-{formatShortDate(event.departure)}
+                                {' · '}
+                                {event.exclusive === 'exclusive' ? 'E' : 'NE'}
+                                {' · '}
+                                {getGuestIcon(Number(event.people || 0))} {event.people || 0}
+                                {event.dogs > 0 ? ` · 🐾 ${event.dogs}` : ''}
+                                {event.status === 'pending' ? ' · pending' : ''}
+                              </small>
+                            </span>
+                          )
+                        }) : (
                           <span className="shore-mobile-open">open</span>
                         )}
                       </div>
@@ -692,6 +697,142 @@ export default function ShoreRequest() {
         </form>
 
         <aside className="shore-side">
+          <section className="shore-occupancy shore-occupancy--side" aria-labelledby="shore-side-occupancy-title">
+            <div className="shore-occupancy__top">
+              <div>
+                <p className="shore-kicker">Availability board</p>
+                <h2 id="shore-side-occupancy-title">Who’s down</h2>
+              </div>
+              <div className="shore-occupancy__controls" aria-label="Occupancy board month controls">
+                <button type="button" onClick={() => shiftBoardMonth(-1)} aria-label="Previous month">‹</button>
+                <strong>{formatMonth(boardMonth)}</strong>
+                <button type="button" onClick={() => shiftBoardMonth(1)} aria-label="Next month">›</button>
+              </div>
+            </div>
+            <div className="shore-occupancy__legend" aria-label="Board legend">
+              <span className="shore-legend-unit shore-legend-unit--one-bedroom"><b>1F</b></span>
+              <span className="shore-legend-unit shore-legend-unit--two-bedroom"><b>2F</b></span>
+              <span className="shore-legend-unit shore-legend-unit--cottage"><b>Ctg</b></span>
+              <span><b>E</b> Exclusive</span>
+              <span><b>NE</b> Non-exclusive</span>
+              <span><b>🐾</b> Dogs</span>
+            </div>
+            {boardStatus && <p className="shore-status">{boardStatus}</p>}
+            <div className="shore-board shore-board--side" aria-label={`${formatMonth(boardMonth)} shore house occupancy`}>
+              <div className="shore-board__weekdays">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((weekday) => (
+                  <div className="shore-board__weekday" key={weekday}>{weekday}</div>
+                ))}
+              </div>
+              {boardWeeks.map((week) => (
+                <section className="shore-week" key={toDateKey(week[0])}>
+                  <div className="shore-week__days" aria-hidden="true">
+                    {week.map((day) => {
+                      const dayKey = toDateKey(day)
+                      const isCurrentMonth = day.getMonth() === boardMonth.getMonth()
+                      const isToday = dayKey === toDateKey(new Date())
+                      return (
+                        <div className={`shore-week__day${isCurrentMonth ? '' : ' shore-week__day--muted'}${isToday ? ' shore-week__day--today' : ''}`} key={dayKey}>
+                          <span>{day.getDate()}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="shore-week__units">
+                    {units.map((unit) => {
+                      const unitEvents = shoreEvents
+                        .filter((event) => event.unit === unit.id && eventOverlapsWeek(event, week))
+                        .sort((a, b) => a.arrival.localeCompare(b.arrival) || a.name.localeCompare(b.name))
+
+                      return (
+                        <div className={`shore-unit-row shore-unit-row--${unit.id}`} key={unit.id} aria-label={unit.name}>
+                          <span className="shore-unit-row__label" aria-hidden="true">
+                            {unitShortNames[unit.id]}
+                          </span>
+                          {unitEvents.map((event) => {
+                            const segment = getWeekSegment(event, week)
+                            return (
+                              <span
+                                className={`shore-reservation shore-reservation--${event.unit} shore-reservation--${event.status}${segment.startsInWeek ? ' shore-reservation--starts' : ''}${segment.endsInWeek ? ' shore-reservation--ends' : ''}`}
+                                style={{ gridColumn: segment.gridColumn }}
+                                key={event.requestId || `${event.unit}-${event.name}-${event.arrival}`}
+                              >
+                                {getStayLabel(event)}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+            <div className="shore-mobile-board" aria-label={`${formatMonth(boardMonth)} shore house occupancy by week`}>
+              {boardWeeks.map((week) => (
+                <section className="shore-mobile-week" key={toDateKey(week[0])}>
+                  <div className="shore-mobile-week__header">
+                    <strong>{formatWeekRange(week)}</strong>
+                    <span>{week.some((day) => toDateKey(day) === toDateKey(new Date())) ? 'This week' : formatMonth(week[0])}</span>
+                  </div>
+                  <div className="shore-mobile-days" aria-hidden="true">
+                    {week.map((day) => {
+                      const dayKey = toDateKey(day)
+                      const isCurrentMonth = day.getMonth() === boardMonth.getMonth()
+                      const isToday = dayKey === toDateKey(new Date())
+                      return (
+                        <span className={`${isCurrentMonth ? '' : 'shore-mobile-day--muted'}${isToday ? ' shore-mobile-day--today' : ''}`} key={dayKey}>
+                          <b>{formatDayName(day)}</b>
+                          {day.getDate()}
+                        </span>
+                      )
+                    })}
+                  </div>
+                  <div className="shore-mobile-lanes">
+                    {units.map((unit) => {
+                      const unitEvents = shoreEvents
+                        .filter((event) => event.unit === unit.id && eventOverlapsWeek(event, week))
+                        .sort((a, b) => a.arrival.localeCompare(b.arrival) || a.name.localeCompare(b.name))
+
+                      return (
+                        <article className={`shore-mobile-lane shore-mobile-lane--${unit.id}`} key={unit.id}>
+                          <div className="shore-mobile-lane__label">
+                            <b>{unitShortNames[unit.id]}</b>
+                            <span>{unit.name.replace("Grammy's Flop House", "Grammy's").replace("Papa's Upper Deck", "Papa's")}</span>
+                          </div>
+                          <div className="shore-mobile-lane__stays">
+                            {unitEvents.length ? unitEvents.map((event) => {
+                              const segment = getWeekSegment(event, week)
+                              return (
+                                <span
+                                  className={`shore-mobile-stay shore-mobile-stay--${event.unit} shore-mobile-stay--${event.status}${segment.startsInWeek ? ' shore-mobile-stay--starts' : ''}${segment.endsInWeek ? ' shore-mobile-stay--ends' : ''}`}
+                                  style={{ gridColumn: segment.mobileGridColumn }}
+                                  key={event.requestId || `${event.unit}-${event.name}-${event.arrival}`}
+                                >
+                                  <b>{event.displayName || event.name}</b>
+                                  <small>
+                                    {formatShortDate(event.arrival)}-{formatShortDate(event.departure)}
+                                    {' · '}
+                                    {event.exclusive === 'exclusive' ? 'E' : 'NE'}
+                                    {' · '}
+                                    {getGuestIcon(Number(event.people || 0))} {event.people || 0}
+                                    {event.dogs > 0 ? ` · 🐾 ${event.dogs}` : ''}
+                                    {event.status === 'pending' ? ' · pending' : ''}
+                                  </small>
+                                </span>
+                              )
+                            }) : (
+                              <span className="shore-mobile-open">open</span>
+                            )}
+                          </div>
+                        </article>
+                      )
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </section>
           <section className="shore-next-up">
             <div className="shore-calendar-shell__top">
               <p className="shore-kicker">Next up</p>
