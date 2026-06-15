@@ -462,6 +462,9 @@ export default function ShoreRequest() {
           <span className="shore-legend-unit shore-legend-unit--one-bedroom"><b>Grammy’s</b></span>
           <span className="shore-legend-unit shore-legend-unit--two-bedroom"><b>Papa’s</b></span>
           <span className="shore-legend-unit shore-legend-unit--cottage"><b>Cottage</b></span>
+          <span><b>1F</b> Grammy’s</span>
+          <span><b>2F</b> Papa’s</span>
+          <span><b>Ctg</b> Cottage</span>
           <span><b>E</b> Exclusive</span>
           <span><b>NE</b> Non-exclusive</span>
           <span><b>👤</b> Guests</span>
@@ -497,6 +500,9 @@ export default function ShoreRequest() {
 
                   return (
                     <div className={`shore-unit-row shore-unit-row--${unit.id}`} key={unit.id} aria-label={unit.name}>
+                      <span className="shore-unit-row__label" aria-hidden="true">
+                        {unit.id === 'one-bedroom' ? '1F' : unit.id === 'two-bedroom' ? '2F' : 'Ctg'}
+                      </span>
                       {unitEvents.map((event) => {
                         const segment = getWeekSegment(event, week)
                         return (

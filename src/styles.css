@@ -1697,8 +1697,9 @@ main.page > .wrap {
 .shore-unit-row {
   grid-column: 1;
   min-width: 0;
-  padding: 0 10px;
+  padding: 0 10px 0 38px;
   column-gap: 0;
+  position: relative;
 }
 
 .shore-unit-row--one-bedroom {
@@ -1730,6 +1731,38 @@ main.page > .wrap {
 
 .shore-unit-row--cottage::before {
   border-left-color: var(--shore-yellow);
+}
+
+.shore-unit-row__label {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-grid;
+  min-width: 25px;
+  height: 22px;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--shore-ink);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  z-index: 2;
+  box-shadow: 0 1px 2px rgba(17, 62, 80, .16);
+}
+
+.shore-unit-row--one-bedroom .shore-unit-row__label {
+  background: var(--shore-blue);
+  color: white;
+  text-shadow: 0 1px 0 rgba(17, 62, 80, .28);
+}
+
+.shore-unit-row--two-bedroom .shore-unit-row__label {
+  background: var(--shore-pink);
+}
+
+.shore-unit-row--cottage .shore-unit-row__label {
+  background: var(--shore-yellow);
 }
 
 .shore-reservation {
