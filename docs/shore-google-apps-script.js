@@ -155,7 +155,10 @@ function handleDecision_(params, decision) {
   const request = rows[index];
   if (request.status !== CONFIG.status.pending) {
     if (decision === CONFIG.status.approved && request.status === CONFIG.status.approved) {
-      approveCalendarEvent_(request);
+      const calendarEventId = approveCalendarEvent_(request);
+      if (calendarEventId && calendarEventId !== request.calendar_event_id) {
+        updateRow_(sheet, index + 2, { calendar_event_id: calendarEventId });
+      }
       return html_('This request was already approved. Calendar event refreshed.');
     }
     return html_('This request is already ' + escapeHtml_(request.status) + '.');
@@ -170,7 +173,7 @@ function handleDecision_(params, decision) {
 
   if (decision === CONFIG.status.approved) {
     updates.approved_at = now;
-    approveCalendarEvent_(request);
+    updates.calendar_event_id = approveCalendarEvent_(request);
     updateRow_(sheet, rowNumber, updates);
     emailRequester_(Object.assign({}, request, updates), 'approved');
     return html_('Approved: ' + escapeHtml_(request.unit_name) + ' for ' + escapeHtml_(request.name) + '.');
@@ -305,23 +308,28 @@ function buildWarnings_(request) {
 }
 
 function createPendingCalendarEvent_(request) {
+  return createCalendarEvent_(request, CONFIG.status.pending);
+}
+
+function createCalendarEvent_(request, status) {
   const calendar = getCalendar_();
-  const title = buildCalendarTitle_(request, CONFIG.status.pending);
+  const title = buildCalendarTitle_(request, status);
   const event = calendar.createAllDayEvent(title, parseDate_(request.arrival), addDays_(parseDate_(request.departure), 1), {
-    description: buildCalendarDescription_(request),
+    description: buildCalendarDescription_(Object.assign({}, request, { status })),
     guests: request.email,
     sendInvites: false,
   });
-  event.setColor(getCalendarColor_(request, CONFIG.status.pending));
+  event.setColor(getCalendarColor_(request, status));
   return event.getId();
 }
 
 function approveCalendarEvent_(request) {
   const event = getCalendarEvent_(request.calendar_event_id, request);
-  if (!event) throw new Error('Calendar event not found for request: ' + request.request_id);
+  if (!event) return createCalendarEvent_(request, CONFIG.status.approved);
   event.setTitle(buildCalendarTitle_(request, CONFIG.status.approved));
   event.setDescription(buildCalendarDescription_(Object.assign({}, request, { status: CONFIG.status.approved })));
   event.setColor(getCalendarColor_(request, CONFIG.status.approved));
+  return event.getId();
 }
 
 function denyCalendarEvent_(request) {
@@ -499,7 +507,14 @@ function getRows_(sheet) {
   return values.slice(1).map((row) => {
     const item = {};
     headers.forEach((header, index) => {
-      item[header] = row[index] == null ? '' : String(row[index]);
+      const value = row[index];
+      if (value == null) {
+        item[header] = '';
+      } else if (value instanceof Date) {
+        item[header] = ['arrival', 'departure'].includes(header) ? formatDate_(value) : value.toISOString();
+      } else {
+        item[header] = String(value);
+      }
     });
     return item;
   });
