@@ -147,6 +147,23 @@ function getStayLabel(event: ShoreEvent): string {
   ].filter(Boolean).join(' · ')
 }
 
+function getStayClassName(event: ShoreEvent, day: Date, boardStart: string): string {
+  const dayKey = toDateKey(day)
+  const nextDayKey = toDateKey(addDays(day, 1))
+  const isStart = event.arrival === dayKey || dayKey === boardStart || day.getDay() === 0
+  const isEnd = event.departure === dayKey || event.departure === nextDayKey || day.getDay() === 6
+  const classes = [
+    'shore-stay',
+    `shore-stay--${event.status}`,
+    `shore-stay--${event.unit}`,
+    isStart ? 'shore-stay--start' : 'shore-stay--middle',
+    isEnd ? 'shore-stay--end' : '',
+    isStart ? '' : 'shore-stay--continuation',
+  ]
+
+  return classes.filter(Boolean).join(' ')
+}
+
 function eventTouchesDay(event: ShoreEvent, dayKey: string): boolean {
   return event.arrival <= dayKey && dayKey <= event.departure
 }
@@ -488,7 +505,7 @@ export default function ShoreRequest() {
                         ) : (
                           <span className="shore-stay-list">
                             {visibleEvents.map((event) => (
-                              <span className={`shore-stay shore-stay--${event.status}`} key={event.requestId || `${event.unit}-${event.name}-${event.arrival}`}>
+                              <span className={getStayClassName(event, day, boardStart)} key={event.requestId || `${event.unit}-${event.name}-${event.arrival}`}>
                                 {getStayLabel(event)}
                               </span>
                             ))}

@@ -1603,17 +1603,21 @@ main.page > .wrap {
 
 .shore-legend-unit--one-bedroom {
   border-color: var(--shore-blue);
-  background: rgba(0, 166, 189, .14);
+  background: var(--shore-blue);
+  color: white;
+  text-shadow: 0 1px 0 rgba(17, 62, 80, .28);
 }
 
 .shore-legend-unit--two-bedroom {
   border-color: var(--shore-pink);
-  background: rgba(255, 123, 141, .14);
+  background: var(--shore-pink);
+  color: var(--shore-ink);
 }
 
 .shore-legend-unit--cottage {
   border-color: #f1ca31;
-  background: rgba(255, 227, 110, .3);
+  background: var(--shore-yellow);
+  color: var(--shore-ink);
 }
 
 .shore-board {
@@ -1727,21 +1731,59 @@ main.page > .wrap {
 .shore-turnover {
   display: block;
   border: 1px solid rgba(17, 62, 80, .2);
-  border-radius: 999px;
+  border-radius: 0;
   background: rgba(158, 231, 212, .56);
   color: var(--shore-ink);
-  padding: 3px 6px;
+  min-height: 22px;
+  padding: 3px 8px;
   font-size: 11px;
   font-weight: 900;
   line-height: 1.2;
+  margin-left: -9px;
+  margin-right: -8px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), inset 0 -1px 0 rgba(17, 62, 80, .12);
+}
+
+.shore-stay--one-bedroom {
+  background: var(--shore-blue);
+  color: white;
+  text-shadow: 0 1px 0 rgba(17, 62, 80, .28);
+}
+
+.shore-stay--two-bedroom {
+  background: var(--shore-pink);
+  color: var(--shore-ink);
+}
+
+.shore-stay--cottage {
+  background: var(--shore-yellow);
+  color: var(--shore-ink);
+}
+
+.shore-stay--start {
+  margin-left: 0;
+  border-top-left-radius: 999px;
+  border-bottom-left-radius: 999px;
+}
+
+.shore-stay--end {
+  margin-right: 0;
+  border-top-right-radius: 999px;
+  border-bottom-right-radius: 999px;
+}
+
+.shore-stay--continuation {
+  color: transparent;
+  text-shadow: none;
 }
 
 .shore-stay--pending {
   border-style: dashed;
   background: rgba(180, 186, 190, .34);
+  color: var(--shore-ink);
 }
 
 .shore-turnover {
