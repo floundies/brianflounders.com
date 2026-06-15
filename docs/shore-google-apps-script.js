@@ -154,6 +154,10 @@ function handleDecision_(params, decision) {
 
   const request = rows[index];
   if (request.status !== CONFIG.status.pending) {
+    if (decision === CONFIG.status.approved && request.status === CONFIG.status.approved) {
+      approveCalendarEvent_(request);
+      return html_('This request was already approved. Calendar event refreshed.');
+    }
     return html_('This request is already ' + escapeHtml_(request.status) + '.');
   }
 
@@ -313,15 +317,15 @@ function createPendingCalendarEvent_(request) {
 }
 
 function approveCalendarEvent_(request) {
-  const event = getCalendarEvent_(request.calendar_event_id);
-  if (!event) return;
+  const event = getCalendarEvent_(request.calendar_event_id, request);
+  if (!event) throw new Error('Calendar event not found for request: ' + request.request_id);
   event.setTitle(buildCalendarTitle_(request, CONFIG.status.approved));
   event.setDescription(buildCalendarDescription_(Object.assign({}, request, { status: CONFIG.status.approved })));
   event.setColor(getCalendarColor_(request, CONFIG.status.approved));
 }
 
 function denyCalendarEvent_(request) {
-  const event = getCalendarEvent_(request.calendar_event_id);
+  const event = getCalendarEvent_(request.calendar_event_id, request);
   if (event) event.deleteEvent();
 }
 
@@ -522,10 +526,23 @@ function getCalendar_() {
   return calendar;
 }
 
-function getCalendarEvent_(eventId) {
-  if (!eventId) return null;
+function getCalendarEvent_(eventId, request) {
   const calendar = getCalendar_();
-  return calendar.getEventById(eventId);
+  if (eventId) {
+    const event = calendar.getEventById(eventId);
+    if (event) return event;
+  }
+
+  if (!request || !request.request_id || !request.arrival || !request.departure) return null;
+
+  const searchStart = addDays_(parseDate_(request.arrival), -1);
+  const searchEnd = addDays_(parseDate_(request.departure), 2);
+  const needle = 'Request ID: ' + request.request_id;
+  const matches = calendar.getEvents(searchStart, searchEnd).filter((event) => {
+    return String(event.getDescription() || '').indexOf(needle) >= 0;
+  });
+
+  return matches.length ? matches[0] : null;
 }
 
 function getRequiredProperty_(key) {
