@@ -439,6 +439,9 @@ export default function ShoreRequest() {
           </div>
         </div>
         <div className="shore-occupancy__legend" aria-label="Board legend">
+          <span className="shore-legend-unit shore-legend-unit--one-bedroom"><b>Grammy’s</b></span>
+          <span className="shore-legend-unit shore-legend-unit--two-bedroom"><b>Papa’s</b></span>
+          <span className="shore-legend-unit shore-legend-unit--cottage"><b>Cottage</b></span>
           <span><b>E</b> Exclusive</span>
           <span><b>NE</b> Non-exclusive</span>
           <span><b>👤</b> Guests</span>
@@ -475,7 +478,7 @@ export default function ShoreRequest() {
                       <div className={`shore-lane shore-lane--${unit.id}`} key={unit.id}>
                         <span className="shore-lane__unit">{unit.name.replace("Grammy's Flop House", "Grammy's").replace("Papa's Upper Deck", "Papa's")}</span>
                         {visibleEvents.length === 0 ? (
-                          <span className="shore-lane__open">open</span>
+                          null
                         ) : turnover ? (
                           <span className="shore-turnover">
                             <span>{departures.map((event) => event.displayName || event.name).join(' & ')}</span>

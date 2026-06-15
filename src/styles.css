@@ -1596,9 +1596,29 @@ main.page > .wrap {
   font-weight: 800;
 }
 
+.shore-occupancy__legend .shore-legend-unit {
+  color: var(--shore-ink);
+  padding-left: 12px;
+}
+
+.shore-legend-unit--one-bedroom {
+  border-color: var(--shore-blue);
+  background: rgba(0, 166, 189, .14);
+}
+
+.shore-legend-unit--two-bedroom {
+  border-color: var(--shore-pink);
+  background: rgba(255, 123, 141, .14);
+}
+
+.shore-legend-unit--cottage {
+  border-color: #f1ca31;
+  background: rgba(255, 227, 110, .3);
+}
+
 .shore-board {
   display: grid;
-  grid-template-columns: repeat(7, minmax(138px, 1fr));
+  grid-template-columns: repeat(7, minmax(124px, 1fr));
   overflow-x: auto;
   border: 2px solid var(--shore-ink);
   border-radius: 8px;
@@ -1622,11 +1642,11 @@ main.page > .wrap {
 }
 
 .shore-day {
-  min-height: 184px;
+  min-height: 118px;
   border-right: 1px solid rgba(17, 62, 80, .14);
   border-bottom: 1px solid rgba(17, 62, 80, .14);
   background: rgba(255, 255, 255, .52);
-  padding: 7px;
+  padding: 6px;
 }
 
 .shore-day--muted {
@@ -1657,16 +1677,16 @@ main.page > .wrap {
 
 .shore-day__lanes {
   display: grid;
-  gap: 5px;
+  gap: 4px;
 }
 
 .shore-lane {
-  min-height: 43px;
+  min-height: 24px;
   border: 2px solid rgba(17, 62, 80, .2);
   border-left-width: 7px;
   border-radius: 6px;
   background: rgba(255, 255, 255, .7);
-  padding: 4px 5px;
+  padding: 3px 4px;
 }
 
 .shore-lane--one-bedroom {
@@ -1682,17 +1702,16 @@ main.page > .wrap {
 }
 
 .shore-lane__unit {
-  display: block;
-  color: rgba(17, 62, 80, .68);
-  font-size: 10px;
-  font-weight: 900;
-  line-height: 1.1;
-  text-transform: uppercase;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .shore-lane__open {
-  display: block;
-  margin-top: 4px;
+  display: none;
   color: rgba(22, 66, 75, .45);
   font-size: 12px;
   font-style: italic;
@@ -1702,7 +1721,6 @@ main.page > .wrap {
 .shore-stay-list {
   display: grid;
   gap: 3px;
-  margin-top: 4px;
 }
 
 .shore-stay,
