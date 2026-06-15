@@ -186,12 +186,62 @@ function listEvents_(params) {
   const end = isDateString_(params.end) ? params.end : formatDate_(endFallback);
   const calendar = getCalendar_();
   const calendarEvents = calendar.getEvents(parseDate_(start), addDays_(parseDate_(end), 1));
-  const events = calendarEvents
+  const calendarRows = calendarEvents
     .map(parseCalendarEvent_)
     .filter(Boolean)
     .filter((event) => rangesOverlap_(event.arrival, event.departure, start, end));
+  const sheetRows = getRequestEventsFromSheet_(start, end);
+  const events = mergeEventRows_(calendarRows.concat(sheetRows));
 
-  return json_({ ok: true, start, end, events }, 200, params.callback);
+  return json_({
+    ok: true,
+    start,
+    end,
+    events,
+    debug: {
+      calendarEventCount: calendarEvents.length,
+      parsedCalendarEventCount: calendarRows.length,
+      sheetEventCount: sheetRows.length,
+    },
+  }, 200, params.callback);
+}
+
+function getRequestEventsFromSheet_(start, end) {
+  const rows = getRows_(getRequestsSheet_());
+  return rows
+    .filter((row) => [CONFIG.status.pending, CONFIG.status.approved].includes(row.status))
+    .filter((row) => isDateString_(row.arrival) && isDateString_(row.departure))
+    .filter((row) => rangesOverlap_(row.arrival, row.departure, start, end))
+    .map((row) => ({
+      requestId: row.calendar_event_id || row.request_id,
+      status: row.status,
+      unit: row.unit,
+      unitName: row.unit_name || CONFIG.units[row.unit] || row.unit,
+      arrival: row.arrival,
+      departure: row.departure,
+      exclusive: row.exclusive || 'non-exclusive',
+      name: row.name,
+      displayName: getDisplayName_(row),
+      people: countPeople_(row),
+      dogs: Number(row.dogs || 0),
+      notes: row.notes || '',
+    }));
+}
+
+function mergeEventRows_(events) {
+  const seen = {};
+  return events.filter((event) => {
+    const key = [
+      event.unit,
+      event.arrival,
+      event.departure,
+      String(event.name || '').toLowerCase(),
+      event.status,
+    ].join('|');
+    if (seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
 }
 
 function normalizeRequest_(payload) {
@@ -334,8 +384,13 @@ function parseCalendarEvent_(event) {
 }
 
 function getUnitIdFromName_(unitName) {
-  const normalized = String(unitName || '').toLowerCase();
-  return Object.keys(CONFIG.units).find((unit) => CONFIG.units[unit].toLowerCase() === normalized) || '';
+  const normalized = normalizeText_(unitName);
+  const direct = Object.keys(CONFIG.units).find((unit) => normalizeText_(CONFIG.units[unit]) === normalized);
+  if (direct) return direct;
+  if (normalized.includes('grammy') || normalized.includes('granny') || normalized.includes('flop') || normalized.includes('1st floor') || normalized.includes('first floor')) return 'one-bedroom';
+  if (normalized.includes('papa') || normalized.includes('upper') || normalized.includes('2nd floor') || normalized.includes('second floor')) return 'two-bedroom';
+  if (normalized.includes('cottage')) return 'cottage';
+  return '';
 }
 
 function normalizeExclusiveLabel_(label) {
@@ -540,6 +595,14 @@ function getDisplayName_(request) {
   const match = notes.match(/(?:display|family|last name|calendar)\s*[:=-]\s*([^\n,;]+)/i);
   if (match && match[1]) return match[1].trim();
   return String(request.name || '').trim();
+}
+
+function normalizeText_(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[’‘]/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function makeRequestId_() {
