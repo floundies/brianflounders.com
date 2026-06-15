@@ -1169,6 +1169,7 @@ main.page > .wrap {
 .shore-gate__form label,
 .shore-form label,
 .shore-choice legend {
+  min-width: 0;
   color: var(--shore-ink);
   font-size: 13px;
   font-weight: 800;
@@ -1197,6 +1198,9 @@ main.page > .wrap {
 .shore-form input,
 .shore-form select,
 .shore-form textarea {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
   width: 100%;
   margin-top: 6px;
   background: rgba(255, 255, 255, .82);
@@ -2412,10 +2416,17 @@ main.page > .wrap {
   }
 
   .shore-form input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
     min-height: 38px;
     padding: 7px 8px;
     font-size: 14px;
     line-height: 1.1;
+    text-align: left;
   }
 
   .shore-submit {
