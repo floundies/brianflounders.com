@@ -754,7 +754,7 @@ export default function ShoreRequest() {
                             return (
                               <span
                                 className={`shore-reservation shore-reservation--${event.unit} shore-reservation--${event.status}${segment.startsInWeek ? ' shore-reservation--starts' : ''}${segment.endsInWeek ? ' shore-reservation--ends' : ''}`}
-                                style={{ gridColumn: segment.gridColumn }}
+                                style={{ gridColumn: segment.mobileGridColumn }}
                                 key={event.requestId || `${event.unit}-${event.name}-${event.arrival}`}
                               >
                                 {getStayLabel(event)}

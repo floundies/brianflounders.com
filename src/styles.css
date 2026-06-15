@@ -1721,6 +1721,7 @@ main.page > .wrap {
 
 .shore-board--side {
   min-width: 0;
+  overflow: visible;
 }
 
 .shore-occupancy--side .shore-mobile-board {
@@ -1757,6 +1758,18 @@ main.page > .wrap {
 .shore-board--side .shore-board__weekday {
   padding: 6px 2px;
   font-size: 10px;
+}
+
+.shore-board--side .shore-board__weekdays,
+.shore-board--side .shore-week__days,
+.shore-board--side .shore-unit-row {
+  grid-template-columns: 26px repeat(7, minmax(0, 1fr));
+}
+
+.shore-board--side .shore-board__weekdays::before,
+.shore-board--side .shore-week__days::before {
+  content: "";
+  border-right: 1px solid rgba(17, 62, 80, .12);
 }
 
 .shore-week {
@@ -1822,7 +1835,7 @@ main.page > .wrap {
 }
 
 .shore-board--side .shore-unit-row {
-  padding: 0 5px 0 23px;
+  padding: 0 5px 0 0;
 }
 
 .shore-unit-row--one-bedroom {
@@ -1842,6 +1855,10 @@ main.page > .wrap {
   grid-column: 1 / -1;
   grid-row: 1;
   border-left: 7px solid rgba(17, 62, 80, .2);
+}
+
+.shore-board--side .shore-unit-row::before {
+  grid-column: 2 / -1;
 }
 
 .shore-unit-row--one-bedroom::before {
@@ -1875,8 +1892,12 @@ main.page > .wrap {
 }
 
 .shore-board--side .shore-unit-row__label {
-  left: 5px;
-  min-width: 18px;
+  position: static;
+  grid-column: 1;
+  align-self: center;
+  justify-self: center;
+  transform: none;
+  min-width: 20px;
   height: 16px;
   font-size: 8px;
 }
