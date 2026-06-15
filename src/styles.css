@@ -1616,6 +1616,7 @@ main.page > .wrap {
   box-shadow: 8px 8px 0 rgba(255, 93, 79, .24), 0 18px 44px rgba(32, 91, 105, .12);
   padding: clamp(16px, 3vw, 24px);
   position: relative;
+  overflow: hidden;
   z-index: 2;
 }
 
@@ -1634,6 +1635,7 @@ main.page > .wrap {
   position: absolute;
   inset: 0 0 auto;
   height: 14px;
+  border-radius: 0 22px 0 0;
   background: repeating-linear-gradient(90deg, var(--shore-blue) 0 22px, white 22px 30px, var(--shore-pink) 30px 52px, white 52px 60px, var(--shore-yellow) 60px 82px, white 82px 90px);
 }
 
