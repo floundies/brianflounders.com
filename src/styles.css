@@ -1601,20 +1601,20 @@ main.page > .wrap {
   padding-left: 12px;
 }
 
-.shore-legend-unit--one-bedroom {
+.shore-occupancy__legend .shore-legend-unit--one-bedroom {
   border-color: var(--shore-blue);
   background: var(--shore-blue);
   color: white;
   text-shadow: 0 1px 0 rgba(17, 62, 80, .28);
 }
 
-.shore-legend-unit--two-bedroom {
+.shore-occupancy__legend .shore-legend-unit--two-bedroom {
   border-color: var(--shore-pink);
   background: var(--shore-pink);
   color: var(--shore-ink);
 }
 
-.shore-legend-unit--cottage {
+.shore-occupancy__legend .shore-legend-unit--cottage {
   border-color: #f1ca31;
   background: var(--shore-yellow);
   color: var(--shore-ink);
