@@ -45,6 +45,10 @@ const shoreImages = {
     src: '/shore/images/wildwood-boardwalk-pier.png',
     alt: 'Generated Wildwood boardwalk inspired scene with amusement pier rides, beach, ocean, and pastel boardwalk details',
   },
+  grammy: {
+    src: '/shore/images/grammy.png',
+    alt: 'Grammy smiling',
+  },
 }
 
 const unitShortNames: Record<string, string> = {
@@ -87,16 +91,6 @@ const leavingChecklist = [
   'Grill is covered and secured?',
   'Trash cans are at the curb, if appropriate?',
 ]
-
-const houseInfo = [
-  ['Wi-Fi', 'SomethingsFishy / 116Lavender!'],
-  ['Trash and recycling', 'Monday morning. Do not use a bag for recycling.'],
-  ['Trash only', 'Thursday morning.'],
-  ['Lavender beach box', '#140, lock code: 0116!'],
-  ['Address', '116 1/2 West Lavender Road, Wildwood Crest, NJ 08260'],
-]
-
-const houseRulesDocUrl = 'https://docs.google.com/document/d/e/2PACX-1vTaBXEeDtEFBSxwYNqFpzNvOybqHnptW7qjNBa7PHhuU9rmt9cj6oawbK0WrfC3YOyKg7myUfMqtBt8/pub'
 
 type FormState = {
   name: string
@@ -889,9 +883,8 @@ export default function ShoreRequest() {
           <p className="shore-kicker">House notes</p>
           <h2 id="shore-house-info-title">Welcome to The Fish Tank</h2>
           <p>
-            Quick family rules and leaving reminders. This can stay flexible as the official house notes evolve.
+            Quick family rules and leaving reminders for taking care of the house.
           </p>
-          <a href={houseRulesDocUrl} target="_blank" rel="noreferrer">Open the live Google Doc</a>
         </div>
 
         <div className="shore-house-info__grid">
@@ -917,21 +910,15 @@ export default function ShoreRequest() {
           </article>
 
           <article className="shore-house-card shore-house-card--info">
-            <h3>Useful details</h3>
-            <dl>
-              {houseInfo.map(([label, value]) => (
-                <React.Fragment key={label}>
-                  <dt>{label}</dt>
-                  <dd>{value}</dd>
-                </React.Fragment>
-              ))}
-            </dl>
+            <h3>Details</h3>
+            <p>Sensitive house details are shared directly with confirmed guests.</p>
           </article>
         </div>
 
-        <p className="shore-house-info__granny">
-          Would Granny (aka JoMama) be happy with the cleanliness if she came here an hour after you leave? If no, turn around and fix it.
-        </p>
+        <div className="shore-house-info__granny">
+          <img src={shoreImages.grammy.src} alt={shoreImages.grammy.alt} />
+          <p>Would Grammy be happy with the cleanliness if she came here an hour after you leave? If no, turn around and fix it.</p>
+        </div>
       </section>
 
       <section className="shore-photo-band" aria-label="Shore house mood">
