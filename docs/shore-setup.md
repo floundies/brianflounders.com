@@ -124,7 +124,7 @@ The public page also reads this free JSON endpoint to render the custom occupanc
 <web-app-url>?action=events&start=2026-06-01&end=2026-08-31
 ```
 
-The board uses the structured Sheet rows, not the Google Calendar embed. By default it displays the requester's name. If someone wants a family label on the board, put a line like `Family: Marcics` in Notes.
+The board reads the configured Google Calendar and parses shore event titles. By default it displays the event/requester name. If someone wants a family label on the board, put a line like `Family: Marcics` in the event description or request Notes.
 
 When Brian approves:
 

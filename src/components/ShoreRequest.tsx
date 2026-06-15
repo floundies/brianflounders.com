@@ -159,6 +159,40 @@ function formatMonth(date: Date): string {
   return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(date)
 }
 
+function loadShoreEvents(url: string, signal: AbortSignal): Promise<ShoreEvent[]> {
+  return new Promise((resolve, reject) => {
+    const callbackName = `shoreEvents_${Date.now()}_${Math.random().toString(36).slice(2)}`
+    const script = document.createElement('script')
+    const cleanup = () => {
+      delete (window as unknown as Record<string, unknown>)[callbackName]
+      script.remove()
+    }
+
+    ;(window as unknown as Record<string, (payload: { ok?: boolean; error?: string; events?: ShoreEvent[] }) => void>)[callbackName] = (payload) => {
+      cleanup()
+      if (!payload?.ok) {
+        reject(new Error(payload?.error || 'Could not load shore events.'))
+        return
+      }
+      resolve(Array.isArray(payload.events) ? payload.events : [])
+    }
+
+    signal.addEventListener('abort', () => {
+      cleanup()
+      reject(new DOMException('Aborted', 'AbortError'))
+    }, { once: true })
+
+    const parsed = new URL(url)
+    parsed.searchParams.set('callback', callbackName)
+    script.src = parsed.toString()
+    script.onerror = () => {
+      cleanup()
+      reject(new Error('Could not load shore events.'))
+    }
+    document.body.appendChild(script)
+  })
+}
+
 function upsertMeta(selector: string, attributes: Record<string, string>): () => void {
   const existing = document.head.querySelector<HTMLMetaElement>(selector)
   const previous = existing
@@ -259,11 +293,9 @@ export default function ShoreRequest() {
     url.searchParams.set('refresh', String(calendarRefreshKey))
 
     setBoardStatus('Loading the occupancy board...')
-    fetch(url.toString(), { signal: controller.signal })
-      .then((response) => response.json())
-      .then((payload) => {
-        if (!payload?.ok) throw new Error(payload?.error || 'Could not load shore events.')
-        setShoreEvents(Array.isArray(payload.events) ? payload.events : [])
+    loadShoreEvents(url.toString(), controller.signal)
+      .then((events) => {
+        setShoreEvents(events)
         setBoardStatus('')
       })
       .catch((error) => {

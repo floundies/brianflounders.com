@@ -132,7 +132,7 @@ function doGet(event) {
     if (action === 'approve') return handleDecision_(event.parameter, CONFIG.status.approved);
     if (action === 'deny') return handleDecision_(event.parameter, CONFIG.status.denied);
     if (action === 'events') return listEvents_(event.parameter);
-    if (action === 'health') return json_({ ok: true, service: 'shore-request' });
+    if (action === 'health') return json_({ ok: true, service: 'shore-request' }, 200, event.parameter.callback);
     return html_('Shore request backend is running.');
   } catch (error) {
     console.error(error);
@@ -184,27 +184,14 @@ function listEvents_(params) {
   const endFallback = new Date();
   endFallback.setMonth(endFallback.getMonth() + 3);
   const end = isDateString_(params.end) ? params.end : formatDate_(endFallback);
-  const rows = getRows_(getRequestsSheet_());
-  const events = rows
-    .filter((row) => [CONFIG.status.pending, CONFIG.status.approved].includes(row.status))
-    .filter((row) => isDateString_(row.arrival) && isDateString_(row.departure))
-    .filter((row) => rangesOverlap_(row.arrival, row.departure, start, end))
-    .map((row) => ({
-      requestId: row.request_id,
-      status: row.status,
-      unit: row.unit,
-      unitName: row.unit_name || CONFIG.units[row.unit] || row.unit,
-      arrival: row.arrival,
-      departure: row.departure,
-      exclusive: row.exclusive || 'non-exclusive',
-      name: row.name,
-      displayName: getDisplayName_(row),
-      people: countPeople_(row),
-      dogs: Number(row.dogs || 0),
-      notes: row.notes || '',
-    }));
+  const calendar = getCalendar_();
+  const calendarEvents = calendar.getEvents(parseDate_(start), addDays_(parseDate_(end), 1));
+  const events = calendarEvents
+    .map(parseCalendarEvent_)
+    .filter(Boolean)
+    .filter((event) => rangesOverlap_(event.arrival, event.departure, start, end));
 
-  return json_({ ok: true, start, end, events });
+  return json_({ ok: true, start, end, events }, 200, params.callback);
 }
 
 function normalizeRequest_(payload) {
@@ -309,6 +296,53 @@ function buildCalendarTitle_(request, status) {
   const unitName = request.unit_name || CONFIG.units[request.unit] || request.unit || 'Unit';
   const label = status === CONFIG.status.pending ? 'PENDING' : request.exclusive || 'non-exclusive';
   return '[' + unitName + ', ' + label + '] ' + request.name + ' (' + buildGuestSummary_(request) + ')';
+}
+
+function parseCalendarEvent_(event) {
+  const title = event.getTitle();
+  const parsedTitle = title.match(/^\[([^,\]]+),\s*([^\]]+)\]\s*(.*?)\s*(?:\(([^)]*)\))?$/);
+  if (!parsedTitle) return null;
+
+  const unitName = parsedTitle[1].trim();
+  const label = parsedTitle[2].trim();
+  const name = parsedTitle[3].trim();
+  const guestSummary = parsedTitle[4] || '';
+  const unit = getUnitIdFromName_(unitName);
+  if (!unit) return null;
+
+  const start = event.isAllDayEvent() ? event.getAllDayStartDate() : event.getStartTime();
+  const rawEnd = event.isAllDayEvent() ? event.getAllDayEndDate() : event.getEndTime();
+  const departure = event.isAllDayEvent() ? addDays_(rawEnd, -1) : rawEnd;
+  const status = label.toUpperCase() === 'PENDING' ? CONFIG.status.pending : CONFIG.status.approved;
+  const peopleMatch = guestSummary.match(/(\d+)\s*(?:people|person|guests?|guest)?/i);
+  const dogsMatch = guestSummary.match(/(\d+)\s*dogs?/i);
+
+  return {
+    requestId: event.getId(),
+    status,
+    unit,
+    unitName,
+    arrival: formatDate_(start),
+    departure: formatDate_(departure),
+    exclusive: status === CONFIG.status.pending ? 'pending' : normalizeExclusiveLabel_(label),
+    name,
+    displayName: getDisplayName_({ name, notes: event.getDescription() }),
+    people: peopleMatch ? Number(peopleMatch[1]) : 0,
+    dogs: dogsMatch ? Number(dogsMatch[1]) : 0,
+    notes: event.getDescription() || '',
+  };
+}
+
+function getUnitIdFromName_(unitName) {
+  const normalized = String(unitName || '').toLowerCase();
+  return Object.keys(CONFIG.units).find((unit) => CONFIG.units[unit].toLowerCase() === normalized) || '';
+}
+
+function normalizeExclusiveLabel_(label) {
+  const normalized = String(label || '').toLowerCase();
+  if (normalized === 'e') return 'exclusive';
+  if (normalized === 'ne') return 'non-exclusive';
+  return normalized.includes('non') ? 'non-exclusive' : 'exclusive';
 }
 
 function getCalendarColor_(request, status) {
@@ -516,7 +550,14 @@ function makeToken_() {
   return Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
 }
 
-function json_(payload, statusCode) {
+function json_(payload, statusCode, callback) {
+  if (callback) {
+    const safeCallback = String(callback).replace(/[^\w.$]/g, '');
+    const output = ContentService.createTextOutput(safeCallback + '(' + JSON.stringify(Object.assign({ statusCode: statusCode || 200 }, payload)) + ');');
+    output.setMimeType(ContentService.MimeType.JAVASCRIPT);
+    return output;
+  }
+
   const output = ContentService.createTextOutput(JSON.stringify(Object.assign({ statusCode: statusCode || 200 }, payload)));
   output.setMimeType(ContentService.MimeType.JSON);
   return output;
