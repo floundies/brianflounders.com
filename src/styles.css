@@ -1186,6 +1186,7 @@ main.page > .wrap {
 .shore-form select,
 .shore-form textarea,
 .shore-submit {
+  box-sizing: border-box;
   min-height: 44px;
   border: 2px solid var(--shore-ink);
   border-radius: 4px;
@@ -1434,7 +1435,7 @@ main.page > .wrap {
 
 .shore-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.12fr) minmax(320px, .88fr);
+  grid-template-columns: minmax(320px, .88fr) minmax(0, 1.12fr);
   gap: 16px;
   max-width: 1180px;
   margin: 0 auto;
@@ -1443,6 +1444,7 @@ main.page > .wrap {
 }
 
 .shore-form {
+  order: 2;
   display: grid;
   gap: 16px;
   padding: clamp(18px, 4vw, 28px);
@@ -1509,6 +1511,7 @@ main.page > .wrap {
 }
 
 .shore-side {
+  order: 1;
   display: grid;
   gap: 16px;
 }
@@ -2404,6 +2407,13 @@ main.page > .wrap {
   .shore-grid--2,
   .shore-grid--3 {
     grid-template-columns: 1fr;
+  }
+
+  .shore-form input[type="date"] {
+    min-height: 38px;
+    padding: 7px 8px;
+    font-size: 14px;
+    line-height: 1.1;
   }
 
   .shore-submit {

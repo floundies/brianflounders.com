@@ -836,46 +836,6 @@ export default function ShoreRequest() {
               ))}
             </div>
           </section>
-          <section className="shore-next-up">
-            <div className="shore-calendar-shell__top">
-              <p className="shore-kicker">Next up</p>
-              <h2>Coming down</h2>
-            </div>
-            {upcomingEvents.length ? (
-              <div className="shore-next-list">
-                {upcomingEvents.map((event) => (
-                  <article className={`shore-next-item shore-next-item--${event.unit}`} key={event.requestId || `${event.unit}-${event.name}-${event.arrival}`}>
-                    <span className="shore-next-item__unit">{unitShortNames[event.unit] || event.unitName}</span>
-                    <div>
-                      <h3>{event.displayName || event.name}</h3>
-                      <p>
-                        {formatShortDate(event.arrival)}-{formatShortDate(event.departure)}
-                        {' · '}
-                        {event.exclusive === 'exclusive' ? 'E' : 'NE'}
-                        {' · '}
-                        {getGuestIcon(Number(event.people || 0))} {event.people || 0}
-                        {event.dogs > 0 ? ` · 🐾 ${event.dogs}` : ''}
-                        {event.status === 'pending' ? ' · pending' : ''}
-                      </p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <p className="shore-empty-note">Nothing upcoming is loaded yet.</p>
-            )}
-          </section>
-
-          <section className="shore-rules">
-            <h2>House rules baked in</h2>
-            <ul>
-              <li>Exclusive means exclusive use of the selected unit only.</li>
-              <li>Same-day departure and arrival are allowed.</li>
-              <li>Dogs are only allowed in the cottage.</li>
-              <li>More than two dogs can be approved by Brian.</li>
-              <li>Pending requests should block the calendar right away.</li>
-            </ul>
-          </section>
         </aside>
       </section>
 
