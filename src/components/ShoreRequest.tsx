@@ -2,7 +2,6 @@ import * as React from 'react'
 
 const ACCESS_WORD = 'wildwood'
 const SHORE_ENDPOINT = import.meta.env.VITE_SHORE_ENDPOINT || ''
-const SHORE_CALENDAR_EMBED_URL = import.meta.env.VITE_SHORE_CALENDAR_EMBED_URL || ''
 const SHORE_PAGE_TITLE = 'Flounders Shore House Request Form'
 const SHORE_PAGE_DESCRIPTION = 'Request dates for the Flounders family shore house in Wildwood Crest.'
 const SHORE_PAGE_URL = 'https://www.brianflounders.com/shore'
@@ -46,6 +45,12 @@ const shoreImages = {
     src: '/shore/images/wildwood-boardwalk-pier.png',
     alt: 'Generated Wildwood boardwalk inspired scene with amusement pier rides, beach, ocean, and pastel boardwalk details',
   },
+}
+
+const unitShortNames: Record<string, string> = {
+  'one-bedroom': '1F',
+  'two-bedroom': '2F',
+  cottage: 'Ctg',
 }
 
 type FormState = {
@@ -96,19 +101,6 @@ function getStoredAccess(): boolean {
     return window.localStorage.getItem('shore-access') === 'ok'
   } catch {
     return false
-  }
-}
-
-function withCalendarRefresh(url: string, refreshKey: number): string {
-  if (!url) return ''
-
-  try {
-    const parsed = new URL(url)
-    parsed.searchParams.set('shoreRefresh', String(refreshKey))
-    return parsed.toString()
-  } catch {
-    const joiner = url.includes('?') ? '&' : '?'
-    return `${url}${joiner}shoreRefresh=${refreshKey}`
   }
 }
 
@@ -176,6 +168,11 @@ function getWeekSegment(event: ShoreEvent, week: Date[]) {
 
 function formatMonth(date: Date): string {
   return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(date)
+}
+
+function formatShortDate(dateKey: string): string {
+  const [year, month, day] = dateKey.split('-').map(Number)
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(year, month - 1, day))
 }
 
 function loadShoreEvents(url: string, signal: AbortSignal): Promise<ShoreEvent[]> {
@@ -264,14 +261,17 @@ export default function ShoreRequest() {
   const [shoreEvents, setShoreEvents] = React.useState<ShoreEvent[]>([])
   const [boardStatus, setBoardStatus] = React.useState('')
 
-  const calendarEmbedUrl = React.useMemo(
-    () => withCalendarRefresh(SHORE_CALENDAR_EMBED_URL, calendarRefreshKey),
-    [calendarRefreshKey]
-  )
   const boardDays = React.useMemo(() => getMonthGrid(boardMonth), [boardMonth])
   const boardWeeks = React.useMemo(() => chunkWeeks(boardDays), [boardDays])
   const boardStart = toDateKey(boardDays[0])
   const boardEnd = toDateKey(boardDays[boardDays.length - 1])
+  const upcomingEvents = React.useMemo(() => {
+    const today = toDateKey(new Date())
+    return shoreEvents
+      .filter((event) => event.departure >= today)
+      .sort((a, b) => a.arrival.localeCompare(b.arrival) || a.unit.localeCompare(b.unit) || a.name.localeCompare(b.name))
+      .slice(0, 6)
+  }, [shoreEvents])
 
   React.useEffect(() => {
     const previousTitle = document.title
@@ -320,7 +320,7 @@ export default function ShoreRequest() {
       })
       .catch((error) => {
         if (error.name === 'AbortError') return
-        setBoardStatus('Could not load the occupancy board. The Google Calendar backup is still below.')
+        setBoardStatus('Could not load the occupancy board. Try refreshing, or text Brian if the calendar looks wrong.')
       })
 
     return () => controller.abort()
@@ -501,7 +501,7 @@ export default function ShoreRequest() {
                   return (
                     <div className={`shore-unit-row shore-unit-row--${unit.id}`} key={unit.id} aria-label={unit.name}>
                       <span className="shore-unit-row__label" aria-hidden="true">
-                        {unit.id === 'one-bedroom' ? '1F' : unit.id === 'two-bedroom' ? '2F' : 'Ctg'}
+                        {unitShortNames[unit.id]}
                       </span>
                       {unitEvents.map((event) => {
                         const segment = getWeekSegment(event, week)
@@ -624,22 +624,33 @@ export default function ShoreRequest() {
         </form>
 
         <aside className="shore-side">
-          <section className="shore-calendar-shell">
+          <section className="shore-next-up">
             <div className="shore-calendar-shell__top">
-              <p className="shore-kicker">Calendar</p>
-              <h2>Everyone’s plans</h2>
+              <p className="shore-kicker">Next up</p>
+              <h2>Coming down</h2>
             </div>
-            {SHORE_CALENDAR_EMBED_URL ? (
-              <iframe
-                key={calendarRefreshKey}
-                className="shore-calendar-frame"
-                src={calendarEmbedUrl}
-                title="Shore house shared Google Calendar"
-              />
-            ) : (
-              <div className="shore-calendar-placeholder">
-                Add VITE_SHORE_CALENDAR_EMBED_URL to show the shared Google Calendar here.
+            {upcomingEvents.length ? (
+              <div className="shore-next-list">
+                {upcomingEvents.map((event) => (
+                  <article className={`shore-next-item shore-next-item--${event.unit}`} key={event.requestId || `${event.unit}-${event.name}-${event.arrival}`}>
+                    <span className="shore-next-item__unit">{unitShortNames[event.unit] || event.unitName}</span>
+                    <div>
+                      <h3>{event.displayName || event.name}</h3>
+                      <p>
+                        {formatShortDate(event.arrival)}-{formatShortDate(event.departure)}
+                        {' · '}
+                        {event.exclusive === 'exclusive' ? 'E' : 'NE'}
+                        {' · '}
+                        {getGuestIcon(Number(event.people || 0))} {event.people || 0}
+                        {event.dogs > 0 ? ` · 🐾 ${event.dogs}` : ''}
+                        {event.status === 'pending' ? ' · pending' : ''}
+                      </p>
+                    </div>
+                  </article>
+                ))}
               </div>
+            ) : (
+              <p className="shore-empty-note">Nothing upcoming is loaded yet.</p>
             )}
           </section>
 

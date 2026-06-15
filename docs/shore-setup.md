@@ -77,34 +77,18 @@ Add this environment variable wherever the site is built:
 
 ```text
 VITE_SHORE_ENDPOINT=<web-app-url>
-VITE_SHORE_CALENDAR_EMBED_URL=<google-calendar-embed-src-url>
 ```
 
 For local testing, add it to `.env`:
 
 ```text
 VITE_SHORE_ENDPOINT=https://script.google.com/macros/s/.../exec
-VITE_SHORE_CALENDAR_EMBED_URL=https://calendar.google.com/calendar/embed?src=...
 ```
 
 Then restart Vite:
 
 ```bash
 npm run dev -- --host 127.0.0.1
-```
-
-To get the calendar embed URL:
-
-1. Open Google Calendar settings.
-2. Choose the shared shore calendar.
-3. Go to `Integrate calendar`.
-4. Copy the URL inside the `src="..."` part of the iframe embed code.
-5. Use that URL as `VITE_SHORE_CALENDAR_EMBED_URL`.
-
-Do not use the private iCal URL here. Use the Google Calendar embed URL that starts with:
-
-```text
-https://calendar.google.com/calendar/embed?src=
 ```
 
 ## Behavior
