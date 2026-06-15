@@ -705,7 +705,7 @@ export default function ShoreRequest() {
 
           <div className="shore-grid shore-grid--2">
             <label>
-              Calendar name
+              Display name
               <input
                 required
                 placeholder="Ed and Sara"
