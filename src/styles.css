@@ -1622,19 +1622,26 @@ main.page > .wrap {
 
 .shore-board {
   display: grid;
-  grid-template-columns: repeat(7, minmax(124px, 1fr));
+  min-width: 760px;
   overflow-x: auto;
   border: 2px solid var(--shore-ink);
   border-radius: 8px;
   background: rgba(255, 255, 255, .66);
 }
 
-.shore-board__weekday {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  border-right: 1px solid rgba(17, 62, 80, .18);
+.shore-board__weekdays,
+.shore-week__days,
+.shore-unit-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.shore-board__weekdays {
   border-bottom: 2px solid var(--shore-ink);
+}
+
+.shore-board__weekday {
+  border-right: 1px solid rgba(17, 62, 80, .18);
   background: var(--shore-cream);
   color: var(--shore-deep);
   padding: 8px 6px;
@@ -1645,166 +1652,132 @@ main.page > .wrap {
   text-transform: uppercase;
 }
 
-.shore-day {
-  min-height: 112px;
-  border-right: 1px solid rgba(17, 62, 80, .14);
+.shore-week {
+  position: relative;
+  min-height: 118px;
   border-bottom: 1px solid rgba(17, 62, 80, .14);
-  background: rgba(255, 255, 255, .52);
-  padding: 6px 0;
+  display: grid;
+  grid-template-rows: 34px repeat(3, 26px);
+  row-gap: 6px;
+  padding: 6px 0 8px;
+  background: rgba(255, 255, 255, .5);
 }
 
-.shore-day--muted {
-  background: rgba(255, 255, 255, .24);
-  color: rgba(17, 62, 80, .45);
+.shore-week__days {
+  grid-row: 1 / -1;
+  grid-column: 1;
+  pointer-events: none;
 }
 
-.shore-day--today {
-  outline: 3px solid var(--shore-coral);
-  outline-offset: -4px;
-}
-
-.shore-day__number {
-  display: inline-grid;
-  min-width: 26px;
-  height: 26px;
-  place-items: center;
-  margin: 0 6px 6px;
-  border-radius: 999px;
+.shore-week__day {
+  border-right: 1px solid rgba(17, 62, 80, .12);
   color: var(--shore-ink);
   font-weight: 900;
+  padding: 8px 8px 0;
 }
 
-.shore-day--today .shore-day__number {
+.shore-week__day--muted {
+  color: rgba(17, 62, 80, .38);
+}
+
+.shore-week__day--today span {
+  display: inline-grid;
+  min-width: 27px;
+  height: 27px;
+  place-items: center;
+  border-radius: 999px;
   background: var(--shore-coral);
   color: white;
 }
 
-.shore-day__lanes {
-  display: grid;
-  gap: 5px;
+.shore-week__units {
+  display: contents;
 }
 
-.shore-lane {
-  min-height: 24px;
-  border: 0;
-  border-left: 7px solid rgba(17, 62, 80, .18);
-  border-radius: 0;
-  background: transparent;
-  padding: 0 6px 0 4px;
+.shore-unit-row {
+  grid-column: 1;
+  min-width: 0;
+  padding: 0 10px;
+  column-gap: 0;
 }
 
-.shore-lane--one-bedroom {
+.shore-unit-row--one-bedroom {
+  grid-row: 2;
+}
+
+.shore-unit-row--two-bedroom {
+  grid-row: 3;
+}
+
+.shore-unit-row--cottage {
+  grid-row: 4;
+}
+
+.shore-unit-row::before {
+  content: "";
+  grid-column: 1 / -1;
+  grid-row: 1;
+  border-left: 7px solid rgba(17, 62, 80, .2);
+}
+
+.shore-unit-row--one-bedroom::before {
   border-left-color: var(--shore-blue);
 }
 
-.shore-lane--two-bedroom {
+.shore-unit-row--two-bedroom::before {
   border-left-color: var(--shore-pink);
 }
 
-.shore-lane--cottage {
+.shore-unit-row--cottage::before {
   border-left-color: var(--shore-yellow);
 }
 
-.shore-lane__unit {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
-
-.shore-lane__open {
-  display: none;
-  color: rgba(22, 66, 75, .45);
-  font-size: 12px;
-  font-style: italic;
-  font-weight: 800;
-}
-
-.shore-stay-list {
-  display: grid;
-  gap: 4px;
-}
-
-.shore-stay,
-.shore-turnover {
-  display: block;
-  border: 0;
-  border-radius: 0;
-  background: rgba(158, 231, 212, .56);
+.shore-reservation {
+  z-index: 1;
+  grid-row: 1;
+  min-width: 0;
+  align-self: center;
+  border-radius: 7px;
   color: var(--shore-ink);
-  min-height: 24px;
-  padding: 4px 9px;
+  padding: 5px 10px;
   font-size: 11px;
   font-weight: 900;
-  line-height: 1.2;
-  margin-left: -12px;
-  margin-right: -6px;
+  line-height: 1.15;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .42), 0 1px 0 rgba(17, 62, 80, .14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .42), 0 1px 2px rgba(17, 62, 80, .16);
 }
 
-.shore-stay--one-bedroom {
+.shore-reservation--one-bedroom {
   background: var(--shore-blue);
   color: white;
   text-shadow: 0 1px 0 rgba(17, 62, 80, .28);
 }
 
-.shore-stay--two-bedroom {
+.shore-reservation--two-bedroom {
   background: var(--shore-pink);
-  color: var(--shore-ink);
 }
 
-.shore-stay--cottage {
+.shore-reservation--cottage {
   background: var(--shore-yellow);
+}
+
+.shore-reservation--pending {
+  background: #d8d6cf;
   color: var(--shore-ink);
+  border: 2px dashed rgba(17, 62, 80, .32);
+  padding-block: 3px;
 }
 
-.shore-stay--start {
-  margin-left: 0;
-  border-top-left-radius: 999px;
-  border-bottom-left-radius: 999px;
+.shore-reservation:not(.shore-reservation--starts) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
 }
 
-.shore-stay--end {
-  margin-right: 6px;
-  border-top-right-radius: 999px;
-  border-bottom-right-radius: 999px;
-}
-
-.shore-stay--continuation {
-  color: transparent;
-  text-shadow: none;
-  padding-left: 0;
-  padding-right: 0;
-}
-
-.shore-stay--pending {
-  border-style: dashed;
-  background: rgba(180, 186, 190, .34);
-  color: var(--shore-ink);
-}
-
-.shore-turnover {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(255, 227, 110, .48);
-}
-
-.shore-turnover span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.shore-turnover b {
-  color: var(--shore-coral);
-  font-size: 14px;
-  flex: 0 0 auto;
+.shore-reservation:not(.shore-reservation--ends) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 .shore-rules ul {

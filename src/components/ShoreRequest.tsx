@@ -131,6 +131,10 @@ function getMonthGrid(monthDate: Date): Date[] {
   return Array.from({ length: 42 }, (_, index) => addDays(gridStart, index))
 }
 
+function chunkWeeks(days: Date[]): Date[][] {
+  return Array.from({ length: Math.ceil(days.length / 7) }, (_, index) => days.slice(index * 7, index * 7 + 7))
+}
+
 function getGuestIcon(count: number): string {
   return count >= 8 ? '👥' : '👤'
 }
@@ -147,29 +151,27 @@ function getStayLabel(event: ShoreEvent): string {
   ].filter(Boolean).join(' · ')
 }
 
-function getStayClassName(event: ShoreEvent, day: Date, boardStart: string): string {
-  const dayKey = toDateKey(day)
-  const nextDayKey = toDateKey(addDays(day, 1))
-  const isStart = event.arrival === dayKey || dayKey === boardStart || day.getDay() === 0
-  const isEnd = event.departure === dayKey || event.departure === nextDayKey || day.getDay() === 6
-  const classes = [
-    'shore-stay',
-    `shore-stay--${event.status}`,
-    `shore-stay--${event.unit}`,
-    isStart ? 'shore-stay--start' : 'shore-stay--middle',
-    isEnd ? 'shore-stay--end' : '',
-    isStart ? '' : 'shore-stay--continuation',
-  ]
-
-  return classes.filter(Boolean).join(' ')
-}
-
 function eventTouchesDay(event: ShoreEvent, dayKey: string): boolean {
   return event.arrival <= dayKey && dayKey <= event.departure
 }
 
-function eventStaysOvernight(event: ShoreEvent, dayKey: string): boolean {
-  return event.arrival <= dayKey && dayKey < event.departure
+function eventOverlapsWeek(event: ShoreEvent, week: Date[]): boolean {
+  return event.arrival <= toDateKey(week[6]) && event.departure >= toDateKey(week[0])
+}
+
+function getWeekSegment(event: ShoreEvent, week: Date[]) {
+  const weekStart = toDateKey(week[0])
+  const weekEnd = toDateKey(week[6])
+  const segmentStart = event.arrival > weekStart ? event.arrival : weekStart
+  const segmentEnd = event.departure < weekEnd ? event.departure : weekEnd
+  const startIndex = week.findIndex((day) => toDateKey(day) === segmentStart)
+  const endIndex = week.findIndex((day) => toDateKey(day) === segmentEnd)
+
+  return {
+    gridColumn: `${Math.max(startIndex, 0) + 1} / ${Math.max(endIndex, startIndex, 0) + 2}`,
+    startsInWeek: event.arrival >= weekStart,
+    endsInWeek: event.departure <= weekEnd,
+  }
 }
 
 function formatMonth(date: Date): string {
@@ -267,6 +269,7 @@ export default function ShoreRequest() {
     [calendarRefreshKey]
   )
   const boardDays = React.useMemo(() => getMonthGrid(boardMonth), [boardMonth])
+  const boardWeeks = React.useMemo(() => chunkWeeks(boardDays), [boardDays])
   const boardStart = toDateKey(boardDays[0])
   const boardEnd = toDateKey(boardDays[boardDays.length - 1])
 
@@ -466,58 +469,52 @@ export default function ShoreRequest() {
           <span><b>→</b> Same-day turnover</span>
         </div>
         {boardStatus && <p className="shore-status">{boardStatus}</p>}
-        <div className="shore-board" role="table" aria-label={`${formatMonth(boardMonth)} shore house occupancy`}>
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((weekday) => (
-            <div className="shore-board__weekday" role="columnheader" key={weekday}>{weekday}</div>
+        <div className="shore-board" aria-label={`${formatMonth(boardMonth)} shore house occupancy`}>
+          <div className="shore-board__weekdays">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((weekday) => (
+              <div className="shore-board__weekday" key={weekday}>{weekday}</div>
+            ))}
+          </div>
+          {boardWeeks.map((week) => (
+            <section className="shore-week" key={toDateKey(week[0])}>
+              <div className="shore-week__days" aria-hidden="true">
+                {week.map((day) => {
+                  const dayKey = toDateKey(day)
+                  const isCurrentMonth = day.getMonth() === boardMonth.getMonth()
+                  const isToday = dayKey === toDateKey(new Date())
+                  return (
+                    <div className={`shore-week__day${isCurrentMonth ? '' : ' shore-week__day--muted'}${isToday ? ' shore-week__day--today' : ''}`} key={dayKey}>
+                      <span>{day.getDate()}</span>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="shore-week__units">
+                {units.map((unit) => {
+                  const unitEvents = shoreEvents
+                    .filter((event) => event.unit === unit.id && eventOverlapsWeek(event, week))
+                    .sort((a, b) => a.arrival.localeCompare(b.arrival) || a.name.localeCompare(b.name))
+
+                  return (
+                    <div className={`shore-unit-row shore-unit-row--${unit.id}`} key={unit.id} aria-label={unit.name}>
+                      {unitEvents.map((event) => {
+                        const segment = getWeekSegment(event, week)
+                        return (
+                          <span
+                            className={`shore-reservation shore-reservation--${event.unit} shore-reservation--${event.status}${segment.startsInWeek ? ' shore-reservation--starts' : ''}${segment.endsInWeek ? ' shore-reservation--ends' : ''}`}
+                            style={{ gridColumn: segment.gridColumn }}
+                            key={event.requestId || `${event.unit}-${event.name}-${event.arrival}`}
+                          >
+                            {getStayLabel(event)}
+                          </span>
+                        )
+                      })}
+                    </div>
+                  )
+                })}
+              </div>
+            </section>
           ))}
-          {boardDays.map((day) => {
-            const dayKey = toDateKey(day)
-            const isCurrentMonth = day.getMonth() === boardMonth.getMonth()
-            const isToday = dayKey === toDateKey(new Date())
-
-            return (
-              <article
-                className={`shore-day${isCurrentMonth ? '' : ' shore-day--muted'}${isToday ? ' shore-day--today' : ''}`}
-                role="cell"
-                key={dayKey}
-              >
-                <div className="shore-day__number">{day.getDate()}</div>
-                <div className="shore-day__lanes">
-                  {units.map((unit) => {
-                    const unitEvents = shoreEvents.filter((event) => event.unit === unit.id && eventTouchesDay(event, dayKey))
-                    const arrivals = unitEvents.filter((event) => event.arrival === dayKey)
-                    const departures = unitEvents.filter((event) => event.departure === dayKey)
-                    const staying = unitEvents.filter((event) => eventStaysOvernight(event, dayKey))
-                    const turnover = arrivals.length > 0 && departures.length > 0
-                    const visibleEvents = staying.length ? staying : unitEvents
-
-                    return (
-                      <div className={`shore-lane shore-lane--${unit.id}`} key={unit.id}>
-                        <span className="shore-lane__unit">{unit.name.replace("Grammy's Flop House", "Grammy's").replace("Papa's Upper Deck", "Papa's")}</span>
-                        {visibleEvents.length === 0 ? (
-                          null
-                        ) : turnover ? (
-                          <span className="shore-turnover">
-                            <span>{departures.map((event) => event.displayName || event.name).join(' & ')}</span>
-                            <b>→</b>
-                            <span>{arrivals.map((event) => event.displayName || event.name).join(' & ')}</span>
-                          </span>
-                        ) : (
-                          <span className="shore-stay-list">
-                            {visibleEvents.map((event) => (
-                              <span className={getStayClassName(event, day, boardStart)} key={event.requestId || `${event.unit}-${event.name}-${event.arrival}`}>
-                                {getStayLabel(event)}
-                              </span>
-                            ))}
-                          </span>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </article>
-            )
-          })}
         </div>
       </section>
 
