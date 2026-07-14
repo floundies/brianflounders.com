@@ -362,7 +362,7 @@ function buildCalendarTitle_(request, status) {
 
 function parseCalendarEvent_(event) {
   const title = event.getTitle();
-  const parsedTitle = title.match(/^\[([^,\]]+),\s*([^\]]+)\]\s*(.*?)\s*(?:\(([^)]*)\))?$/);
+  const parsedTitle = title.match(/^[\[\(]([^,\]\)]+),\s*([^\]\)]+)[\]\)]\s*(.*?)\s*(?:\(([^)]*)\))?$/);
   if (!parsedTitle) return null;
 
   const unitName = parsedTitle[1].trim();
