@@ -248,7 +248,19 @@ document.addEventListener('DOMContentLoaded', function () {
   tooltip.addEventListener('click', function (e) {
     var btn = e.target.closest('[data-action="sponsor"]');
     if (btn) {
-      window.open('https://givebutter.com/HLTC', '_blank', 'noopener');
+      var amount = btn.getAttribute('data-amount');
+      var seatId = btn.getAttribute('data-seat');
+      var tier = btn.getAttribute('data-tier');
+      var params = new URLSearchParams({
+        amount: amount,
+        frequency: 'once',
+        utm_source: 'hltc-seat-map',
+        utm_medium: 'website',
+        utm_campaign: 'seat-sponsorship',
+        utm_term: tier,
+        utm_content: seatId
+      });
+      window.open('https://givebutter.com/HLTC-Seat-Sponsor?' + params.toString(), '_blank', 'noopener');
     }
   });
 
@@ -457,12 +469,13 @@ document.addEventListener('DOMContentLoaded', function () {
       cell.className += ' seat-map__cell--' + tier;
       var tierName = tier === 'prime' ? 'Prime' : tier === 'gold' ? 'Gold' : 'Blue';
       var price = tier === 'prime' ? '$1,000' : tier === 'gold' ? '$750' : '$600';
+      var amount = tier === 'prime' ? '1000' : tier === 'gold' ? '750' : '600';
       var seatId = escapeHtml(val);
       var previewHtml =
         '<span class="seat-tooltip__seat">' + seatId + '</span>' + tierName + ' (' + price + ')';
       var latchedHtml =
         '<div class="seat-tooltip__head">Seat <strong>' + seatId + '</strong> &middot; ' + tierName + ' tier &middot; ' + price + '</div>' +
-        '<button class="seat-tooltip__cta" data-action="sponsor" type="button">Sponsor this seat &rarr;</button>';
+        '<button class="seat-tooltip__cta" data-action="sponsor" data-seat="' + seatId + '" data-tier="' + tier + '" data-amount="' + amount + '" type="button">Sponsor this seat &rarr;</button>';
       cell.setAttribute('aria-label', val + ', ' + tierName + ' tier, ' + price + ', available');
       bindSeatPanel(cell, previewHtml, latchedHtml);
     }
