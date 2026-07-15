@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1200" viewBox="0 0 1200 1200" role="img" aria-labelledby="title desc">
+  <title id="title">Historic Lansdowne Theater Corporation architectural seal</title>
+  <desc id="desc">A navy and brass circular seal featuring a detailed line drawing of the Lansdowne Theater, the restored script L, the theater date 1927, and the corporation date 2006.</desc>
+  <defs>
+    <radialGradient id="paper" cx="50%" cy="42%" r="68%">
+      <stop offset="0" stop-color="#fffdf8"/>
+      <stop offset="0.76" stop-color="#f7f1e8"/>
+      <stop offset="1" stop-color="#eee3d4"/>
+    </radialGradient>
+    <path id="topArc" d="M 157 602 A 443 443 0 0 1 1043 602"/>
+    <path id="scriptL" d="M 21.5 102 C 21 97 28 92 38 91.5 C 47 91 49.5 88 53 80 C 57 69 58.5 58 61.5 48.5 C 64.5 38.5 69 30.5 76.5 26.5 C 84 22.5 95 24 100 30 C 105 37 101 47 93.5 51.5 C 87 55.5 80 52.5 79 48 C 78 44 82 44 86 42 C 91 39.5 92 36 88 34.8 C 82 33.5 76.5 39.5 73.2 46 C 69.5 54 68.5 65.5 65.2 78 C 62.5 87 59.5 93 66 97 C 76 101.5 87 105 94.5 101 C 99 98.5 99.5 94 101.5 93.8 C 105 93.5 108 98.5 106.5 104 C 104.5 111 97 114 87 112.5 C 74 110.5 62 105 54 104 C 49 103.5 46 108 38 109 C 30 110 22 108 21.5 102 Z M 33.5 99.2 C 35.5 98.8 39 97.7 40.2 98.7 C 41 99.7 39 100.7 37 101 C 35 101.4 33 100.5 33.5 99.2 Z"/>
+    <g id="cartouche">
+      <path d="M-23 0C-18-7-12-9-7-6C-4-12 4-12 7-6C12-9 18-7 23 0C18 7 12 9 7 6C4 12-4 12-7 6C-12 9-18 7-23 0Z"/>
+      <path d="M-8 0C-5-5 5-5 8 0C5 5-5 5-8 0Z"/>
+    </g>
+    <g id="centerWindow">
+      <path d="M0 0h46v110H0zM7 7v96M23 7v96M39 7v96M0 57h46"/>
+      <path d="M-4 0h54M-2 110h50M3 -7h40" stroke-width="3.6"/>
+    </g>
+    <g id="towerWindow">
+      <path d="M0 44V28A34 34 0 0 1 68 28v16M8 44V29A26 26 0 0 1 60 29v15M34 2v42M10 24h48M17 12l17 16 17-16"/>
+      <path d="M8 44h52v96H8zM34 44v96M8 92h52"/>
+    </g>
+    <clipPath id="leftRoofClip"><path d="M246 420L328 369L410 420Z"/></clipPath>
+    <clipPath id="centerRoofClip"><path d="M394 443L422 399H778L806 443Z"/></clipPath>
+    <clipPath id="rightRoofClip"><path d="M790 420L872 369L954 420Z"/></clipPath>
+    <g id="leaf" stroke-width="2.35">
+      <path d="M0 0C8 -12 23 -15 33 -6C25 4 11 7 0 0Z"/>
+      <path d="M3 0L28 -5"/>
+    </g>
+    <g id="laurelSprig">
+      <path d="M430 1024C354 1005 286 966 220 898" stroke-width="3"/>
+      <g transform="translate(220 898) rotate(211) scale(.88)"><use href="#leaf"/></g>
+      <g transform="translate(246 922) rotate(262) scale(.9)"><use href="#leaf"/></g>
+      <g transform="translate(264 939) rotate(166) scale(.86)"><use href="#leaf"/></g>
+      <g transform="translate(287 956) rotate(256) scale(.94)"><use href="#leaf"/></g>
+      <g transform="translate(310 973) rotate(160) scale(.9)"><use href="#leaf"/></g>
+      <g transform="translate(338 989) rotate(249) scale(.96)"><use href="#leaf"/></g>
+      <g transform="translate(365 1001) rotate(153) scale(.9)"><use href="#leaf"/></g>
+      <g transform="translate(395 1013) rotate(242) scale(.9)"><use href="#leaf"/></g>
+    </g>
+  </defs>
+
+  <circle cx="600" cy="600" r="574" fill="url(#paper)"/>
+  <circle cx="600" cy="600" r="552" fill="none" stroke="#102f51" stroke-width="12"/>
+  <circle cx="600" cy="600" r="522" fill="none" stroke="#9b762e" stroke-width="3"/>
+
+  <g fill="#102f51">
+    <text font-family="Baskerville, 'Times New Roman', serif" font-size="40" font-weight="600" letter-spacing="7.2">
+      <textPath href="#topArc" startOffset="50%" text-anchor="middle">HISTORIC LANSDOWNE THEATER CORPORATION</textPath>
+    </text>
+    <circle cx="126" cy="592" r="6" fill="#a37b2d"/>
+    <circle cx="1074" cy="592" r="6" fill="#a37b2d"/>
+  </g>
+
+  <!-- Theater elevation: all geometry below is vector linework. -->
+  <g id="theater" fill="none" stroke="#102f51" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+    <!-- silhouette and the Lansdowne's three low tile roofs -->
+    <path d="M258 826V430H404V452H796V430H942V826" stroke-width="4"/>
+    <g fill="#eee3d4">
+      <path d="M246 420L328 369L410 420Z" stroke-width="4"/>
+      <path d="M394 443L422 399H778L806 443Z" stroke-width="4"/>
+      <path d="M790 420L872 369L954 420Z" stroke-width="4"/>
+    </g>
+    <g stroke-width="1.35">
+      <g clip-path="url(#leftRoofClip)">
+        <path d="M238 389H418M238 401H418M238 412H418M328 369L270 424M328 369L296 424M328 369V424M328 369L360 424M328 369L386 424"/>
+      </g>
+      <g clip-path="url(#centerRoofClip)">
+        <path d="M388 410H812M388 421H812M388 432H812M408 445L438 396M448 445L470 396M488 445L502 396M528 445L534 396M568 445L566 396M608 445L598 396M648 445L630 396M688 445L662 396M728 445L694 396M768 445L726 396"/>
+      </g>
+      <g clip-path="url(#rightRoofClip)">
+        <path d="M782 389H962M782 401H962M782 412H962M872 369L814 424M872 369L840 424M872 369V424M872 369L904 424M872 369L930 424"/>
+      </g>
+    </g>
+    <path d="M242 430H414M390 452H810M786 430H958" stroke-width="6"/>
+
+    <!-- tower masonry and pilasters -->
+    <path d="M267 443H389M267 457H389M811 443H933M811 457H933"/>
+    <path d="M279 430v396M377 430v396M823 430v396M921 430v396"/>
+    <path d="M258 503h30M368 503h30M802 503h30M912 503h30" stroke-width="5"/>
+    <path d="M258 513h30M368 513h30M802 513h30M912 513h30"/>
+    <path d="M279 545H258m119 0h21M823 545h-21m119 0h21M279 580H258m119 0h21M823 580h-21m119 0h21M279 615H258m119 0h21M823 615h-21m119 0h21" stroke-width="1.4"/>
+
+    <!-- arched tower windows and iron balconies -->
+    <use href="#towerWindow" x="294" y="514"/>
+    <use href="#towerWindow" x="838" y="514"/>
+    <path d="M287 661h82v41h-82zM295 661v41m11-41v41m11-41v41m11-41v41m11-41v41m11-41v41m11-41v41M831 661h82v41h-82zM839 661v41m11-41v41m11-41v41m11-41v41m11-41v41m11-41v41m11-41v41"/>
+    <path d="M283 657h90M827 657h90" stroke-width="5"/>
+
+    <!-- central ornamental band: three cartouches visible on the real facade -->
+    <path d="M408 466h384v72H408zM420 479h360v46H420z"/>
+    <g fill="none"><use href="#cartouche" x="480" y="502"/><use href="#cartouche" x="600" y="502"/><use href="#cartouche" x="720" y="502"/></g>
+
+    <!-- central windows -->
+    <use href="#centerWindow" x="422" y="557"/>
+    <use href="#centerWindow" x="484" y="557"/>
+    <use href="#centerWindow" x="546" y="557"/>
+    <use href="#centerWindow" x="608" y="557"/>
+    <use href="#centerWindow" x="670" y="557"/>
+    <use href="#centerWindow" x="732" y="557"/>
+
+    <!-- marquee canopy -->
+    <path d="M420 686L460 674H740L780 686L772 758H428Z" fill="#f7f1e8" stroke-width="4"/>
+    <path d="M460 674l-12 75M740 674l12 75M448 704h304M440 723h320M432 748h336"/>
+    <path d="M466 686h268v49H466z"/>
+    <path d="M478 698h244M478 710h244M478 722h244" stroke-width="1.35"/>
+    <!-- At seal scale the inherited L is the marquee crown; micro-lettering is omitted. -->
+    <path d="M536 648h128v33H536z" fill="#f7f1e8" stroke-width="3.4"/>
+    <path d="M546 660h28M626 660h28" stroke-width="3.4"/>
+    <g transform="translate(556 590) scale(.68)" fill="#f7f1e8" stroke="#102f51" stroke-width="3.8">
+      <use href="#scriptL"/>
+    </g>
+
+    <!-- storefronts, doors, and ticket booth -->
+    <path d="M258 707l18-42h104l18 42v19H258zM802 707l18-42h104l18 42v19H802z" fill="#f7f1e8"/>
+    <path d="M266 726h124v100H266zM810 726h124v100H810zM278 740h100v86M822 740h100v86M328 740v86M872 740v86"/>
+    <path d="M406 772h100v54H406zM694 772h100v54H694zM421 785h70v41M709 785h70v41"/>
+    <path d="M520 758h160v68H520zM545 758v68M575 758v68M625 758v68M655 758v68"/>
+    <path d="M584 763h32v63M588 792q12-18 24 0"/>
+    <path d="M564 826v-64l36-27 36 27v64M572 762h56M581 754h38M600 735v-10" stroke-width="3"/>
+    <circle cx="600" cy="723" r="4" fill="#102f51"/>
+    <path d="M246 826h708M238 837h724" stroke-width="4"/>
+  </g>
+
+  <!-- Theater date belongs to the building. -->
+  <g fill="#102f51" text-anchor="middle">
+    <text x="600" y="882" font-family="Baskerville, 'Times New Roman', serif" font-size="24" font-weight="600" letter-spacing="5">THEATER</text>
+    <text x="600" y="920" font-family="Baskerville, 'Times New Roman', serif" font-size="31" font-weight="600" letter-spacing="7">1927</text>
+  </g>
+
+  <!-- Steeper, tapered laurel sprigs with alternating pointed leaves. -->
+  <g fill="none" stroke="#9b762e" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+    <use href="#laurelSprig"/>
+    <use href="#laurelSprig" transform="translate(1200 0) scale(-1 1)"/>
+  </g>
+
+  <!-- Corporation date belongs to HLTC. -->
+  <g text-anchor="middle">
+    <path d="M455 1006h82M663 1006h82" fill="none" stroke="#9b762e" stroke-width="2"/>
+    <text x="600" y="1015" fill="#102f51" font-family="Baskerville, 'Times New Roman', serif" font-size="21" font-weight="600" letter-spacing="5">EST.</text>
+    <text x="600" y="1055" fill="#102f51" font-family="Baskerville, 'Times New Roman', serif" font-size="36" font-weight="600" letter-spacing="8">2006</text>
+  </g>
+  <circle cx="600" cy="1102" r="5" fill="#9b762e"/>
+</svg>

@@ -42,7 +42,8 @@
     .eyebrow{margin:0 0 18px;color:var(--blue);font-family:'Jost',sans-serif;font-size:10px;font-weight:600;letter-spacing:.28em;text-transform:uppercase}
     h1,h2,h3,p{margin-top:0}
     h1{max-width:950px;margin-bottom:23px;font-family:'Bodoni Moda',serif;font-size:clamp(54px,8.5vw,108px);font-optical-sizing:auto;font-weight:600;line-height:.9;letter-spacing:-.055em}
-    .hero__lede{max-width:680px;margin-bottom:0;color:var(--muted);font-size:15px;line-height:1.75}
+    .hero__lede{max-width:760px;margin-bottom:0;color:var(--muted);font-size:15px;line-height:1.75}
+    .hero__rationale{max-width:920px;margin:18px 0 0;padding-left:19px;border-left:2px solid var(--blue);color:#d5cbd0;font-size:13px;line-height:1.75}
     .hero__rule{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:18px;margin-top:46px;color:#796c72;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
     .hero__rule::after{content:"";height:1px;background:var(--oxblood)}
     .neon-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;padding:24px 0 clamp(90px,10vw,140px)}
@@ -214,7 +215,8 @@
       <p class="eyebrow">Board preview · identity study</p>
       <h1>Keep the<br>lights on.</h1>
       <p class="hero__lede">Two nighttime expressions of the inherited Lansdowne L—followed by the same identity with the electricity turned off. The building dates to 1927; its nonprofit steward dates to 2006.</p>
-      <div class="hero__rule">Animated marks</div>
+      <p class="hero__rationale">The octagonal frame comes from the geometry of the theater’s chandelier. Its luminous blue or gold lines recall the Lansdowne’s exterior neon, while the ring of warm dots comes from the bulbs of the marquee. We kept the original script L because it carries the memory of the preservation campaign, then separated <strong>1927</strong> for the building from <strong>2006</strong> for HLTC. The result is intended to feel born from this theater—not applied to it—and to work both as a living nighttime sign and as a disciplined flat mark in print.</p>
+      <div class="hero__rule">Current favorite · animated marks</div>
     </section>
 
     <section class="shell neon-grid" aria-label="Animated identity directions">
@@ -345,6 +347,230 @@
             </div>
           </article>
         </div>
+      </div>
+    </section>
+
+    <section class="process-book" aria-labelledby="process-title">
+      <style>
+        .process-book{padding:clamp(82px,10vw,138px) 0;background:#12080c;color:#f4eee7}
+        .process-book__intro{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(300px,.65fr);gap:clamp(32px,7vw,100px);align-items:end}
+        .process-book__intro h2{max-width:780px}
+        .process-book__intro-copy{margin:0;color:#b4a8ad;font-size:14px;line-height:1.75}
+        .favorite-note{margin:50px 0 0;padding:24px 26px;border:1px solid #56404a;border-left:4px solid #72d1ff;background:#180b10;color:#d4cbd0;font-size:13px;line-height:1.75}
+        .favorite-note span{display:block;margin-bottom:10px;color:#72d1ff;font-family:'Jost',sans-serif;font-size:8px;font-weight:700;letter-spacing:.2em;text-transform:uppercase}
+        .favorite-note strong{color:#f4eee7}
+        .decision-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:28px;border-top:1px solid #422831;border-left:1px solid #422831}
+        .decision{min-height:190px;padding:26px;border-right:1px solid #422831;border-bottom:1px solid #422831}
+        .decision span{display:block;margin-bottom:14px;color:#72d1ff;font-family:'Jost',sans-serif;font-size:8px;font-weight:700;letter-spacing:.22em;text-transform:uppercase}
+        .decision h3{margin:0 0 9px;font-family:'Bodoni Moda',serif;font-size:25px;font-weight:600;line-height:1.05}
+        .decision p{margin:0;color:#9f9298;font-size:11px;line-height:1.65}
+        .working-ideas{padding:clamp(82px,10vw,138px) 0;background:#ede5da;color:#21191b}
+        .working-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.62fr);gap:clamp(30px,7vw,92px);align-items:end;margin-bottom:54px}
+        .working-head .eyebrow{color:#8c6b22}
+        .working-head p:last-child{margin:0;color:#665e59;font-size:14px;line-height:1.75}
+        .idea-stack{display:grid;gap:24px}
+        .idea-card{overflow:hidden;border:1px solid #cfc2b0;background:#f8f3ec}
+        .idea-card__head{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start;padding:25px 28px;border-bottom:1px solid #d7cbbb}
+        .idea-card__number{color:#9b7427;font-family:'Jost',sans-serif;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+        .idea-card__head h3{margin:0 0 6px;font-family:'Bodoni Moda',serif;font-size:clamp(29px,3.7vw,43px);font-weight:600;line-height:1;letter-spacing:-.035em}
+        .idea-card__head p{max-width:760px;margin:0;color:#6d645e;font-size:12px;line-height:1.65}
+        .idea-pair{display:grid;grid-template-columns:1fr 1fr}
+        .idea-panel{min-height:330px;display:flex;align-items:center;justify-content:center;padding:clamp(22px,4vw,48px);background:#fffdf9}
+        .idea-panel+.idea-panel{border-left:1px solid #d7cbbb}
+        .idea-panel--dark{background:#160a0f;color:#f4eee7}
+        .idea-panel--navy{background:#164b77;color:#f4eee7}
+        .idea-panel svg{width:100%;height:auto}
+        .marquee-panel{display:flex;flex-direction:column;gap:28px;text-align:center}
+        .marquee-title{width:100%;padding:22px 12px;border-top:3px solid currentColor;border-bottom:3px solid currentColor;color:#72d1ff;font-family:'Bodoni Moda',serif;font-size:clamp(34px,5vw,59px);font-weight:600;letter-spacing:.11em}
+        .idea-panel--light .marquee-title{color:#22191b;border-color:#9b7427}
+        .marquee-box{width:100%;padding:21px 12px;border:3px solid #b5a17b;background:repeating-linear-gradient(to bottom,#f7f0e3 0,#f7f0e3 37px,#d8cdb9 38px,#f7f0e3 39px);color:#a52f31;font-family:'Jost',sans-serif;font-size:clamp(15px,2.4vw,28px);font-weight:700;letter-spacing:.13em;text-transform:uppercase}
+        .marquee-credit{color:#c9a64c;font-family:'Jost',sans-serif;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+        .seal-study{padding:clamp(84px,10vw,138px) 0;background:#071725;color:#f4eee7;border-top:7px solid #a9853f}
+        .seal-head{max-width:930px;margin-bottom:46px}
+        .seal-head .eyebrow{color:#d1b46d}
+        .seal-head p:last-child{max-width:820px;margin:22px 0 0;color:#aeb8bf;font-size:14px;line-height:1.75}
+        .seal-stage{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(270px,.55fr);gap:22px}
+        .seal-art{display:flex;align-items:center;justify-content:center;padding:clamp(18px,4vw,48px);background:#f5efe6;border:1px solid #ad966a}
+        .seal-art img{display:block;width:min(100%,820px);height:auto}
+        .seal-notes{display:flex;flex-direction:column;background:#102538;border:1px solid #29445a}
+        .seal-note{padding:25px 26px;border-bottom:1px solid #29445a}
+        .seal-note span{display:block;margin-bottom:8px;color:#8097a7;font-family:'Jost',sans-serif;font-size:8px;font-weight:700;letter-spacing:.2em;text-transform:uppercase}
+        .seal-note strong{display:block;font-family:'Bodoni Moda',serif;font-size:24px;font-weight:600;line-height:1.08}
+        .seal-note p{margin:8px 0 0;color:#aeb8bf;font-size:11px;line-height:1.65}
+        .seal-actions{margin-top:auto;padding:26px}
+        .seal-download{display:block;padding:15px 18px;background:#d1b46d;color:#071725;font-family:'Jost',sans-serif;font-size:9px;font-weight:700;letter-spacing:.18em;text-align:center;text-decoration:none;text-transform:uppercase}
+        .seal-download:hover,.seal-download:focus-visible{background:#ecd591;outline:none}
+        .seal-tests{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
+        .seal-test{min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;background:#0e2031;border:1px solid #29445a}
+        .seal-test img{height:auto}.seal-test:nth-child(1) img{width:160px}.seal-test:nth-child(2) img{width:96px}.seal-test:nth-child(3) img{width:56px}
+        .seal-test span{margin-top:16px;color:#8097a7;font-family:'Jost',sans-serif;font-size:8px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+        .seal-verdict{max-width:930px;margin:30px 0 0;padding:24px 26px;border-left:4px solid #a9853f;background:#102538;color:#b7c2c9;font-size:12px;line-height:1.75}
+        .seal-verdict strong{color:#e1c77e}
+        @media(max-width:900px){
+          .process-book__intro,.working-head,.seal-stage{grid-template-columns:1fr}
+          .decision-grid{grid-template-columns:1fr 1fr}
+        }
+        @media(max-width:700px){
+          .idea-pair{grid-template-columns:1fr}.idea-panel+.idea-panel{border-left:0;border-top:1px solid #d7cbbb}
+          .idea-panel{min-height:260px;padding:20px 14px}
+          .seal-tests{grid-template-columns:1fr 1fr 1fr}.seal-test{min-height:150px;padding:12px}
+        }
+        @media(max-width:520px){
+          .decision-grid{grid-template-columns:1fr}.decision{min-height:0}
+          .idea-card__head{grid-template-columns:1fr;gap:8px;padding:22px 20px}
+          .marquee-box{letter-spacing:.08em}
+          .seal-tests{grid-template-columns:1fr}.seal-test{min-height:175px}
+          .seal-art{padding:10px}
+        }
+      </style>
+      <div class="shell">
+        <div class="process-book__intro">
+          <div>
+            <p class="eyebrow">The shared thought process</p>
+            <h2 id="process-title">A system for a theater—and its steward.</h2>
+          </div>
+          <p class="process-book__intro-copy">This page records the route, not only the destination. The animated octagons above remain the current favorite. The studies below preserve the useful questions we tested together: inheritance versus reinvention, the building versus the nonprofit, night versus print, and campaign voice versus permanent identity.</p>
+        </div>
+
+        <blockquote class="favorite-note"><span>Working note retained from the development process</span><strong>The inherited L is nudged eight units left of mathematical center to compensate for its heavy lower swash. Both versions use the requested corporate lockup and a restrained animated neon hum. These remain explorations—not Board Review—until you say otherwise.</strong></blockquote>
+
+        <div class="decision-grid" aria-label="Identity decisions developed during the brainstorming process">
+          <article class="decision"><span>01 · Inheritance</span><h3>Keep the real L.</h3><p>The original script letter is the visual memory of the old Save the Lansdowne identity. Its silhouette was redrawn as a smooth vector, not replaced with a typeface.</p></article>
+          <article class="decision"><span>02 · Optical balance</span><h3>Trust the eye.</h3><p>The low swash makes mathematical centering look wrong. Every primary mark compensates by shifting the L eight units left.</p></article>
+          <article class="decision"><span>03 · Two dates</span><h3>1927 / 2006.</h3><p>The building carries 1927. Historic Lansdowne Theater Corporation carries 2006. The hierarchy honors both without rewriting either history.</p></article>
+          <article class="decision"><span>04 · Stewardship</span><h3>Protect and preserve.</h3><p>“Save” was the campaign that got us here. “Protect,” “preserved by,” and “keep the lights on” describe the work that continues.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="working-ideas" aria-labelledby="working-title">
+      <div class="shell">
+        <div class="working-head">
+          <div><p class="eyebrow">Included for discussion · not shortlisted</p><h2 id="working-title">Other working ideas.</h2></div>
+          <p>These are the strongest alternate routes from our brainstorming—not six claims that six logos should survive. Each asks a different strategic question and each now uses the same approved, smooth inherited L.</p>
+        </div>
+
+        <div class="idea-stack">
+          <article class="idea-card">
+            <div class="idea-card__head"><span class="idea-card__number">Idea 01</span><div><h3>The Promise</h3><p>An evolutionary successor to the old campaign lockup. “Protect” becomes an active promise; the formal organization name stays subordinate.</p></div></div>
+            <div class="idea-pair">
+              <div class="idea-panel idea-panel--dark">
+                <svg viewBox="0 0 620 250" role="img" aria-label="Dark Protect the Lansdowne identity concept">
+                  <circle cx="110" cy="125" r="72" fill="#ffca18" stroke="#72d1ff" stroke-width="3"/>
+                  <use href="#scriptL" x="54" y="66" width="96" height="100" style="color:#fffaf0"/>
+                  <text x="215" y="95" font-family="'Jost',sans-serif" font-size="22" font-weight="700" letter-spacing="6" fill="#ffca18">PROTECT</text>
+                  <text x="215" y="137" font-family="'Bodoni Moda',serif" font-size="39" font-weight="600" fill="#f4eee7">THE LANSDOWNE</text>
+                  <text x="215" y="174" font-family="'Jost',sans-serif" font-size="12" font-weight="600" letter-spacing="2.2" fill="#b4a8ad">HISTORIC LANSDOWNE THEATER CORPORATION</text>
+                </svg>
+              </div>
+              <div class="idea-panel">
+                <svg viewBox="0 0 620 250" role="img" aria-label="Light Protect the Lansdowne identity concept">
+                  <circle cx="110" cy="125" r="72" fill="#ffca18"/>
+                  <use href="#scriptL" x="54" y="66" width="96" height="100" style="color:#fffaf0"/>
+                  <text x="215" y="95" font-family="'Jost',sans-serif" font-size="22" font-weight="700" letter-spacing="6" fill="#8c6b22">PROTECT</text>
+                  <text x="215" y="137" font-family="'Bodoni Moda',serif" font-size="39" font-weight="600" fill="#21191b">THE LANSDOWNE</text>
+                  <text x="215" y="174" font-family="'Jost',sans-serif" font-size="12" font-weight="600" letter-spacing="2.2" fill="#655f5c">HISTORIC LANSDOWNE THEATER CORPORATION</text>
+                </svg>
+              </div>
+            </div>
+          </article>
+
+          <article class="idea-card">
+            <div class="idea-card__head"><span class="idea-card__number">Idea 02</span><div><h3>The Living Marquee</h3><p>Not the everyday logo: a campaign voice. The owner line remains constant while fundraising appeals, milestones, and community messages change.</p></div></div>
+            <div class="idea-pair">
+              <div class="idea-panel idea-panel--dark marquee-panel"><div class="marquee-title">LANSDOWNE</div><div class="marquee-box">Protect the Lansdowne</div><div class="marquee-credit">A promise of the Historic Lansdowne Theater Corporation</div></div>
+              <div class="idea-panel idea-panel--light marquee-panel"><div class="marquee-title">LANSDOWNE</div><div class="marquee-box">The next 100 years</div><div class="marquee-credit">Historic Lansdowne Theater Corporation</div></div>
+            </div>
+          </article>
+
+          <article class="idea-card">
+            <div class="idea-card__head"><span class="idea-card__number">Idea 03</span><div><h3>The working lockup</h3><p>The inherited L without glow, shadow, or campaign language. This asks whether the silhouette and formal name can carry a durable institutional identity on their own.</p></div></div>
+            <div class="idea-pair">
+              <div class="idea-panel idea-panel--dark">
+                <svg viewBox="0 0 650 240" role="img" aria-label="Dark formal Lansdowne lockup">
+                  <circle cx="105" cy="120" r="70" fill="#b8963e"/>
+                  <use href="#scriptL" x="48" y="61" width="98" height="102" style="color:#160a0f"/>
+                  <text x="210" y="120" font-family="'Bodoni Moda',serif" font-size="43" font-weight="600" fill="#f4eee7">THE LANSDOWNE</text>
+                  <text x="212" y="153" font-family="'Jost',sans-serif" font-size="12" font-weight="600" letter-spacing="1.7" fill="#c3a147">HISTORIC LANSDOWNE THEATER CORPORATION · EST. 2006</text>
+                </svg>
+              </div>
+              <div class="idea-panel">
+                <svg viewBox="0 0 650 240" role="img" aria-label="Light formal Lansdowne lockup">
+                  <circle cx="105" cy="120" r="70" fill="#b8963e"/>
+                  <use href="#scriptL" x="48" y="61" width="98" height="102" style="color:#fffdf9"/>
+                  <text x="210" y="120" font-family="'Bodoni Moda',serif" font-size="43" font-weight="600" fill="#21191b">THE LANSDOWNE</text>
+                  <text x="212" y="153" font-family="'Jost',sans-serif" font-size="12" font-weight="600" letter-spacing="1.7" fill="#665f58">HISTORIC LANSDOWNE THEATER CORPORATION · EST. 2006</text>
+                </svg>
+              </div>
+            </div>
+          </article>
+
+          <article class="idea-card">
+            <div class="idea-card__head"><span class="idea-card__number">Idea 04</span><div><h3>The preservation medallion</h3><p>A round, sign-like companion to the octagon. The theater’s 1927 date lives in the mark; HLTC’s 2006 date remains in the stewardship line.</p></div></div>
+            <div class="idea-panel idea-panel--dark">
+              <svg viewBox="0 0 760 610" role="img" aria-label="Circular preservation medallion concept">
+                <g transform="translate(190 18)">
+                  <circle cx="190" cy="190" r="164" fill="none" stroke="#72d1ff" stroke-width="10"/>
+                  <circle cx="190" cy="190" r="140" fill="none" stroke="#72d1ff" stroke-width="3"/>
+                  <g fill="#ffd56c"><circle cx="190" cy="44" r="6"/><circle cx="293" cy="87" r="6"/><circle cx="336" cy="190" r="6"/><circle cx="293" cy="293" r="6"/><circle cx="190" cy="336" r="6"/><circle cx="87" cy="293" r="6"/><circle cx="44" cy="190" r="6"/><circle cx="87" cy="87" r="6"/></g>
+                  <use href="#scriptL" x="92" y="88" width="180" height="186" style="color:#f8fbff"/>
+                  <text x="190" y="317" text-anchor="middle" font-family="'Bodoni Moda',serif" font-size="18" font-weight="700" fill="#f8fbff">1927</text>
+                </g>
+                <text x="380" y="430" text-anchor="middle" font-family="'Bodoni Moda',serif" font-size="52" font-weight="600" letter-spacing="1" fill="#f4eee7">THE LANSDOWNE</text>
+                <text x="380" y="468" text-anchor="middle" font-family="'Bodoni Moda',serif" font-size="17" font-style="italic" font-weight="600" fill="#e7b93c">preserved by</text>
+                <text x="380" y="501" text-anchor="middle" font-family="'Jost',sans-serif" font-size="14" font-weight="600" letter-spacing="1.8" fill="#e7b93c">HISTORIC LANSDOWNE THEATER CORPORATION · EST. 2006</text>
+                <line x1="252" y1="526" x2="508" y2="526" stroke="#60434c" stroke-width="1"/>
+                <text x="380" y="551" text-anchor="middle" font-family="'Jost',sans-serif" font-size="10" font-weight="600" letter-spacing="3" fill="#72d1ff">KEEP THE LIGHTS ON</text>
+              </svg>
+            </div>
+          </article>
+
+          <article class="idea-card">
+            <div class="idea-card__head"><span class="idea-card__number">Idea 05</span><div><h3>The Lobby Star</h3><p>An eight-point architectural motif drawn from the building’s ornament, tested as a radiant field behind the inherited L. It is celebratory, compact, and unmistakably different from the neon framework.</p></div></div>
+            <div class="idea-pair">
+              <div class="idea-panel idea-panel--navy">
+                <svg viewBox="0 0 420 360" role="img" aria-label="Lobby star identity symbol">
+                  <g transform="translate(210 180)"><path d="M0-145 27-43 103-103 43-27 145 0 43 27 103 103 27 43 0 145-27 43-103 103-43 27-145 0-43-27-103-103-27-43Z" fill="#d8b24d"/><path d="M0-105 19-31 74-74 31-19 105 0 31 19 74 74 19 31 0 105-19 31-74 74-31 19-105 0-31-19-74-74-19-31Z" fill="#f2e7ce"/><use href="#scriptL" x="-63" y="-66" width="130" height="134" style="color:#164b77"/></g>
+                </svg>
+              </div>
+              <div class="idea-panel">
+                <svg viewBox="0 0 620 300" role="img" aria-label="Lobby star horizontal lockup">
+                  <g transform="translate(130 150)"><path d="M0-95 18-28 67-67 28-18 95 0 28 18 67 67 18 28 0 95-18 28-67 67-28 18-95 0-28-18-67-67-18-28Z" fill="#d8b24d"/><path d="M0-67 12-20 47-47 20-12 67 0 20 12 47 47 12 20 0 67-12 20-47 47-20 12-67 0-20-12-47-47-12-20Z" fill="#f2e7ce"/><use href="#scriptL" x="-48" y="-50" width="96" height="100" style="color:#164b77"/></g>
+                  <text x="250" y="130" font-family="'Bodoni Moda',serif" font-size="42" font-weight="600" fill="#21191b">THE LANSDOWNE</text>
+                  <text x="252" y="164" font-family="'Bodoni Moda',serif" font-size="16" font-style="italic" font-weight="600" fill="#8c6b22">preserved by</text>
+                  <text x="252" y="192" font-family="'Jost',sans-serif" font-size="11" font-weight="600" letter-spacing="1.3" fill="#5f5956">HISTORIC LANSDOWNE THEATER CORPORATION · EST. 2006</text>
+                </svg>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="seal-study" aria-labelledby="seal-title">
+      <div class="shell">
+        <div class="seal-head">
+          <p class="eyebrow">Complete production study · architectural seal</p>
+          <h2 id="seal-title">The building,<br>rebuilt as vector linework.</h2>
+          <p>This is not a screenshot inside an SVG wrapper. The rings, theater elevation, windows, roof tile, tightened marquee, inherited script L, date system, and laurels are native vector shapes. The facade is intentionally simplified so the seal keeps its authority when reduced.</p>
+        </div>
+
+        <div class="seal-stage">
+          <div class="seal-art"><img src="./hltc-architectural-seal.svg" alt="Architectural seal for the Historic Lansdowne Theater Corporation"></div>
+          <aside class="seal-notes" aria-label="Architectural seal production notes">
+            <div class="seal-note"><span>Identity hierarchy</span><strong>The building carries 1927.</strong><p>HLTC’s separate EST. 2006 date is the stewardship date—not the building’s origin date.</p></div>
+            <div class="seal-note"><span>Facade pass · revised</span><strong>Drawn from the actual theater.</strong><p>Three clipped tile roofs, six center windows, three frieze cartouches, and a tightened marquee replace the generic first-pass elevation.</p></div>
+            <div class="seal-note"><span>Production palette</span><strong>Midnight ink + aged brass.</strong><p>Two spot colors on warm plaster. No gradients are required for stationery, plaques, or print.</p></div>
+            <div class="seal-actions"><a class="seal-download" href="./hltc-architectural-seal.svg" download>Download editable SVG</a></div>
+          </aside>
+        </div>
+
+        <div class="seal-tests" aria-label="Architectural seal reduction tests">
+          <div class="seal-test"><img src="./hltc-architectural-seal.svg" alt="Architectural seal at 160 pixels"><span>160 px · stationery</span></div>
+          <div class="seal-test"><img src="./hltc-architectural-seal.svg" alt="Architectural seal at 96 pixels"><span>96 px · social avatar</span></div>
+          <div class="seal-test"><img src="./hltc-architectural-seal.svg" alt="Architectural seal at 56 pixels"><span>56 px · detail limit</span></div>
+        </div>
+        <p class="seal-verdict"><strong>Production judgment:</strong> this is a formal secondary seal, not a replacement for the neon L at every size. It is strongest on board packets, donor certificates, restoration plaques, grant materials, and merchandise where the building story deserves room. Below roughly 56 px, the simpler inherited-L mark should take over.</p>
       </div>
     </section>
   </main>
