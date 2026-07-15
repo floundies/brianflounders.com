@@ -1054,6 +1054,27 @@ img { max-width: 100%; height: auto; display: block; }
    AWARDS — brass plaques
    ================================================================ */
 
+#awards {
+  overflow: hidden;
+  isolation: isolate;
+}
+
+#awards::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  right: -5vw;
+  width: clamp(720px, 66vw, 1120px);
+  aspect-ratio: 1;
+  transform: translateY(-50%);
+  background: url('../hltc-architectural-seal.svg') center / contain no-repeat;
+  filter: grayscale(1) sepia(0.2) contrast(1.08);
+  mix-blend-mode: multiply;
+  opacity: 0.07;
+  pointer-events: none;
+}
+
 .awards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
@@ -1092,6 +1113,14 @@ img { max-width: 100%; height: auto; display: block; }
   text-transform: uppercase;
   color: var(--t-fg-muted-d);
   line-height: 1.6;
+}
+
+@media (max-width: 700px) {
+  #awards::before {
+    right: -58vw;
+    width: 150vw;
+    opacity: 0.055;
+  }
 }
 
 /* ================================================================
