@@ -260,7 +260,13 @@ document.addEventListener('DOMContentLoaded', function () {
         utm_term: tier,
         utm_content: seatId
       });
-      window.open('https://givebutter.com/HLTC-Seat-Sponsor?' + params.toString(), '_blank', 'noopener');
+      var campaignByTier = {
+        prime: 'https://givebutter.com/sponsor-a-prime-seat',
+        gold: 'https://givebutter.com/sponsor-a-gold-seat',
+        blue: 'https://givebutter.com/HLTC-Seat-Sponsor'
+      };
+      var campaignUrl = campaignByTier[tier] || campaignByTier.blue;
+      window.open(campaignUrl + '?' + params.toString(), '_blank', 'noopener');
     }
   });
 
