@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import { marked } from 'marked'
 import StatsBar from './StatsBar'
+import { HashtagText, linkifyHashtagsInHtml } from './HashtagText'
 
 function relaysFromEnv() {
   const s = (import.meta.env.VITE_RELAYS as string) || ''
@@ -333,7 +334,7 @@ const title = useMemo(() => {
         isAllowedAudioUrl(u) ? `<audio src="${u}" controls preload="metadata" style="max-width:100%;width:100%;margin:8px 0"></audio>` : _m
       )
 
-    return htmlAfter
+    return linkifyHashtagsInHtml(htmlAfter)
   }, [ev, heroUrl, cameFromBody])
 
   // -------- comments: ZapThreads (iife) for comments only; hide its counts; fallback to NoComment ----------
@@ -497,8 +498,8 @@ const title = useMemo(() => {
           </div>
           {/* Title overlaps bottom of hero via negative margin */}
           <div className="post-hero__overlay">
-            {title && <h1 className="post-title post-title--hero">{title}</h1>}
-            {summary && <p className="post-summary">{summary}</p>}
+            {title && <h1 className="post-title post-title--hero"><HashtagText text={title} /></h1>}
+            {summary && <p className="post-summary"><HashtagText text={summary} /></p>}
             <div className="meta post-hero__meta">
               <a href="#/" className="post-back">← Back</a>
               <span className="post-meta__sep">·</span>
@@ -526,8 +527,8 @@ const title = useMemo(() => {
       {/* Title/meta when there's no hero image (video or no media) */}
       {!hasHeroImage && (
         <>
-          {title && <h1 className="post-title">{title}</h1>}
-          {summary && <p className="post-summary">{summary}</p>}
+          {title && <h1 className="post-title"><HashtagText text={title} /></h1>}
+          {summary && <p className="post-summary"><HashtagText text={summary} /></p>}
           <div className="meta" style={{ marginBottom: 12 }}>
             <a href="#/" className="post-back">← Back</a>
             <span className="post-meta__sep">·</span>

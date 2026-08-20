@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { titleFrom, summaryFrom } from '../lib/nostr'
+import { HashtagText } from './HashtagText'
 
 
 function imageUrlsFrom(text: string) {
@@ -138,7 +139,7 @@ export default function RepostCard({ ev }: Props) {
           {orig.kind === 1 && (
             <div style={{ marginTop: 6 }}>
               {stripImageUrls(orig.content || '') && (
-                <div style={{ whiteSpace: 'pre-wrap' }}>{stripImageUrls(orig.content || '')}</div>
+                <div style={{ whiteSpace: 'pre-wrap' }}><HashtagText text={stripImageUrls(orig.content || '')} /></div>
               )}
               {imageUrlsFrom(orig.content || '').map((u, i) => (
                 <img key={i} src={u} alt="" style={{ maxWidth: '100%', borderRadius: 8, marginTop: 8 }} />

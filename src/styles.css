@@ -717,6 +717,17 @@ hr.sep {
   text-decoration: none;
 }
 
+.hashtag-link {
+  color: var(--tag-fg);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.hashtag-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .primal-link__icon {
   width: 16px;
   height: 16px;
@@ -933,7 +944,7 @@ hr.sep {
 
 @media (prefers-color-scheme: dark) {
   .loading-monogram {
-    filter: brightness(0) invert(1);
+    filter: none;
   }
 }
 

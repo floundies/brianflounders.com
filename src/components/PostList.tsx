@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import dayjs from 'dayjs'
 import RepostCard from './RepostCard'
+import { HashtagText } from './HashtagText'
 
 type NEvent = {
   id: string
@@ -363,7 +364,7 @@ export default function PostList({ tag, filterFn }: { tag?: string; filterFn?: (
             <li className="list-row" key={ev.id}>
               <div className="card card--note">
                 <NoteHeader pubkey={ev.pubkey} relays={relays} ts={ts} eventId={ev.id} />
-                <div style={{ whiteSpace:'pre-wrap', overflowWrap:'anywhere', wordBreak:'break-word', marginTop: 12, lineHeight: 1.7 }}>{body}</div>
+                <div style={{ whiteSpace:'pre-wrap', overflowWrap:'anywhere', wordBreak:'break-word', marginTop: 12, lineHeight: 1.7 }}><HashtagText text={body} /></div>
                 {vids.length > 0 && (
                   <div style={{ marginTop: 14, display:'grid', gap: 10 }}>
                     {vids.map((u,i) => (
