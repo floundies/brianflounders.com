@@ -129,9 +129,6 @@ function hasTag(ev: NEvent, slug: string): boolean {
   return bodyTags.includes(want)
 }
 
-/* --- tag behavior: which tags include short notes on tag pages? --- */
-const TAGS_INCLUDE_NOTES = new Set<string>(['cook','briantries','fitness','bitcoin'])
-
 /* =================== Profile fetch (memoized + timeout + pool reuse) =================== */
 let __pool: any = null
 async function getPool() {
@@ -201,14 +198,12 @@ export default function PostList({ tag, filterFn }: { tag?: string; filterFn?: (
         const pool = await getPool()
 
         const lowerTag = (tag || '').toLowerCase()
-        const includeNotesForTag = !!lowerTag && TAGS_INCLUDE_NOTES.has(lowerTag)
 
         // Build relay filters
-        const filters = tag ? (
-          includeNotesForTag
-            ? [{ kinds: [30023, 1], authors: [authorHex], limit: 200 }]
-            : [{ kinds: [30023], authors: [authorHex], limit: 200 }]
-        ) : [
+        const filters = tag ? [
+          { kinds: [30023], authors: [authorHex], limit: 200 },
+          { kinds: [1], authors: [authorHex], limit: 200 },
+        ] : [
           { kinds: [30023], authors: [authorHex], limit: 100 },
           { kinds: [1], authors: [authorHex], limit: 100 },
           { kinds: [6], authors: [authorHex], limit: 50 },
@@ -236,14 +231,10 @@ export default function PostList({ tag, filterFn }: { tag?: string; filterFn?: (
 
         let filtered = evs
         if (tag) {
-          // Tag pages
-          if (includeNotesForTag) {
-            filtered = evs.filter(ev => (
-              (ev.kind === 30023 || (ev.kind === 1 && !isReply(ev))) && hasTag(ev, lowerTag)
-            ))
-          } else {
-            filtered = evs.filter(ev => ev.kind === 30023 && hasTag(ev, lowerTag))
-          }
+          // Tag pages include long-form articles and top-level short notes.
+          filtered = evs.filter(ev => (
+            (ev.kind === 30023 || (ev.kind === 1 && !isReply(ev))) && hasTag(ev, lowerTag)
+          ))
         } else {
           // Home view
           if (filterFn) {
@@ -358,7 +349,6 @@ export default function PostList({ tag, filterFn }: { tag?: string; filterFn?: (
         if (ev.kind === 1) {
           const lowerTag = (tag || '').toLowerCase()
           if (tag) {
-            if (!TAGS_INCLUDE_NOTES.has(lowerTag)) return null
             if (!hasTag(ev, lowerTag)) return null
             if (isReply(ev)) return null
           } else {
