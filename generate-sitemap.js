@@ -49,7 +49,7 @@ const BACKUP_RELAYS = [
   "wss://relayable.org",
   "wss://offchain.pub"
 ];
-const RELAY_SET = Array.from(new Set([...RELAYS, ...BACKUP_RELAYS]));
+const RELAY_SET = Array.from(new Set(["wss://premium.primal.net", ...RELAYS, ...BACKUP_RELAYS]));
 
 const HASH_POST_PREFIX = "/#/post"; // sitemap will point to #/post/<naddr>
 
@@ -71,7 +71,7 @@ function extractTagRoutes(events) {
     if (ev?.kind !== 30023) continue;
     for (const t of ev.tags || []) {
       if (t?.[0] === "t" && t?.[1]) {
-        tags.add(String(t[1]).toLowerCase());
+        tags.add(String(t[1]).replace(/^#+/, "").toLowerCase());
       }
     }
   }

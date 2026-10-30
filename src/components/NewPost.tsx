@@ -1,10 +1,7 @@
+import { relaysFromEnv } from '../lib/relays'
 import { useState } from 'react'
 import MarkdownEditor from './MarkdownEditor'
 
-function relaysFromEnv(){
-  return (import.meta.env.VITE_RELAYS as string || '')
-    .split(',').map(s => s.trim()).filter(Boolean)
-}
 function dTag(){ return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}` }
 
 export default function NewPost(){

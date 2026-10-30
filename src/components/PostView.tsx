@@ -1,20 +1,10 @@
+import { relaysFromEnv } from '../lib/relays'
 // src/components/PostView.tsx
 import { useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import { marked } from 'marked'
 import StatsBar from './StatsBar'
 import { HashtagText, linkifyHashtagsInHtml } from './HashtagText'
-
-function relaysFromEnv() {
-  const s = (import.meta.env.VITE_RELAYS as string) || ''
-  const arr = s.split(',').map(t => t.trim()).filter(Boolean)
-  return arr.length ? arr : [
-    'wss://relay.primal.net',
-    'wss://relay.damus.io',
-    'wss://nos.lol',
-    'wss://relay.snort.social',
-  ]
-}
 
 export default function PostView({ id }: { id: string }) {
   const [ev, setEv] = useState<any | null>(null)

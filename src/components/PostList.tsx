@@ -1,3 +1,4 @@
+import { relaysFromEnv } from '../lib/relays'
 // src/components/PostList.tsx
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -12,20 +13,6 @@ type NEvent = {
   content: string
   tags: string[][]
   created_at: number
-}
-
-/* -------------------- relays -------------------- */
-function relaysFromEnv(): string[] {
-  const raw = (import.meta.env.VITE_RELAYS as string) || ''
-  const arr = raw.split(',').map(s => s.trim()).filter(Boolean)
-  return arr.length
-    ? arr
-    : [
-        'wss://relay.primal.net',
-        'wss://relay.damus.io',
-        'wss://nos.lol',
-        'wss://relay.snort.social',
-      ]
 }
 
 /* -------------------- nip19 helpers -------------------- */
@@ -120,10 +107,10 @@ function getHeroImageUrl(ev: NEvent): string | undefined {
 
 /* -------------------- tag match helpers -------------------- */
 function hasTag(ev: NEvent, slug: string): boolean {
-  const want = (slug || '').toLowerCase()
+  const want = (slug || '').replace(/^#+/, '').toLowerCase()
   if (!want) return false
   // NIP-12 t-tags
-  const tHit = ev.tags.some(t => t[0] === 't' && (t[1] || '').toLowerCase() === want)
+  const tHit = ev.tags.some(t => t[0] === 't' && (t[1] || '').replace(/^#+/, '').toLowerCase() === want)
   if (tHit) return true
   // hashtag fallback from body
   const bodyTags = (ev.content.match(/#[a-z0-9_-]+/gi) || []).map(h => h.slice(1).toLowerCase())
@@ -298,7 +285,7 @@ export default function PostList({ tag, filterFn }: { tag?: string; filterFn?: (
           const hero = getHeroImageUrl(ev)
           const postUrl = `#/post/${encodeAnchor(ev)}`
           const clearComments = () => sessionStorage.removeItem('goto_comments')
-          const tTags = ev.tags.filter(t => t[0] === 't' && t[1]).map(t => t[1].toLowerCase())
+          const tTags = [...new Set(ev.tags.filter(t => t[0] === 't' && t[1]).map(t => t[1].replace(/^#+/, '').toLowerCase()))]
           const isFirst = idx === 0 && !tag && safeePage === 0
 
           return (

@@ -1,11 +1,7 @@
+import { relaysFromEnv } from './relays'
 import NDK, { NDKEvent, NDKNip07Signer, NDKUser } from '@nostr-dev-kit/ndk'
 
-export const relays = (import.meta.env.VITE_RELAYS as string | undefined)?.split(',').map(s=>s.trim()).filter(Boolean) ?? [
-  'wss://relay.damus.io',
-  'wss://nos.lol',
-  'wss://relay.primal.net',
-  'wss://relay.nostr.band'
-]
+export const relays = relaysFromEnv()
 
 export function resolveAuthor(): string | null {
   const url = new URL(window.location.href)

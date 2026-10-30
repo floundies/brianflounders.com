@@ -1,3 +1,4 @@
+import { relaysFromEnv } from '../lib/relays'
 import { useEffect, useRef, useState } from 'react'
 import { titleFrom, summaryFrom } from '../lib/nostr'
 import { HashtagText } from './HashtagText'
@@ -71,16 +72,7 @@ export default function RepostCard({ ev }: Props) {
           } catch {}
         }
 
-        const relaysEnv = (import.meta.env.VITE_RELAYS as string) || ''
-        let relays = relaysEnv.split(',').map(s => s.trim()).filter(Boolean)
-        if (!relays.length) {
-          relays = [
-            'wss://relay.primal.net',
-            'wss://relay.damus.io',
-            'wss://nos.lol',
-            'wss://relay.snort.social',
-          ]
-        }
+        const relays = relaysFromEnv()
         const { SimplePool }: any = await import('https://esm.sh/nostr-tools@1.17.0')
         const p = new SimplePool()
         tempPool = p

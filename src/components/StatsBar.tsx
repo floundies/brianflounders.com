@@ -1,3 +1,4 @@
+import { relaysFromEnv } from '../lib/relays'
 // src/components/StatsBar.tsx
 import { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -6,17 +7,6 @@ type Props = {
   compact?: boolean
   lazy?: boolean
   interactive?: boolean
-}
-
-function relaysFromEnv() {
-  const s = (import.meta.env.VITE_RELAYS as string) || ''
-  const arr = s.split(',').map(t => t.trim()).filter(Boolean)
-  return arr.length ? arr : [
-    'wss://relay.primal.net',
-    'wss://relay.damus.io',
-    'wss://nos.lol',
-    'wss://relay.snort.social',
-  ]
 }
 
 function addressOf(ev: any): string | null {

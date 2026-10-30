@@ -1,11 +1,7 @@
+import { relaysFromEnv } from '../lib/relays'
 import { useEffect, useState } from 'react'
 import MarkdownEditor from './MarkdownEditor'
 import dayjs from 'dayjs'
-
-function relaysFromEnv(){
-  return (import.meta.env.VITE_RELAYS as string || '')
-    .split(',').map(s => s.trim()).filter(Boolean)
-}
 
 export default function EditPost({ id }: { id: string }) {
   const [ev, setEv] = useState<any | null>(null)
